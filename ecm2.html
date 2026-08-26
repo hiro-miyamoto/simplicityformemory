@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECM — 和音体シーケンサー</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0d1b2a;        /* 深い藍 — ECMの夜 */
+  --ink2:#1b2a3a;
+  --paper:#f4f1ea;      /* 紙の白 */
+  --paper2:#e8e3d7;
+  --gold:#b08d57;       /* 控えめな金 */
+  --mist:#7a8a9a;       /* 霧 */
+  --mist2:#4a5a6a;
+  --deep:#060f18;       /* 最も深い */
+  --line:rgba(176,141,87,0.25);
+  --glow:rgba(176,141,87,0.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--deep);color:var(--paper);font-family:'JetBrains Mono',monospace;font-weight:300;height:100%;overflow:hidden;}
+body{display:flex;flex-direction:column;}
+
+.masthead{
+  padding:0.7rem 1.4rem;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;gap:1.2rem;background:linear-gradient(180deg,var(--ink) 0%,var(--deep) 100%);
+}
+.masthead h1{font-family:'IM Fell English',serif;font-weight:400;font-size:1.6rem;letter-spacing:0.18em;color:var(--paper);}
+.masthead .sub{font-family:'IM Fell English',serif;font-style:italic;font-size:0.85rem;color:var(--mist);letter-spacing:0.04em;}
+.masthead .spacer{flex:1;}
+.masthead .principle{font-size:0.62rem;color:var(--gold);letter-spacing:0.05em;opacity:0.8;max-width:340px;text-align:right;line-height:1.4;}
+
+.stage{flex:1;display:flex;min-height:0;}
+.canvas-wrap{flex:1;position:relative;background:radial-gradient(ellipse at 50% 40%,var(--ink2) 0%,var(--deep) 75%);}
+#chordCanvas{position:absolute;inset:0;width:100%;height:100%;}
+
+.panel{
+  width:300px;border-left:1px solid var(--line);background:var(--ink);
+  padding:1rem 1.1rem;overflow-y:auto;display:flex;flex-direction:column;gap:1.1rem;
+}
+.panel::-webkit-scrollbar{width:5px;}
+.panel::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+
+.group{display:flex;flex-direction:column;gap:0.55rem;}
+.group > .label{
+  font-family:'IM Fell English',serif;font-style:italic;font-size:0.78rem;
+  color:var(--gold);letter-spacing:0.06em;border-bottom:1px solid var(--line);padding-bottom:0.25rem;
+}
+.row{display:flex;align-items:center;gap:0.5rem;justify-content:space-between;}
+.row .name{font-size:0.66rem;color:var(--mist);letter-spacing:0.03em;}
+.row .val{font-size:0.66rem;color:var(--paper);font-weight:400;min-width:2.6rem;text-align:right;}
+
+input[type=range]{-webkit-appearance:none;appearance:none;height:2px;background:var(--line);border-radius:2px;flex:1;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--gold);cursor:pointer;border:1px solid var(--deep);}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--gold);cursor:pointer;border:1px solid var(--deep);}
+
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+.seg button{flex:1;background:transparent;color:var(--mist);border:none;padding:0.4rem 0.2rem;font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:300;letter-spacing:0.04em;cursor:pointer;transition:all 0.25s;border-right:1px solid var(--line);}
+.seg button:last-child{border-right:none;}
+.seg button.on{background:var(--gold);color:var(--deep);font-weight:500;}
+.seg button:hover:not(.on){background:rgba(176,141,87,0.12);color:var(--paper);}
+
+.transport{display:flex;gap:0.55rem;padding:0.8rem 1.1rem;border-top:1px solid var(--line);background:var(--ink);align-items:center;}
+.btn{
+  background:transparent;border:1px solid var(--gold);color:var(--gold);
+  padding:0.5rem 1.1rem;font-family:'IM Fell English',serif;font-size:0.92rem;letter-spacing:0.08em;
+  cursor:pointer;border-radius:4px;transition:all 0.25s;
+}
+.btn:hover{background:var(--gold);color:var(--deep);}
+.btn.playing{background:var(--gold);color:var(--deep);}
+.btn.ghost{border-color:var(--line);color:var(--mist);font-family:'JetBrains Mono',monospace;font-size:0.62rem;padding:0.45rem 0.7rem;letter-spacing:0.04em;}
+.btn.ghost:hover{border-color:var(--gold);color:var(--paper);background:transparent;}
+
+.readout{flex:1;display:flex;gap:1.4rem;align-items:center;justify-content:flex-end;font-size:0.62rem;color:var(--mist);letter-spacing:0.04em;}
+.readout .field{display:flex;gap:0.4rem;align-items:baseline;}
+.readout .field b{color:var(--gold);font-weight:400;font-size:0.72rem;}
+.readout .field .v{color:var(--paper);font-weight:400;}
+
+.midi-dot{width:7px;height:7px;border-radius:50%;background:var(--mist2);transition:background 0.3s;}
+.midi-dot.live{background:var(--gold);box-shadow:0 0 6px var(--glow);}
+
+.log{position:absolute;left:1.1rem;bottom:1rem;font-size:0.6rem;color:var(--mist);font-style:italic;font-family:'IM Fell English',serif;letter-spacing:0.03em;max-width:60%;line-height:1.5;pointer-events:none;opacity:0.85;}
+</style>
+</head>
+<body>
+<div class="masthead">
+  <h1>ECM</h1>
+  <span class="sub">chord-body sequencer</span>
+  <span class="spacer"></span>
+  <span class="principle">声部は和音として動く。和音は包み込む引力を持つ。一人で動くと弾かれる。</span>
+</div>
+
+<div class="stage">
+  <div class="canvas-wrap">
+    <canvas id="chordCanvas"></canvas>
+    <div class="log" id="log">沈黙から始まる。</div>
+  </div>
+
+  <div class="panel">
+    <div class="group">
+      <div class="label">chord body — 和音体</div>
+      <div class="seg" id="stackSeg">
+        <button data-stack="3" class="on">3度堆積</button>
+        <button data-stack="4">4度堆積</button>
+        <button data-stack="5">5度堆積</button>
+      </div>
+      <div class="row"><span class="name">声部数 voices</span><input type="range" id="voicesSlider" min="3" max="6" step="1" value="4"><span class="val" id="voicesVal">4</span></div>
+      <div class="row"><span class="name">根音 root</span><input type="range" id="rootSlider" min="33" max="57" step="1" value="45"><span class="val" id="rootVal">A2</span></div>
+    </div>
+
+    <div class="group">
+      <div class="label">pocket — 懐(低音ほど長い)</div>
+      <div class="row"><span class="name">深さ depth</span><input type="range" id="pocketSlider" min="0" max="100" step="1" value="60"><span class="val" id="pocketVal">60</span></div>
+      <div class="row"><span class="name">余韻 release</span><input type="range" id="releaseSlider" min="0" max="100" step="1" value="55"><span class="val" id="releaseVal">55</span></div>
+    </div>
+
+    <div class="group">
+      <div class="label">wave — 波(全体のうねり)</div>
+      <div class="row"><span class="name">周期 period</span><input type="range" id="waveSlider" min="4" max="20" step="0.5" value="11"><span class="val" id="waveVal">11s</span></div>
+      <div class="row"><span class="name">振幅 amplitude</span><input type="range" id="waveAmpSlider" min="0" max="12" step="1" value="5"><span class="val" id="waveAmpVal">5</span></div>
+    </div>
+
+    <div class="group">
+      <div class="label">motion — 動き(塊の連動)</div>
+      <div class="row"><span class="name">歩幅 step</span><input type="range" id="stepSlider" min="0" max="100" step="1" value="40"><span class="val" id="stepVal">40</span></div>
+      <div class="row"><span class="name">開閉 breath</span><input type="range" id="breathSlider" min="0" max="100" step="1" value="35"><span class="val" id="breathVal">35</span></div>
+    </div>
+
+    <div class="group">
+      <div class="label">silence — 間(沈黙)</div>
+      <div class="row"><span class="name">沈黙率 ma</span><input type="range" id="silenceSlider" min="0" max="80" step="1" value="25"><span class="val" id="silenceVal">25</span></div>
+      <div class="row"><span class="name">速さ pulse</span><input type="range" id="tempoSlider" min="30" max="90" step="1" value="50"><span class="val" id="tempoVal">50</span></div>
+    </div>
+
+    <div class="group">
+      <div class="label">output</div>
+      <div class="row"><span class="name">MIDI出力先</span><select id="midiOut" style="flex:1;background:var(--ink2);color:var(--paper);border:1px solid var(--line);border-radius:4px;padding:0.3rem;font-family:'JetBrains Mono',monospace;font-size:0.6rem;"><option>内蔵音源</option></select></div>
+      <div class="row"><span class="name">内蔵音色</span><div class="seg" style="flex:1"><button id="synthOn" class="on" data-synth="1">ON</button><button data-synth="0">OFF</button></div></div>
+    </div>
+
+    <div class="group">
+      <div class="label">carve — 逆彫刻の参照出力</div>
+      <div class="row"><span class="name">CC送信</span><div class="seg" style="flex:1"><button id="ccOn" class="on" data-cc="1">ON</button><button data-cc="0">OFF</button></div></div>
+      <div class="row"><span class="name">CC1 波位相</span><span class="val" id="ccWave">·</span></div>
+      <div class="row"><span class="name">CC2 中心高度</span><span class="val" id="ccCenter">·</span></div>
+      <div class="row"><span class="name">CC3 着地候補</span><span class="val" id="ccConv">·</span></div>
+      <div class="row"><span class="name" style="font-size:0.58rem;line-height:1.3;color:var(--mist2)">波に同期して君が枠を当てる。谷=着地、頂点=浮遊。</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="transport">
+  <button class="btn" id="btnPlay">Play</button>
+  <button class="btn ghost" id="btnNudge">和音体を動かす</button>
+  <button class="btn ghost" id="btnBreathe">開く / 閉じる</button>
+  <div class="readout">
+    <div class="field"><b id="roChord">—</b><span class="v" id="roStack">3rd</span></div>
+    <div class="field">wave<span class="v" id="roWave">·</span></div>
+    <div class="field">t<span class="v" id="roTime">0:00</span></div>
+    <div class="midi-dot" id="midiDot"></div>
+  </div>
+</div>
+
+<script id="engine">
+// ════════════════════════════════════════════════════════════════
+//  ECM CHORD-BODY ENGINE
+//  統一原理: 声部は和音として動く。塊が引力場。一人で動かさない。
+// ════════════════════════════════════════════════════════════════
+'use strict';
+const $=id=>document.getElementById(id);
+const NN=['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+const nameOf=m=>NN[((m%12)+12)%12]+(Math.floor(m/12)-1);
+
+// ─── state ───
+const S={
+  playing:false,
+  stack:3,            // 3rd / 4th / 5th piling
+  voices:4,
+  root:45,            // A2
+  pocket:60, release:55,
+  wavePeriod:11, waveAmp:5,
+  step:40, breath:35,
+  silence:25, tempo:50,
+  synth:true,
+  cc:true,
+  // chord body — the living organism. degrees are offsets from root (in scale steps).
+  body:null,          // {center, spread, notes:[midi...]}
+  t0:0, lastStepTime:0,
+  waveOpen:1,         // 0..1 current breath openness (animated)
+  breathDir:1,
+};
+
+// scale palette — ECM modal colors (we follow the chord-body, not a named scale).
+// We build the chord by PILING intervals, so the "scale" is implied by the stack.
+const STACK_INTERVAL={3:3, 4:5, 5:7};  // semitone step per pile (minor3rd-ish/4th/5th)
+// to keep it musical, alternate the 3rd-pile between 3 and 4 (maj/min) for tonal color
+function buildBody(rootMidi, stack, voices){
+  const notes=[rootMidi];
+  let cur=rootMidi;
+  for(let i=1;i<voices;i++){
+    let iv;
+    if(stack===3){ iv = (i%2===1)?4:3; }      // alternate maj3/min3 → triadic stacks
+    else if(stack===4){ iv = 5; }              // quartal
+    else { iv = 7; }                            // quintal
+    cur+=iv; notes.push(cur);
+  }
+  return notes;
+}
+
+// THE chord body. Created once; it MOVES AS A WHOLE.
+function makeChordBody(){
+  const notes=buildBody(S.root, S.stack, S.voices);
+  const center=notes.reduce((a,b)=>a+b,0)/notes.length;
+  S.body={ base:notes.slice(), notes:notes.slice(), center, baseCenter:center };
+  refreshReadout();
+}
+
+// MOVE the whole body by `delta` semitones — every voice moves together.
+// This is the law: never move one voice alone. The chord is one organism.
+function moveBody(delta){
+  if(!S.body) return;
+  S.body.notes = S.body.notes.map(n=>n+delta);
+  S.body.center += delta;
+  log('和音体ごと '+(delta>0?'上':'下')+'へ '+Math.abs(delta)+' — 全声部が同行');
+  refreshReadout();
+}
+
+// BREATHE — open/close the spread. All voices move OUTWARD or INWARD together,
+// pivoting around the center. Still chordal: they move as a coordinated body.
+function breatheBody(){
+  if(!S.body) return;
+  const open = S.breathDir>0;
+  const c=S.body.center;
+  S.body.notes = S.body.notes.map(n=>{
+    const dist=n-c;
+    const factor = open ? 1.18 : 0.85;
+    return Math.round(c + dist*factor);
+  });
+  S.breathDir*=-1;
+  log(open?'和音体が開く — 懐が広がる':'和音体が閉じる — 凝縮する');
+  refreshReadout();
+}
+
+// ─── pocket: lower notes get LONGER duration (the deep pocket) ───
+// duration scales inversely with pitch. depth slider controls the spread.
+function durationFor(midi, baseDurMs){
+  const depth = S.pocket/100;                 // 0..1
+  // lowest voice ~ 2.5x, highest ~ 0.7x, scaled by depth
+  const lowRef=33, hiRef=72;
+  const t = Math.max(0, Math.min(1, (midi-lowRef)/(hiRef-lowRef)));  // 0 low .. 1 high
+  const mult = (2.6 - 1.9*t);                  // low→2.6, high→0.7
+  const blended = 1 + (mult-1)*depth;          // depth scales the effect
+  return baseDurMs * blended;
+}
+
+// release tail (ECM space) — long releases for resonance
+function releaseFor(){ return 0.3 + (S.release/100)*2.4; }  // seconds
+
+// ════════════════════════════════════════════════════════════════
+//  AUDIO — Web Audio, transparent ECM piano-ish voice
+// ════════════════════════════════════════════════════════════════
+let actx=null;
+function getCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+
+function voice(midi, durMs, vel){
+  if(!S.synth) return;
+  const ctx=getCtx(), now=ctx.currentTime;
+  const f=mtof(midi);
+  // two partials + soft attack → glassy ECM piano
+  const g=ctx.createGain(); g.gain.value=0;
+  const rel=releaseFor();
+  const peak=Math.max(0.04, Math.min(0.5, vel))* (0.5);
+  g.gain.setValueAtTime(0,now);
+  g.gain.linearRampToValueAtTime(peak, now+0.012);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0008,peak*0.5), now+durMs/1000*0.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, now+durMs/1000+rel);
+  const o1=ctx.createOscillator(); o1.type='triangle'; o1.frequency.value=f;
+  const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=f*2.001;
+  const g2=ctx.createGain(); g2.gain.value=0.28;
+  const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2400; lp.Q.value=0.4;
+  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp);
+  // gentle stereo + reverb-ish (just a touch of delay for ECM space)
+  lp.connect(masterGain);
+  o1.start(now); o2.start(now);
+  const end=now+durMs/1000+rel+0.05;
+  o1.stop(end); o2.stop(end);
+}
+
+let masterGain=null, convolver=null;
+function initAudioGraph(){
+  const ctx=getCtx();
+  masterGain=ctx.createGain(); masterGain.gain.value=0.7;
+  // simple algorithmic reverb (ECM space) via feedback delay network-lite
+  const wet=ctx.createGain(); wet.gain.value=0.32;
+  const dry=ctx.createGain(); dry.gain.value=0.85;
+  const dl=ctx.createDelay(2.0); dl.delayTime.value=0.18;
+  const fb=ctx.createGain(); fb.gain.value=0.4;
+  const damp=ctx.createBiquadFilter(); damp.type='lowpass'; damp.frequency.value=2600;
+  masterGain.connect(dry); dry.connect(ctx.destination);
+  masterGain.connect(dl); dl.connect(damp); damp.connect(fb); fb.connect(dl); damp.connect(wet); wet.connect(ctx.destination);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MIDI out
+// ════════════════════════════════════════════════════════════════
+let midiAccess=null, midiOut=null;
+async function initMidi(){
+  if(!navigator.requestMIDIAccess) return;
+  try{
+    midiAccess=await navigator.requestMIDIAccess();
+    const sel=$('midiOut'); sel.innerHTML='<option value="-1">内蔵音源</option>';
+    let i=0;
+    for(const o of midiAccess.outputs.values()){ const op=document.createElement('option'); op.value=i; op.textContent=o.name; sel.appendChild(op); i++; }
+    sel.onchange=()=>{ const v=parseInt(sel.value); if(v<0){midiOut=null;return;} let k=0; for(const o of midiAccess.outputs.values()){ if(k===v){midiOut=o;break;} k++; } };
+  }catch(e){}
+}
+function midiNote(midi, durMs, vel){
+  if(!midiOut) return;
+  const v=Math.max(1,Math.min(127,Math.round(vel*127)));
+  midiOut.send([0x90, midi, v]);
+  setTimeout(()=>{ if(midiOut) midiOut.send([0x80, midi, 0]); }, durMs);
+  flashMidi();
+}
+let midiFlashT=null;
+function flashMidi(){ const d=$('midiDot'); d.classList.add('live'); clearTimeout(midiFlashT); midiFlashT=setTimeout(()=>d.classList.remove('live'),120); }
+
+// ─── 逆彫刻のための参照CC出力 ───
+// 君のプラグインが「波に同期して枠を当てる」ための情報を出す。
+// CC1 = 波の位相(0-127), CC2 = 和音体の中心高度(0-127), CC3 = 収束パルス(着地候補)
+function sendCarveCC(wavePhase, center){
+  if(!S.cc) return;
+  const cc1 = Math.max(0,Math.min(127, Math.round((wavePhase+1)/2*127)));   // -1..1 → 0..127
+  const cc2 = Math.max(0,Math.min(127, Math.round((center-30)/(84-30)*127)));
+  if(midiOut){ midiOut.send([0xB0, 1, cc1]); midiOut.send([0xB0, 2, cc2]); }
+  // live display (works even without MIDI out, so you can see the wave)
+  const w=$('ccWave'), c=$('ccCenter');
+  if(w) w.textContent=cc1+ (wavePhase>0.5?' ▲':wavePhase<-0.5?' ▼':' ·');
+  if(c) c.textContent=cc2;
+}
+// 収束(着地候補)を検出: 和音体が直前と同じ位置に留まった = 静止 = 結晶の好機
+let _prevCenter=null, _stillCount=0;
+function sendConvergencePulse(center){
+  if(!S.cc) return;
+  if(_prevCenter!==null && Math.abs(center-_prevCenter)<0.5){ _stillCount++; }
+  else { _stillCount=0; }
+  _prevCenter=center;
+  const pulse = _stillCount>=2 ? 127 : 0;
+  if(midiOut) midiOut.send([0xB0, 3, pulse]);
+  const e=$('ccConv'); if(e) e.textContent = pulse>0?'● 結晶の好機':'·';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  THE PLAY LOOP — the chord body sounds, moves, waves, breathes
+// ════════════════════════════════════════════════════════════════
+let rafId=null, playTimer=null;
+function play(){
+  if(S.playing) return;
+  const ctx=getCtx(); if(ctx.state==='suspended') ctx.resume();
+  if(!masterGain) initAudioGraph();
+  if(!S.body) makeChordBody();
+  S.playing=true; S.t0=performance.now(); S.lastStepTime=0;
+  $('btnPlay').classList.add('playing'); $('btnPlay').textContent='Stop';
+  log('和音体が鳴り始める。波に乗って。');
+  schedule();
+}
+function stop(){
+  S.playing=false;
+  $('btnPlay').classList.remove('playing'); $('btnPlay').textContent='Play';
+  if(playTimer){ clearTimeout(playTimer); playTimer=null; }
+  if(midiOut) for(let c=0;c<16;c++) midiOut.send([0xB0|c,123,0]);
+  log('沈黙へ還る。');
+}
+
+// each "step": decide whether to sound (ma/silence), apply wave, sound the body
+function schedule(){
+  if(!S.playing) return;
+  const now=(performance.now()-S.t0)/1000;
+
+  // wave: the whole body's center drifts on a slow sine (the うねり)
+  const wavePhase = Math.sin(2*Math.PI*now/S.wavePeriod);
+  const waveOffset = Math.round(wavePhase * S.waveAmp);   // semitones, applied to ALL voices
+
+  // ma (silence): probabilistically rest — ECM space
+  const sounding = Math.random()*100 >= S.silence;
+
+  if(sounding && S.body){
+    // sometimes the body MOVES on its own (chordal drift) by a small step
+    if(Math.random()*100 < S.step*0.5){
+      const dir = (Math.random()<0.5?-1:1);
+      const stepSize = Math.random()<0.7 ? 1 : 2;   // mostly semitone, sometimes whole
+      moveBodyInternal(dir*stepSize);
+    }
+    // sometimes breathe (open/close)
+    if(Math.random()*100 < S.breath*0.35){
+      breatheBody();
+    }
+    soundBody(waveOffset, now);
+  }
+
+  // 逆彫刻の参照情報を出す(波位相・中心・収束)
+  if(S.body){ sendCarveCC(wavePhase, S.body.center); sendConvergencePulse(S.body.center); }
+
+  refreshWaveReadout(wavePhase, now);
+
+  // next step timing — slow pulse, with humanize
+  const beatMs = 60000/S.tempo;
+  const jitter = 0.85 + Math.random()*0.3;
+  playTimer=setTimeout(schedule, beatMs*jitter);
+}
+
+// internal move (no log spam during play)
+function moveBodyInternal(delta){
+  S.body.notes=S.body.notes.map(n=>n+delta);
+  S.body.center+=delta;
+}
+
+// sound every voice of the body together (= the chord), wave applied to all
+function soundBody(waveOffset, now){
+  const beatMs=60000/S.tempo;
+  const notes=S.body.notes;
+  notes.forEach((n,i)=>{
+    const m = n + waveOffset;                         // wave lifts the whole body
+    const dur = durationFor(m, beatMs*2.2);           // pocket: low=long
+    // velocity: lower & inner voices softer, top sings slightly
+    const isLow = (i===0), isTop=(i===notes.length-1);
+    let vel = 0.18 + Math.random()*0.08;
+    if(isTop) vel+=0.08;
+    if(isLow) vel+=0.05;
+    // slight roll (not all exactly simultaneous — human) but CHORDAL
+    const rollMs = i*  (12+Math.random()*18);
+    setTimeout(()=>{ voice(m,dur,vel); midiNote(m,dur,vel); }, rollMs);
+  });
+  S._lastSounded=notes.map(n=>n+waveOffset);
+}
+
+// ─── readouts & log ───
+function refreshReadout(){
+  if(!S.body) return;
+  $('roChord').textContent=nameOf(Math.round(S.body.center));
+  $('roStack').textContent = S.stack+ (S.stack===3?'rd':'th');
+}
+function refreshWaveReadout(phase, now){
+  const bar = phase>0.5?'▲': phase<-0.5?'▼':'·';
+  $('roWave').textContent=bar;
+  const mm=Math.floor(now/60), ss=Math.floor(now%60);
+  $('roTime').textContent=mm+':'+String(ss).padStart(2,'0');
+}
+let logT=null;
+function log(msg){ const el=$('log'); el.textContent=msg; }
+
+// ════════════════════════════════════════════════════════════════
+//  CANVAS — visualize the chord body, the pocket, the wave
+// ════════════════════════════════════════════════════════════════
+const cv=$('chordCanvas'); const cx=cv.getContext('2d');
+function resize(){ const r=cv.getBoundingClientRect(); cv.width=r.width*devicePixelRatio; cv.height=r.height*devicePixelRatio; cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,1*0,0); }
+window.addEventListener('resize',resize);
+
+function draw(){
+  const r=cv.getBoundingClientRect(); const W=r.width,H=r.height;
+  cx.clearRect(0,0,W,H);
+  const now=S.playing?(performance.now()-S.t0)/1000:0;
+
+  // midi range mapped to vertical
+  const loM=30, hiM=84;
+  const y=m=>H - ((m-loM)/(hiM-loM))*H*0.82 - H*0.09;
+
+  // pocket gradient (deep = bottom)
+  const grad=cx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(176,141,87,0.015)');
+  grad.addColorStop(1,'rgba(176,141,87,0.10)');
+  cx.fillStyle=grad; cx.fillRect(0,0,W,H);
+
+  // the wave — a slow horizontal undulation line through the body's center
+  if(S.body){
+    const waveOffset = S.playing ? Math.sin(2*Math.PI*now/S.wavePeriod)*S.waveAmp : 0;
+    const cy=y(S.body.center+waveOffset);
+    cx.strokeStyle='rgba(122,138,154,0.25)'; cx.lineWidth=1;
+    cx.beginPath();
+    for(let x=0;x<=W;x+=6){
+      const ph=Math.sin(2*Math.PI*(now/S.wavePeriod) + x/W*Math.PI*1.5);
+      const yy=cy + ph*8;
+      x===0?cx.moveTo(x,yy):cx.lineTo(x,yy);
+    }
+    cx.stroke();
+
+    // gravity field — an ellipse embracing the body
+    const notes=S.body.notes.map(n=>n+(S.playing?waveOffset:0));
+    const topY=y(Math.max(...notes)), botY=y(Math.min(...notes));
+    const midY=(topY+botY)/2, rad=(botY-topY)/2+34;
+    const cxx=W/2;
+    const fieldGrad=cx.createRadialGradient(cxx,midY,8,cxx,midY,rad+50);
+    fieldGrad.addColorStop(0,'rgba(176,141,87,0.10)');
+    fieldGrad.addColorStop(1,'rgba(176,141,87,0)');
+    cx.fillStyle=fieldGrad;
+    cx.beginPath(); cx.ellipse(cxx,midY,150,rad+30,0,0,Math.PI*2); cx.fill();
+
+    // each voice — a horizontal bar (length = pocket duration), glowing if recently sounded
+    notes.forEach((m,i)=>{
+      const yy=y(m);
+      const dur=durationFor(m,1);             // relative length
+      const barW=Math.min(W*0.7, 80 + dur*60);
+      const x0=cxx-barW/2;
+      const isLow=i===0, isTop=i===notes.length-1;
+      // connecting line to center (shows they're one body)
+      cx.strokeStyle='rgba(176,141,87,0.18)'; cx.lineWidth=0.5;
+      cx.beginPath(); cx.moveTo(cxx,midY); cx.lineTo(cxx,yy); cx.stroke();
+      // the voice bar
+      const glow = S._lastSounded && S._lastSounded.includes(m);
+      cx.strokeStyle = glow?'rgba(176,141,87,0.9)':'rgba(244,241,234,0.55)';
+      cx.lineWidth = isLow?2.4:(isTop?1.6:1.1);
+      cx.beginPath(); cx.moveTo(x0,yy); cx.lineTo(x0+barW,yy); cx.stroke();
+      // note name
+      cx.fillStyle='rgba(122,138,154,0.85)'; cx.font='10px "JetBrains Mono"';
+      cx.fillText(nameOf(Math.round(m)), x0+barW+8, yy+3);
+      // endpoints
+      cx.fillStyle=glow?'rgba(176,141,87,1)':'rgba(244,241,234,0.5)';
+      cx.beginPath(); cx.arc(x0,yy,isLow?3:2,0,Math.PI*2); cx.fill();
+      cx.beginPath(); cx.arc(x0+barW,yy,isLow?3:2,0,Math.PI*2); cx.fill();
+    });
+
+    // label the body
+    cx.fillStyle='rgba(176,141,87,0.6)'; cx.font='italic 12px "IM Fell English"';
+    cx.fillText('chord body — '+nameOf(Math.round(S.body.center)), cxx-140, y(Math.max(...notes))-22);
+  }
+
+  requestAnimationFrame(draw);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  UI wiring
+// ════════════════════════════════════════════════════════════════
+function bindSlider(id, valId, fmt, onset){
+  const s=$(id), v=$(valId);
+  const upd=()=>{ const val=parseFloat(s.value); S[onset]=val; v.textContent=fmt?fmt(val):val; };
+  s.addEventListener('input',()=>{ upd(); if(onset==='root'||onset==='voices'||onset==='stack') makeChordBody(); });
+  upd();
+}
+bindSlider('voicesSlider','voicesVal',null,'voices');
+bindSlider('rootSlider','rootVal',v=>nameOf(v),'root');
+bindSlider('pocketSlider','pocketVal',null,'pocket');
+bindSlider('releaseSlider','releaseVal',null,'release');
+bindSlider('waveSlider','waveVal',v=>v+'s','wavePeriod');
+bindSlider('waveAmpSlider','waveAmpVal',null,'waveAmp');
+bindSlider('stepSlider','stepVal',null,'step');
+bindSlider('breathSlider','breathVal',null,'breath');
+bindSlider('silenceSlider','silenceVal',null,'silence');
+bindSlider('tempoSlider','tempoVal',null,'tempo');
+
+// fix: voices/root sliders write the right key
+$('voicesSlider').addEventListener('input',e=>{ S.voices=parseInt(e.target.value); makeChordBody(); });
+$('rootSlider').addEventListener('input',e=>{ S.root=parseInt(e.target.value); makeChordBody(); });
+
+// stack segment
+document.querySelectorAll('#stackSeg button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#stackSeg button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); S.stack=parseInt(b.dataset.stack); makeChordBody();
+    log('積み方を '+S.stack+'度堆積に — 引力の形が変わる');
+  });
+});
+// synth toggle
+document.querySelectorAll('[data-synth]').forEach(b=>{
+  b.addEventListener('click',()=>{ document.querySelectorAll('[data-synth]').forEach(x=>x.classList.remove('on')); b.classList.add('on'); S.synth=b.dataset.synth==='1'; });
+});
+document.querySelectorAll('[data-cc]').forEach(b=>{
+  b.addEventListener('click',()=>{ document.querySelectorAll('[data-cc]').forEach(x=>x.classList.remove('on')); b.classList.add('on'); S.cc=b.dataset.cc==='1'; });
+});
+
+$('btnPlay').addEventListener('click',()=> S.playing?stop():play());
+$('btnNudge').addEventListener('click',()=>{ if(!S.body)makeChordBody(); moveBody(Math.random()<0.5?-1:1); });
+$('btnBreathe').addEventListener('click',()=>{ if(!S.body)makeChordBody(); breatheBody(); });
+
+// init
+makeChordBody();
+resize();
+draw();
+initMidi();
+
+</script>
+</body>
+</html>
