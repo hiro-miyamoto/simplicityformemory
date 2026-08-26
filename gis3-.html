@@ -1,0 +1,3487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Egberto Gismonti — Salvador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ── Gismonti palette: earth, fire, shadow ── */
+:root {
+  --bg:    #080a08;
+  --s0:    #0d100d;
+  --s1:    #121512;
+  --bd:    #1e241e;
+  --bd2:   #2a342a;
+  --text:  #c8ccc0;
+  --dim:   #506050;
+  --fog:   #2c342c;
+  --earth: #8a6840;   /* terracotta earth */
+  --fire:  #c84820;   /* Brazilian fire */
+  --vine:  #486848;   /* jungle vine green */
+  --bone:  #d8cdb8;   /* bleached bone */
+  --drone: #304838;   /* drone: deep still water */
+  --pulse: #786040;   /* pulse: warm wood */
+  --orn:   #c87040;   /* ornament: orange fire */
+  --paper: #090b09;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;min-height:100vh;}
+
+/* Organic texture */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:.5;}
+
+header{
+  padding:.9rem 1.5rem .65rem;border-bottom:1px solid var(--bd);
+  display:flex;align-items:flex-end;gap:1.4rem;
+  background:var(--paper);position:relative;z-index:10;
+}
+.hdr-name{
+  font-family:'EB Garamond',serif;font-size:1.95rem;
+  font-weight:400;font-style:italic;color:var(--bone);line-height:1;
+}
+.hdr-sub{font-size:.38rem;color:var(--dim);letter-spacing:.32em;text-transform:uppercase;margin-top:.22rem;}
+.hdr-title{flex:1;}
+
+/* BPM journey indicator */
+.bpm-journey{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:.2rem;}
+.bpm-label{font-size:.36rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;}
+.bpm-track{width:140px;height:3px;background:var(--s1);border-radius:2px;position:relative;}
+.bpm-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--drone),var(--fire));transition:width .5s ease;}
+.bpm-val{font-family:'EB Garamond',serif;font-size:1.05rem;font-style:italic;color:var(--earth);}
+
+/* Drone alive indicator */
+.drone-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:.22rem;}
+.drone-label{font-size:.36rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;}
+.drone-orb{width:10px;height:10px;border-radius:50%;background:var(--drone);transition:all .1s;box-shadow:0 0 4px var(--drone);}
+.drone-orb.pulse{background:var(--vine);box-shadow:0 0 10px var(--vine);}
+
+.layout{display:grid;grid-template-columns:205px 1fr;min-height:calc(100vh - 136px);position:relative;z-index:1;}
+.left-panel{border-right:1px solid var(--bd);padding:.6rem;display:flex;flex-direction:column;gap:.42rem;overflow-y:auto;background:var(--paper);}
+.panel{background:var(--s0);border:1px solid var(--bd);border-radius:1px;padding:.48rem .56rem;}
+.panel-title{
+  font-family:'EB Garamond',serif;font-style:italic;font-size:.9rem;
+  color:var(--dim);margin-bottom:.36rem;
+  display:flex;align-items:center;gap:.28rem;
+}
+.panel-title::before{content:'';width:8px;height:1px;background:var(--earth);opacity:.5;flex-shrink:0;}
+.pr{display:flex;align-items:center;gap:.28rem;margin-bottom:.16rem;}
+.pr label{font-size:.37rem;color:var(--dim);width:58px;flex-shrink:0;}
+.pr-val{font-size:.37rem;width:22px;text-align:right;flex-shrink:0;color:var(--earth);}
+input[type=range]{height:2px;accent-color:var(--earth);cursor:pointer;flex:1;}
+select{background:var(--s1);border:1px solid var(--bd);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.44rem;padding:.08rem .15rem;border-radius:1px;}
+.btn{padding:.14rem .44rem;border:1px solid var(--bd);border-radius:1px;background:transparent;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.44rem;cursor:pointer;transition:all .1s;}
+.btn:hover{border-color:var(--earth);color:var(--earth);}
+.btn.act{border-color:rgba(138,104,64,.5);color:var(--earth);background:rgba(138,104,64,.07);}
+.btn.fire{border-color:rgba(200,72,32,.4);color:var(--fire);}
+.midi-dot{width:6px;height:6px;border-radius:50%;background:var(--fog);flex-shrink:0;}
+.midi-dot.on{background:var(--vine);box-shadow:0 0 4px var(--vine);}
+
+.main-area{display:flex;flex-direction:column;}
+.transport{
+  padding:.4rem .85rem;border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:.48rem;
+  background:var(--paper);flex-wrap:wrap;
+}
+
+/* ── THREE LAYER DISPLAY ── */
+.layers-area{flex:1;padding:.65rem .85rem;overflow-y:auto;}
+
+.layer-block{margin-bottom:1.0rem;}
+.layer-header{display:flex;align-items:center;gap:.42rem;margin-bottom:.26rem;}
+.layer-label{font-family:'EB Garamond',serif;font-size:.88rem;font-style:italic;}
+.layer-ch{font-size:.36rem;color:var(--dim);padding:.06rem .2rem;border:1px solid var(--bd);border-radius:1px;}
+.layer-info{font-size:.34rem;color:var(--fog);margin-left:auto;}
+
+/* Note cells — decisiveness: sharp corners, high contrast */
+.note-row{display:flex;gap:2px;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;}
+.nc{
+  flex-shrink:0;min-width:28px;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  cursor:pointer;padding:.08rem .04rem;
+  border:1px solid transparent;
+  transition:border-color .08s;
+  position:relative;
+}
+.nc:hover{border-color:var(--bd2);}
+.nc.playing{border-color:var(--earth)!important;}
+.nc.drone-note{min-width:44px;} /* drone notes are wider — sustain */
+.nc.rest{opacity:.3;}
+/* Velocity bar: sharp, no rounded edges for "キレ" */
+.nc-bar{width:22px;border-radius:0;min-height:2px;transition:height .08s;}
+.nc.drone-note .nc-bar{width:36px;border-radius:1px;}
+.nc-name{font-family:'EB Garamond',serif;font-size:.66rem;font-style:italic;color:var(--dim);line-height:1;}
+.nc-name.on{color:var(--bone);}
+.nc-num{font-size:.24rem;color:var(--fog);}
+/* Duration indicator: short=dot, long=dash */
+.nc-dur{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);font-size:.2rem;color:var(--earth);opacity:.6;}
+
+/* ── BASQUIAT CANVAS ── */
+.basquiat-wrap{
+  position:relative;border-bottom:1px solid var(--bd);
+  overflow:hidden;height:320px;background:#1a1208;
+  cursor:crosshair;
+}
+#basquiatCanvas{display:block;width:100%;height:100%;}
+.basquiat-controls{
+  position:absolute;top:.4rem;right:.5rem;
+  display:flex;gap:.3rem;z-index:5;
+}
+.bcn-btn{
+  padding:.14rem .36rem;border:1px solid rgba(240,232,216,.2);
+  border-radius:1px;background:rgba(0,0,0,.5);
+  color:rgba(240,232,216,.7);font-family:'JetBrains Mono',monospace;
+  font-size:.38rem;cursor:pointer;transition:all .1s;
+}
+.bcn-btn:hover{border-color:rgba(240,232,216,.5);color:rgba(240,232,216,1);}
+
+/* Dock */
+.engine-dock{border-top:1px solid var(--bd);background:var(--paper);position:sticky;bottom:0;z-index:20;}
+.dock-tabbar{display:flex;border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none;}
+.dock-tab{padding:.22rem .46rem;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:.38rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:.18rem;transition:all .1s;white-space:nowrap;}
+.dock-tab:hover{color:var(--text);}
+.dock-tab.active{color:var(--text);border-bottom-color:var(--earth);}
+.arc-bar{display:flex;align-items:center;gap:.4rem;padding:.3rem .4rem;border-bottom:1px solid var(--bd);background:rgba(0,0,0,.18);}
+.arc-bar .btn.act-arc{background:var(--earth);color:var(--bg);}
+.arc-status{font-size:.4rem;color:var(--dim);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;}
+.macro-bar{display:flex;gap:.4rem;padding:.3rem .4rem;flex-wrap:wrap;border-bottom:1px solid var(--bd);background:rgba(0,0,0,.12);}
+.macro{border:1px solid var(--bd);border-radius:3px;padding:.22rem .3rem;display:flex;flex-direction:column;gap:.12rem;min-width:7.5rem;background:var(--panel);}
+.macro.armed{border-color:var(--earth);box-shadow:0 0 0 1px var(--earth) inset;}
+.macro-hd{display:flex;align-items:center;justify-content:space-between;gap:.3rem;}
+.macro-ttl{font-size:.4rem;letter-spacing:.06em;color:var(--earth);font-family:'JetBrains Mono',monospace;}
+.macro-go{font-size:.4rem;padding:.1rem .4rem;border:1px solid var(--earth);border-radius:2px;background:transparent;color:var(--earth);cursor:pointer;font-family:'JetBrains Mono',monospace;}
+.macro.armed .macro-go{background:var(--earth);color:var(--bg);}
+.macro select{font-size:.34rem;background:var(--s1);color:var(--text);border:1px solid var(--bd);border-radius:2px;padding:.04rem;width:100%;}
+.chord-strip{display:flex;align-items:center;gap:.25rem;margin-top:.18rem;}
+.chord-lbl{font-size:.34rem;color:var(--earth);font-family:'JetBrains Mono',monospace;letter-spacing:.05em;}
+.chord-strip>select{font-size:.32rem;background:var(--s1);color:var(--text);border:1px solid var(--bd);border-radius:2px;}
+.chord-row{display:flex;gap:1px;flex:1;}
+.chord-cell{flex:1;height:.5rem;background:var(--s0);border:1px solid var(--bd);border-radius:1px;cursor:pointer;min-width:.4rem;}
+.chord-cell.lit{background:var(--earth);border-color:var(--earth);box-shadow:0 0 3px var(--earth);}
+.dock-tdot{width:4px;height:4px;border-radius:50%;opacity:.4;}
+.dock-tab.active .dock-tdot{opacity:1;}
+.dock-minibar{display:flex;align-items:center;gap:.35rem;padding:0 .55rem;margin-left:auto;flex-shrink:0;}
+.mini-lbl{font-size:.32rem;color:var(--dim);}
+.mini-bar{width:26px;height:2px;background:var(--s1);border-radius:1px;overflow:hidden;}
+.mini-fill{height:100%;border-radius:1px;transition:width .3s;}
+.dock-panels{max-height:185px;overflow:hidden;transition:max-height .22s;}
+.dock-panels.collapsed{max-height:0!important;}
+.dock-panel{display:none;padding:.38rem .72rem .5rem;}
+.dock-panel.active{display:block;}
+.dpg{display:grid;gap:.38rem;}
+.dpg-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.dpg-3{grid-template-columns:1fr 1fr 1fr;}
+.dsub{background:var(--s0);border:1px solid var(--bd);border-radius:1px;padding:.34rem .4rem;}
+.dsub-t{font-family:'EB Garamond',serif;font-style:italic;font-size:.78rem;color:var(--dim);margin-bottom:.2rem;padding-left:.2rem;border-left:1px solid var(--earth);opacity:.65;}
+.dg-row{display:flex;align-items:center;gap:.22rem;margin-bottom:.12rem;}
+.dg-lbl{font-size:.34rem;color:var(--dim);width:52px;flex-shrink:0;}
+.dg-track{flex:1;height:3px;background:var(--s1);border-radius:1px;overflow:hidden;}
+.dg-fill{height:100%;border-radius:1px;transition:width .25s;}
+.dg-val{font-size:.34rem;width:18px;text-align:right;flex-shrink:0;color:var(--earth);}
+.dg-log{font-size:.35rem;color:var(--dim);line-height:1.85;max-height:55px;overflow:hidden;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-title">
+    <div class="hdr-name">Egberto Gismonti</div>
+    <div class="hdr-sub">Salvador · Drone · Pulse · Ornament · Pianoteq Ch 1/2/3</div>
+  </div>
+  <div class="drone-wrap">
+    <span class="drone-label">Drone</span>
+    <div class="drone-orb" id="droneOrb"></div>
+  </div>
+  <div class="bpm-journey">
+    <span class="bpm-label">Journey</span>
+    <div class="bpm-track"><div class="bpm-fill" id="bpmFill" style="width:0%"></div></div>
+    <span class="bpm-val" id="bpmVal">60</span>
+  </div>
+  <div class="arc-progress" id="arcProgress" style="display:none;margin-left:1rem;flex:1;min-width:0">
+    <div style="display:flex;align-items:center;gap:.5rem;font-size:.7rem">
+      <span style="color:var(--earth);font-style:italic;flex:0 0 auto">弧</span>
+      <div style="flex:1;height:3px;background:var(--bd);border-radius:2px;min-width:40px;overflow:hidden"><div id="arcProgFill" style="height:100%;width:0%;background:var(--earth);transition:width .2s"></div></div>
+      <span id="arcProgInfo" style="color:var(--text);flex:0 0 auto;font-size:.66rem;white-space:nowrap">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+<div class="left-panel">
+
+  <!-- Tuning: Gismonti uses E-based open tuning -->
+  <div class="panel">
+    <div class="panel-title">Tuning</div>
+    <div class="pr"><label>Root</label>
+      <select id="rootSel" onchange="onRootChange()" style="flex:1">
+        <option value="36">C2</option>
+        <option value="37">C#2</option>
+        <option value="38">D2</option>
+        <option value="39">E♭2</option>
+        <option value="40">E2</option>
+        <option value="41">F2</option>
+        <option value="42">F#2</option>
+        <option value="43">G2</option>
+        <option value="44">A♭2</option>
+        <option value="45">A2</option>
+        <option value="46">B♭2</option>
+        <option value="47">B2</option>
+        <option value="48">C3</option>
+        <option value="49">C#3</option>
+        <option value="50">D3</option>
+        <option value="51">E♭3</option>
+        <option value="52">E3</option>
+        <option value="53">F3</option>
+        <option value="54">F#3</option>
+        <option value="55">G3</option>
+        <option value="56">A♭3</option>
+        <option value="57">A3</option>
+        <option value="58">B♭3</option>
+        <option value="59">B3</option>
+        <option value="60">C4</option>
+        <option value="61">C#4</option>
+        <option value="62">D4</option>
+        <option value="63">E♭4</option>
+        <option value="64" selected>E4</option>
+        <option value="65">F4</option>
+        <option value="66">F#4</option>
+        <option value="67">G4</option>
+        <option value="68">A♭4</option>
+        <option value="69">A4</option>
+        <option value="70">B♭4</option>
+        <option value="71">B4</option>
+        <option value="72">C5</option>
+        <option value="73">C#5</option>
+        <option value="74">D5</option>
+        <option value="75">E♭5</option>
+        <option value="76">E5</option>
+      </select>
+    </div>
+    <div class="pr"><label>Mode</label>
+      <select id="modeSel" onchange="onModeChange()" style="flex:1"><!-- populated by populateModes() --></select>
+    </div>
+    <div class="pr"><label>貫く素数</label>
+      <select id="primeSel" onchange="setPrime(this.value)" style="flex:1;font-size:.38rem">
+        <option value="3" selected>3 — 骨格(5度・力強い・静的)</option>
+        <option value="5">5 — 色彩(3度・叙情・歌う)</option>
+        <option value="7">7 — 異界(自然7度・浮遊)</option>
+        <option value="9">9 — テンション(9th・混じる色)</option>
+        <option value="11">11 — 極北(♯4・宙吊り)</option>
+      </select>
+    </div>
+    <div style="font-size:.34rem;color:var(--dim);line-height:1.6;margin:.15rem 0">
+      選んだ素数が、リズム周期・跳躍・連符を貫く。2=枠(オクターブ)、3/5/7=色。
+    </div>
+    <div style="font-size:.36rem;color:var(--dim);line-height:1.8;margin:.25rem 0">
+      Drone: <span id="droneNoteDisp" style="color:var(--vine)">E + B</span>
+    </div>
+  </div>
+
+  <!-- BPM Journey: 60→150 over time -->
+  <div class="panel" style="border-color:rgba(138,104,64,.2)">
+    <div class="panel-title" style="color:var(--earth)">BPM Journey <button class="btn" id="btnJourney" onclick="toggleJourney()" style="font-size:.4rem;padding:.06rem .3rem;margin-left:.3rem">OFF</button></div>
+    <div style="font-size:.36rem;color:var(--dim);line-height:1.8;margin-bottom:.22rem">
+      演奏を通した加速——<br>60から150への旅
+    </div>
+    <div class="pr"><label>Start BPM</label>
+      <input type="number" id="bpmStart" value="60" min="20" max="300"
+        style="width:40px;font-size:.48rem;background:var(--s1);border:1px solid var(--bd);color:var(--text);padding:.07rem .14rem;border-radius:1px">
+    </div>
+    <div class="pr"><label>End BPM</label>
+      <input type="number" id="bpmEnd" value="150" min="20" max="400"
+        style="width:40px;font-size:.48rem;background:var(--s1);border:1px solid var(--bd);color:var(--text);padding:.07rem .14rem;border-radius:1px">
+    </div>
+    <div class="pr"><label>Duration</label>
+      <select id="journeyDur" style="flex:1">
+        <option value="120">2 min</option>
+        <option value="300" selected>5 min</option>
+        <option value="600">10 min</option>
+        <option value="900">15 min</option>
+        <option value="0">Manual</option>
+      </select>
+    </div>
+    <div class="pr"><label>Auto accel.</label>
+      <select id="accelMode" style="flex:1">
+        <option value="linear">Linear</option>
+        <option value="ease" selected>Ease (organic)</option>
+        <option value="step">Step (Gismonti的)</option>
+        <option value="manual">Manual only</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:.2rem;margin-top:.25rem">
+      <button class="btn" onclick="bpmStep(-5)" style="flex:1;font-size:.42rem">−5</button>
+      <button class="btn" onclick="bpmReset()" style="flex:1;font-size:.42rem">Reset</button>
+      <button class="btn" onclick="bpmStep(+5)" style="flex:1;font-size:.42rem">+5</button>
+    </div>
+    <button class="btn" onclick="tapTempo()" style="width:100%;margin-top:.18rem;font-size:.42rem">TAP</button>
+  </div>
+
+  <!-- Drone layer -->
+  <div class="panel" style="border-color:rgba(48,72,56,.35)">
+    <div class="panel-title" style="color:var(--vine)">Layer 1 — Drone</div>
+    <div style="font-size:.36rem;color:var(--dim);line-height:1.8;margin-bottom:.22rem">
+      持続音の世界観を選ぶ。土台は動かない。<br>呼吸するように揺れる。純正律はMTS-ESPが担う。
+    </div>
+    <div class="pr" style="gap:.15rem;margin-bottom:.15rem"><label style="color:var(--earth);flex:0 0 auto;font-size:.36rem">Jarrett極意</label>
+      <button class="btn" id="mnv_drone_rootless" onclick="toggleManeuver('drone','rootless')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="3抜き浮遊(1oct上げ錨を消す)">浮遊</button>
+      <button class="btn" id="mnv_drone_contrary" onclick="toggleManeuver('drone','contrary')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="反行(下げ上昇の錯覚)">反行</button>
+      <button class="btn" id="mnv_drone_octaveBreak" onclick="toggleManeuver('drone','octaveBreak')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="枠外飛び出し(1oct上)">飛出</button>
+      <button class="btn" id="mnv_drone_naki" onclick="toggleManeuver('drone','naki')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="泣き(上方倚音)">泣き</button></div>
+    <div class="pr" style="gap:.15rem;margin-bottom:.15rem"><label style="color:var(--earth);flex:0 0 auto;font-size:.36rem"> </label>
+      <button class="btn" id="mnv_drone_dwell" onclick="toggleManeuver('drone','dwell')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="滞在のムラ(基本さっと/時々5-6秒居座る)">滞在</button>
+      <button class="btn" id="mnv_drone_transition" onclick="toggleManeuver('drone','transition')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="移行(5度4度中心の跳躍)">移行</button>
+      <button class="btn" id="mnv_drone_space" onclick="toggleManeuver('drone','space')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="空間(低音と旋律の距離を開ける)">空間</button></div>
+    <div class="pr"><label>Voicing</label>
+      <select id="droneType" onchange="setDroneType(this.value)" style="flex:1;font-size:.36rem"><!-- populated --></select>
+    </div>
+    <div class="pr"><label style="font-size:.36rem">内声ドリフト</label>
+      <div style="display:flex;gap:.16rem;align-items:center;flex:1">
+        <button id="btnDriftAuto" class="btn" onclick="toggleDriftAuto()" style="font-size:.34rem;padding:.06rem .2rem">AUTO</button>
+        <button class="btn" onclick="driftStep(-1)" style="font-size:.4rem;padding:.06rem .26rem" title="内声を半音下げる">−</button>
+        <button class="btn" onclick="driftStep(1)" style="font-size:.4rem;padding:.06rem .26rem" title="内声を半音上げる">＋</button>
+        <button class="btn" onclick="driftReset()" style="font-size:.32rem;padding:.06rem .2rem" title="0に戻す">0</button>
+        <span id="driftDisp" style="font-size:.4rem;color:var(--earth);font-family:'JetBrains Mono',monospace;min-width:1.4rem;text-align:right">+0</span>
+      </div>
+    </div>
+    <div style="font-size:.33rem;color:var(--dim);line-height:1.5;margin:.1rem 0 .15rem">Jarrettの内声半音移動。AUTO=自動の色彩変化。±=手動で半音ずつ。ルートレス系Voicingと相性◎。</div>
+    <div class="pr"><label>Vel</label>
+      <input type="range" id="droneVel" min="10" max="80" value="38"
+        style="accent-color:var(--vine)">
+      <span class="pr-val" id="droneVelV" style="color:var(--vine)">38</span>
+    </div>
+    <div class="pr"><label>Breathe</label>
+      <input type="range" id="droneBreathe" min="0" max="100" value="35">
+      <span class="pr-val" id="droneBreatheV">35</span>
+    </div>
+    <div class="pr"><label>Ch</label>
+      <select id="droneCh" style="flex:1;font-size:.42rem">
+        <option value="1" selected>Ch 1</option><option value="2">Ch 2</option>
+        <option value="3">Ch 3</option><option value="4">Ch 4</option>
+      </select>
+    </div>
+    <div class="pr"><label>Sustain</label>
+      <input type="range" id="droneSustain" min="50" max="400" value="180">
+      <span class="pr-val" id="droneSustainV">180</span><span style="font-size:.3rem;color:var(--dim)">%</span>
+    </div>
+    <div class="pr"><label>Swing</label><input type="range" id="swdrone" min="-80" max="80" value="0" oninput="setSwing('drone',this.value)"><span class="pr-val" id="swdroneV">0</span></div>
+    <div class="pr" style="gap:.15rem;margin-top:.2rem"><label style="color:var(--earth);font-size:.36rem">リズム</label>
+      <select id="rhy_drone_mode" onchange="setTrackRhythm('drone','mode',this.value)" style="font-size:.34rem;flex:1">
+        <option value="off">オフ(全ステップ)</option>
+        <option value="euclid">ユークリッド</option>
+        <option value="additive">加算</option>
+      </select>
+      <select id="rhy_drone_rate" onchange="setTrackRhythm('drone','rate',this.value)" style="font-size:.34rem;flex:1" title="このトラックの速さ"></select></div>
+    <div class="pr" id="rhy_drone_euclidrow" style="gap:.15rem;display:none"><label style="font-size:.34rem">E(k,n)</label>
+      <input type="number" id="rhy_drone_k" min="1" max="32" value="3" onchange="setTrackRhythm('drone','k',this.value)" style="width:2rem;font-size:.34rem">
+      <input type="number" id="rhy_drone_n" min="1" max="32" value="8" onchange="setTrackRhythm('drone','n',this.value)" style="width:2rem;font-size:.34rem">
+      <label style="font-size:.34rem">回転</label><input type="number" id="rhy_drone_rot" value="0" onchange="setTrackRhythm('drone','rot',this.value)" style="width:2rem;font-size:.34rem">
+      <select onchange="applyEuclidPreset('drone',this.value)" style="font-size:.32rem;flex:1" title="名前付きプリセット"><option value="">プリセット…</option></select></div>
+    <div class="pr" id="rhy_drone_addrow" style="gap:.15rem;display:none"><label style="font-size:.34rem">加算</label>
+      <input type="text" id="rhy_drone_groups" value="2,2,3" onchange="setTrackRhythm('drone','groups',this.value)" style="width:4rem;font-size:.34rem" title="例: 2,2,3">
+      <label style="font-size:.34rem">回転</label><input type="number" id="rhy_drone_rot2" value="0" onchange="setTrackRhythm('drone','rot',this.value)" style="width:2rem;font-size:.34rem">
+      <select onchange="applyAddPreset('drone',this.value)" style="font-size:.32rem;flex:1"><option value="">プリセット…</option></select></div>
+    <div id="rhy_drone_viz" style="font-size:.4rem;color:var(--earth);letter-spacing:.1em;margin:.05rem 0 .15rem 2.6rem;font-family:monospace"></div>
+    <div class="pr" style="gap:.2rem"><label>Invert</label>
+      <button class="btn" id="invdronepitch" onclick="toggleInvert('drone','pitch')" style="font-size:.38rem;flex:1" title="軸で高低反転">音程</button>
+      <button class="btn" id="invdroneretro" onclick="toggleInvert('drone','retro')" style="font-size:.38rem;flex:1" title="順序を逆に">逆再生</button></div>
+  </div>
+
+  <!-- Pulse layer -->
+  <div class="panel" style="border-color:rgba(120,96,64,.3)">
+    <div class="panel-title" style="color:var(--pulse)">Layer 2 — Pulse</div>
+    <div style="font-size:.36rem;color:var(--dim);line-height:1.8;margin-bottom:.22rem">
+      等間隔の反復。モチーフは変わらない。<br>ベロシティの立ち上がりが鋭い。
+    </div>
+    <div class="pr" style="gap:.15rem;margin-bottom:.15rem"><label style="color:var(--earth);flex:0 0 auto;font-size:.36rem">Jarrett極意</label>
+      <button class="btn" id="mnv_pulse_rootless" onclick="toggleManeuver('pulse','rootless')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="3抜き浮遊(1oct上げ錨を消す)">浮遊</button>
+      <button class="btn" id="mnv_pulse_contrary" onclick="toggleManeuver('pulse','contrary')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="反行(下げ上昇の錯覚)">反行</button>
+      <button class="btn" id="mnv_pulse_octaveBreak" onclick="toggleManeuver('pulse','octaveBreak')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="枠外飛び出し(1oct上)">飛出</button>
+      <button class="btn" id="mnv_pulse_naki" onclick="toggleManeuver('pulse','naki')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="泣き(上方倚音)">泣き</button></div>
+    <div class="pr" style="gap:.15rem;margin-bottom:.15rem"><label style="color:var(--earth);flex:0 0 auto;font-size:.36rem"> </label>
+      <button class="btn" id="mnv_pulse_dwell" onclick="toggleManeuver('pulse','dwell')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="滞在のムラ(基本さっと/時々5-6秒居座る)">滞在</button>
+      <button class="btn" id="mnv_pulse_transition" onclick="toggleManeuver('pulse','transition')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="移行(5度4度中心の跳躍)">移行</button>
+      <button class="btn" id="mnv_pulse_space" onclick="toggleManeuver('pulse','space')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="空間(低音と旋律の距離を開ける)">空間</button></div>
+    <button id="btnPoly" class="btn" onclick="togglePoly()" style="width:100%;margin-bottom:.16rem;font-size:.4rem">3:5 ポリリズム: OFF</button>
+    <div id="polyCtl" style="display:none;font-size:.36rem;color:var(--dim);margin-bottom:.2rem">
+      <div class="pr"><label style="font-size:.36rem">Drone周期</label><input type="number" id="polyDrone" min="2" max="9" value="3" onchange="setPoly('droneCyc',this.value)" style="width:2.4rem;font-size:.4rem"></div>
+      <div class="pr"><label style="font-size:.36rem">Pulse周期</label><input type="number" id="polyPulse" min="2" max="9" value="5" onchange="setPoly('pulseCyc',this.value)" style="width:2.4rem;font-size:.4rem"></div>
+      <div class="pr"><label style="font-size:.36rem">Orn周期</label><input type="number" id="polyOrn" min="2" max="11" value="7" onchange="setPoly('ornCyc',this.value)" style="width:2.4rem;font-size:.4rem"></div>
+      <div style="line-height:1.6;margin-top:.1rem">独立して回り、LCM=<span id="polyLcm" style="color:var(--pulse)">15</span>グリッドで揃う。持続するサスペンション。</div>
+    </div>
+    <div class="pr"><label>Pattern</label>
+      <select id="pulsePattern" onchange="generatePulse()" style="flex:1">
+        <option value="salvador" selected>Salvador核</option>
+        <option value="ostinato">Ostinato</option>
+        <option value="call">Call</option>
+        <option value="ascent">Ascent</option>
+      </select>
+    </div>
+    <div class="pr"><label>Steps</label>
+      <select id="pulseSteps" onchange="generatePulse()" style="flex:1">
+        <option value="8">8</option>
+        <option value="12" selected>12</option>
+        <option value="16">16</option>
+      </select>
+    </div>
+    <div class="pr"><label>Attack</label>
+      <input type="range" id="pulseAttack" min="0" max="100" value="85">
+      <span class="pr-val" id="pulseAttackV">85</span>
+    </div>
+    <div class="pr"><label>Ch</label>
+      <select id="pulseCh" style="flex:1;font-size:.42rem">
+        <option value="1">Ch 1</option><option value="2" selected>Ch 2</option>
+        <option value="3">Ch 3</option><option value="4">Ch 4</option>
+      </select>
+    </div>
+    <div class="pr"><label>Leap prob.</label>
+      <input type="range" id="leapProb" min="0" max="100" value="45">
+      <span class="pr-val" id="leapProbV">45</span>
+    </div>
+    <div class="pr"><label>Swing</label><input type="range" id="swpulse" min="-80" max="80" value="0" oninput="setSwing('pulse',this.value)"><span class="pr-val" id="swpulseV">0</span></div>
+    <div class="pr" style="gap:.15rem;margin-top:.2rem"><label style="color:var(--earth);font-size:.36rem">リズム</label>
+      <select id="rhy_pulse_mode" onchange="setTrackRhythm('pulse','mode',this.value)" style="font-size:.34rem;flex:1">
+        <option value="off">オフ(全ステップ)</option>
+        <option value="euclid">ユークリッド</option>
+        <option value="additive">加算</option>
+      </select>
+      <select id="rhy_pulse_rate" onchange="setTrackRhythm('pulse','rate',this.value)" style="font-size:.34rem;flex:1" title="このトラックの速さ"></select></div>
+    <div class="pr" id="rhy_pulse_euclidrow" style="gap:.15rem;display:none"><label style="font-size:.34rem">E(k,n)</label>
+      <input type="number" id="rhy_pulse_k" min="1" max="32" value="3" onchange="setTrackRhythm('pulse','k',this.value)" style="width:2rem;font-size:.34rem">
+      <input type="number" id="rhy_pulse_n" min="1" max="32" value="8" onchange="setTrackRhythm('pulse','n',this.value)" style="width:2rem;font-size:.34rem">
+      <label style="font-size:.34rem">回転</label><input type="number" id="rhy_pulse_rot" value="0" onchange="setTrackRhythm('pulse','rot',this.value)" style="width:2rem;font-size:.34rem">
+      <select onchange="applyEuclidPreset('pulse',this.value)" style="font-size:.32rem;flex:1" title="名前付きプリセット"><option value="">プリセット…</option></select></div>
+    <div class="pr" id="rhy_pulse_addrow" style="gap:.15rem;display:none"><label style="font-size:.34rem">加算</label>
+      <input type="text" id="rhy_pulse_groups" value="2,2,3" onchange="setTrackRhythm('pulse','groups',this.value)" style="width:4rem;font-size:.34rem" title="例: 2,2,3">
+      <label style="font-size:.34rem">回転</label><input type="number" id="rhy_pulse_rot2" value="0" onchange="setTrackRhythm('pulse','rot',this.value)" style="width:2rem;font-size:.34rem">
+      <select onchange="applyAddPreset('pulse',this.value)" style="font-size:.32rem;flex:1"><option value="">プリセット…</option></select></div>
+    <div id="rhy_pulse_viz" style="font-size:.4rem;color:var(--earth);letter-spacing:.1em;margin:.05rem 0 .15rem 2.6rem;font-family:monospace"></div>
+    <div class="pr" style="gap:.2rem"><label>Invert</label>
+      <button class="btn" id="invpulsepitch" onclick="toggleInvert('pulse','pitch')" style="font-size:.38rem;flex:1" title="軸で高低反転">音程</button>
+      <button class="btn" id="invpulseretro" onclick="toggleInvert('pulse','retro')" style="font-size:.38rem;flex:1" title="順序を逆に">逆再生</button></div>
+  </div>
+
+  <!-- Ornament layer -->
+  <div class="panel" style="border-color:rgba(200,112,64,.25)">
+    <div class="panel-title" style="color:var(--orn)">Layer 3 — Ornament</div>
+    <div style="font-size:.36rem;color:var(--dim);line-height:1.8;margin-bottom:.22rem">
+      3連符と間。目まぐるしく踊る。<br>BPMが上がるほど密度が増す。
+    </div>
+    <div class="pr" style="gap:.15rem;margin-bottom:.15rem"><label style="color:var(--earth);flex:0 0 auto;font-size:.36rem">Jarrett極意</label>
+      <button class="btn" id="mnv_orn_rootless" onclick="toggleManeuver('orn','rootless')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="3抜き浮遊(1oct上げ錨を消す)">浮遊</button>
+      <button class="btn" id="mnv_orn_contrary" onclick="toggleManeuver('orn','contrary')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="反行(下げ上昇の錯覚)">反行</button>
+      <button class="btn" id="mnv_orn_octaveBreak" onclick="toggleManeuver('orn','octaveBreak')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="枠外飛び出し(1oct上)">飛出</button>
+      <button class="btn" id="mnv_orn_naki" onclick="toggleManeuver('orn','naki')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="泣き(上方倚音)">泣き</button></div>
+    <div class="pr" style="gap:.15rem;margin-bottom:.15rem"><label style="color:var(--earth);flex:0 0 auto;font-size:.36rem"> </label>
+      <button class="btn" id="mnv_orn_dwell" onclick="toggleManeuver('orn','dwell')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="滞在のムラ(基本さっと/時々5-6秒居座る)">滞在</button>
+      <button class="btn" id="mnv_orn_transition" onclick="toggleManeuver('orn','transition')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="移行(5度4度中心の跳躍)">移行</button>
+      <button class="btn" id="mnv_orn_space" onclick="toggleManeuver('orn','space')" style="font-size:.34rem;flex:1;padding:.06rem .1rem" title="空間(低音と旋律の距離を開ける)">空間</button></div>
+    <div class="pr"><label>Density</label>
+      <input type="range" id="ornDensity" min="0" max="100" value="40"
+        style="accent-color:var(--orn)">
+      <span class="pr-val" id="ornDensityV" style="color:var(--orn)">40</span>
+    </div>
+    <div class="pr"><label>Triplet</label>
+      <input type="range" id="tripletProb" min="0" max="100" value="55">
+      <span class="pr-val" id="tripletProbV">55</span>
+    </div>
+    <div class="pr"><label>Silence</label>
+      <input type="range" id="silenceProb" min="0" max="100" value="25">
+      <span class="pr-val" id="silenceProbV">25</span>
+    </div>
+    <div class="pr"><label>Ch</label>
+      <select id="ornCh" style="flex:1;font-size:.42rem">
+        <option value="1">Ch 1</option><option value="2">Ch 2</option>
+        <option value="4" selected>Ch 4</option><option value="4">Ch 4</option>
+      </select>
+    </div>
+    <div class="pr"><label>BPM sync</label>
+      <select id="ornBpmSync" style="flex:1;font-size:.42rem">
+        <option value="1" selected>BPMと連動</option>
+        <option value="0">固定</option>
+      </select>
+    </div>
+    <div class="pr"><label>Swing</label><input type="range" id="sworn" min="-80" max="80" value="0" oninput="setSwing('orn',this.value)"><span class="pr-val" id="swornV">0</span></div>
+    <div class="pr" style="gap:.15rem;margin-top:.2rem"><label style="color:var(--earth);font-size:.36rem">リズム</label>
+      <select id="rhy_orn_mode" onchange="setTrackRhythm('orn','mode',this.value)" style="font-size:.34rem;flex:1">
+        <option value="off">オフ(全ステップ)</option>
+        <option value="euclid">ユークリッド</option>
+        <option value="additive">加算</option>
+      </select>
+      <select id="rhy_orn_rate" onchange="setTrackRhythm('orn','rate',this.value)" style="font-size:.34rem;flex:1" title="このトラックの速さ"></select></div>
+    <div class="pr" id="rhy_orn_euclidrow" style="gap:.15rem;display:none"><label style="font-size:.34rem">E(k,n)</label>
+      <input type="number" id="rhy_orn_k" min="1" max="32" value="3" onchange="setTrackRhythm('orn','k',this.value)" style="width:2rem;font-size:.34rem">
+      <input type="number" id="rhy_orn_n" min="1" max="32" value="8" onchange="setTrackRhythm('orn','n',this.value)" style="width:2rem;font-size:.34rem">
+      <label style="font-size:.34rem">回転</label><input type="number" id="rhy_orn_rot" value="0" onchange="setTrackRhythm('orn','rot',this.value)" style="width:2rem;font-size:.34rem">
+      <select onchange="applyEuclidPreset('orn',this.value)" style="font-size:.32rem;flex:1" title="名前付きプリセット"><option value="">プリセット…</option></select></div>
+    <div class="pr" id="rhy_orn_addrow" style="gap:.15rem;display:none"><label style="font-size:.34rem">加算</label>
+      <input type="text" id="rhy_orn_groups" value="2,2,3" onchange="setTrackRhythm('orn','groups',this.value)" style="width:4rem;font-size:.34rem" title="例: 2,2,3">
+      <label style="font-size:.34rem">回転</label><input type="number" id="rhy_orn_rot2" value="0" onchange="setTrackRhythm('orn','rot',this.value)" style="width:2rem;font-size:.34rem">
+      <select onchange="applyAddPreset('orn',this.value)" style="font-size:.32rem;flex:1"><option value="">プリセット…</option></select></div>
+    <div id="rhy_orn_viz" style="font-size:.4rem;color:var(--earth);letter-spacing:.1em;margin:.05rem 0 .15rem 2.6rem;font-family:monospace"></div>
+    <div class="pr" style="gap:.2rem"><label>Invert</label>
+      <button class="btn" id="invornpitch" onclick="toggleInvert('orn','pitch')" style="font-size:.38rem;flex:1" title="軸で高低反転">音程</button>
+      <button class="btn" id="invornretro" onclick="toggleInvert('orn','retro')" style="font-size:.38rem;flex:1" title="順序を逆に">逆再生</button></div>
+  </div>
+
+  <!-- MIDI -->
+  <div class="panel">
+    <div class="panel-title">MIDI → Pianoteq</div>
+    <div class="pr"><div class="midi-dot" id="midiDot"></div>
+      <span id="midiStatus" style="font-size:.4rem;color:var(--dim)">—</span></div>
+    <button class="btn" onclick="initMIDI()" style="width:100%;margin-bottom:.18rem;font-size:.4rem">↻ Refresh</button>
+    <div class="pr"><label>Out</label>
+      <select id="midiDevSel" onchange="selectMidiOut(this.value)" style="flex:1;font-size:.38rem"></select></div>
+    <div class="pr"><label>Clock In</label>
+      <select id="clockInSel" onchange="selectClockIn(this.value)" style="flex:1;font-size:.38rem">
+        <option value="">—</option></select></div>
+    <button id="btnSlave" class="btn" onclick="toggleSlave()" style="width:100%;margin:.16rem 0;font-size:.4rem">Slave: OFF</button>
+    <div class="pr" style="margin-top:.1rem"><label style="font-size:.36rem">Slave時テンポ</label>
+      <select id="slaveTempoMode" onchange="setSlaveTempoMode(this.value)" style="flex:1;font-size:.36rem">
+        <option value="follow" selected>従属 — Abletonに完全同期</option>
+        <option value="accel">加速保持 — Salvadorの60→150を上に重ねる</option>
+      </select>
+    </div>
+    <button class="btn act" onclick="exportMIDI()" style="width:100%;font-size:.4rem">↓ Export MIDI</button>
+    <button class="btn fire" onclick="testAllChannels()" style="width:100%;margin-top:.15rem;font-size:.4rem">🔊 Test All Ch</button>
+  </div>
+
+</div>
+
+<div class="main-area">
+  <div class="arc-bar" id="arcBar">
+    <button class="btn" id="btnArc" onclick="toggleArc()">弧 ARC: OFF</button>
+    <button class="btn" id="btnArcGen" onclick="generateArc()" title="構造は同じ、中身を作り直す">⟳ 生成</button>
+    <button class="btn" id="btnArcMode" onclick="toggleArcMode()" title="自動=既定の弧 / カスタム=自分で設計">モード: 自動</button>
+    <button class="btn" id="btnArcEdit" onclick="toggleArcEditor()" title="弧の時間割を設計する" style="display:none">✎ 弧を設計</button>
+    <span style="display:inline-flex;align-items:center;gap:.2rem;margin-left:.3rem"><label style="font-size:.36rem;color:var(--earth)">螺旋</label>
+      <input type="range" id="arcSpiral" min="0" max="100" value="15" oninput="setArcSpiral(this.value)" title="周回ごとの変異: 0=不変 → 少しずつ → 劇的手前" style="width:4rem">
+      <span class="pr-val" id="arcSpiralV" style="font-size:.36rem">15</span></span>
+    <span class="arc-status" id="arcStatus">Jarrettロジックの設計された即興 — A→移行→B→絶頂→移行→C</span>
+  </div>
+  <div id="arcEditor" style="display:none;background:var(--bg2,#161210);border:1px solid var(--bd);border-radius:.3rem;padding:.4rem;margin:.2rem 0;font-size:.4rem">
+    <div style="color:var(--earth);font-style:italic;margin-bottom:.3rem">弧の設計 — 場(field)と移行(glide)を並べる。上から順に流れる。</div>
+    <div id="arcEditorRows"></div>
+    <div style="display:flex;gap:.2rem;margin-top:.3rem">
+      <button class="btn" onclick="arcAddSeg('field')" style="font-size:.36rem">+ 場</button>
+      <button class="btn" onclick="arcAddSeg('glide')" style="font-size:.36rem">+ 移行</button>
+      <button class="btn" onclick="arcAddSeg('climax')" style="font-size:.36rem">+ 絶頂</button>
+      <button class="btn" onclick="arcResetCustom()" style="font-size:.36rem" title="既定の弧に戻す">既定へ</button>
+    </div>
+    <div style="font-size:.32rem;color:var(--dim);margin-top:.25rem;line-height:1.5">root=中心からの半音 / color=色(minor/home/bright/rootless) / dur=秒。ARCカスタムON+再生で、この弧が流れる。</div>
+  </div>
+  <div class="macro-bar" id="macroBar"><!-- populated by buildMacros() --></div>
+  <div class="transport">
+    <button class="btn act" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+    <button class="btn" onclick="stopAll()">■ Stop</button>
+    <button class="btn" onclick="generateAll()">↻ Generate</button>
+    <button class="btn" onclick="generatePulse()" style="color:var(--pulse)">↻ Pulse</button>
+    <button class="btn" onclick="generateOrnament()" style="color:var(--orn)">↻ Orn.</button>
+    <button class="btn fire" onclick="fireKire()" style="font-family:'EB Garamond',serif;font-style:italic" title="キレ発動 (K)">キレ</button>
+    <button class="btn" id="btnUndo" onclick="undo()" style="opacity:.3">↩</button>
+    <button class="btn" id="btnRedo" onclick="redo()" style="opacity:.3">↪</button>
+    <button class="btn" onclick="saveState()" style="color:var(--vine)">↓ Save</button>
+    <label class="btn" style="cursor:pointer;color:var(--dim)">↑ Load
+      <input type="file" accept=".json" onchange="loadState(event)" style="display:none"></label>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:.45rem">
+      <span style="font-size:.38rem;color:var(--dim)" id="stepDisplay">—</span>
+      <span style="font-family:'EB Garamond',serif;font-size:.5rem;font-style:italic;color:var(--earth)" id="modeDisplay">Dorian</span>
+      <span style="font-size:.38rem;color:var(--earth);font-family:'EB Garamond',serif" id="bpmLive">60</span>
+    </div>
+  </div>
+
+  <!-- Basquiat painting canvas -->
+  <div class="basquiat-wrap">
+    <canvas id="basquiatCanvas"></canvas>
+    <div class="basquiat-controls">
+      <button class="bcn-btn" onclick="clearBasquiat()">✕</button>
+      <button class="bcn-btn" onclick="downloadBasquiat()">↓ Art</button>
+    </div>
+  </div>
+
+  <div class="layers-area">
+
+    <!-- Layer 1: Drone -->
+    <div class="layer-block">
+      <div class="layer-header">
+        <span class="layer-label" style="color:var(--vine)">Drone</span>
+        <span class="layer-ch">Ch <span id="droneChDisp">1</span></span>
+        <span style="font-size:.36rem;color:var(--dim);margin-left:.3rem">E + B持続 — 土台</span>
+        <span class="layer-info" id="droneInfo">—</span>
+      </div>
+      <div class="note-row" id="droneGrid"></div>
+    </div>
+
+    <!-- Layer 2: Pulse -->
+    <div class="layer-block">
+      <div class="layer-header">
+        <span class="layer-label" style="color:var(--pulse)">Pulse</span>
+        <span class="layer-ch">Ch <span id="pulseChDisp">2</span></span>
+        <canvas id="pulseCurve" width="120" height="18" style="background:var(--s0);border-radius:1px;margin-left:.35rem"></canvas>
+        <span class="layer-info" id="pulseInfo">—</span>
+      </div>
+      <div class="note-row" id="pulseGrid"></div>
+      <div class="chord-strip">
+        <span class="chord-lbl">Chord</span>
+        <select onchange="setChordTaste('pulse',this.value)" id="pulseChordTaste"></select>
+        <select onchange="setChordSize('pulse',this.value)" id="pulseChordSize"><option value="2">2音</option><option value="3" selected>3音</option><option value="4">4音</option></select>
+        <div class="chord-row" id="pulseChordRow"></div>
+      </div>
+    </div>
+
+    <!-- Layer 3: Ornament -->
+    <div class="layer-block">
+      <div class="layer-header">
+        <span class="layer-label" style="color:var(--orn)">Ornament</span>
+        <span class="layer-ch">Ch <span id="ornChDisp">3</span></span>
+        <span style="font-size:.36rem;color:var(--dim);margin-left:.3rem" id="ornRhythmDisp">—</span>
+        <span class="layer-info" id="ornInfo">—</span>
+      </div>
+      <div class="note-row" id="ornGrid"></div>
+      <div class="chord-strip">
+        <span class="chord-lbl">Chord</span>
+        <select onchange="setChordTaste('orn',this.value)" id="ornChordTaste"></select>
+        <select onchange="setChordSize('orn',this.value)" id="ornChordSize"><option value="2">2音</option><option value="3" selected>3音</option><option value="4">4音</option></select>
+        <div class="chord-row" id="ornChordRow"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Engine dock -->
+<div class="engine-dock">
+  <div class="dock-tabbar">
+    <button class="dock-tab active" data-panel="drone">
+      <span class="dock-tdot" style="background:var(--vine)"></span>Drone
+    </button>
+    <button class="dock-tab" data-panel="pulse">
+      <span class="dock-tdot" style="background:var(--pulse)"></span>Pulse
+    </button>
+    <button class="dock-tab" data-panel="ornament">
+      <span class="dock-tdot" style="background:var(--orn)"></span>Ornament
+    </button>
+    <button class="dock-tab" data-panel="journey">
+      <span class="dock-tdot" style="background:var(--fire)"></span>Journey
+    </button>
+    <button class="dock-tab" data-panel="expression">
+      <span class="dock-tdot" style="background:var(--earth)"></span>表情
+    </button>
+    <div class="dock-minibar">
+      <span class="mini-lbl">BPM</span>
+      <div class="mini-bar"><div class="mini-fill" id="miniBpm" style="background:var(--earth)"></div></div>
+      <span class="mini-lbl">Orn.</span>
+      <div class="mini-bar"><div class="mini-fill" id="miniOrn" style="background:var(--orn)"></div></div>
+      <span class="mini-lbl" id="kireLabel" style="color:var(--fire)">—</span>
+      <button onclick="toggleDock()" id="dockColBtn"
+        style="background:transparent;border:none;color:var(--dim);font-size:.42rem;cursor:pointer;margin-left:.28rem">▲</button>
+    </div>
+  </div>
+  <div class="dock-panels" id="dockPanels">
+
+    <!-- Drone panel -->
+    <div class="dock-panel active" id="dp-drone">
+      <div class="dpg dpg-4">
+        <div class="dsub">
+          <div class="dsub-t">Drone State</div>
+          <div class="dg-row"><span class="dg-lbl">E note</span><span id="droneEDisp" style="font-size:.4rem;color:var(--vine);font-family:'EB Garamond',serif;font-style:italic">—</span></div>
+          <div class="dg-row"><span class="dg-lbl">B note</span><span id="droneBDisp" style="font-size:.4rem;color:var(--vine);font-family:'EB Garamond',serif;font-style:italic">—</span></div>
+          <div class="dg-row"><span class="dg-lbl">Breathe</span><div class="dg-track"><div class="dg-fill" id="breatheF" style="background:var(--vine)"></div></div><span class="dg-val" id="breatheV">0</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">Drone Curve</div>
+          <canvas id="droneCanvas" height="50" style="width:100%;display:block;background:var(--bg);border-radius:1px"></canvas>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">Drone 操作</div>
+          <div style="display:flex;flex-direction:column;gap:.18rem;margin-top:.12rem">
+            <button onclick="muteLayer('drone')" id="btnDroneMute" style="border:1px solid rgba(48,72,56,.4);color:var(--vine);background:transparent;font-family:'EB Garamond',serif;font-size:.44rem;padding:.16rem;border-radius:1px;cursor:pointer;font-style:italic">Mute Drone</button>
+            <button onclick="breathePulse()" style="border:1px solid rgba(48,72,56,.35);color:var(--dim);background:transparent;font-family:'EB Garamond',serif;font-size:.44rem;padding:.16rem;border-radius:1px;cursor:pointer;font-style:italic">Breathe Now</button>
+          </div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">ログ</div>
+          <div id="droneLog" class="dg-log"><span style="color:rgba(48,72,56,.4)">— drone waiting —</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pulse panel -->
+    <div class="dock-panel" id="dp-pulse">
+      <div class="dpg dpg-4">
+        <div class="dsub">
+          <div class="dsub-t">Pulse State</div>
+          <div class="dg-row"><span class="dg-lbl">Pattern</span><span id="pulsePatDisp" style="font-size:.4rem;color:var(--pulse);font-family:'EB Garamond',serif;font-style:italic">—</span></div>
+          <div class="dg-row"><span class="dg-lbl">Attack</span><div class="dg-track"><div class="dg-fill" id="attackF" style="background:var(--pulse)"></div></div><span class="dg-val" id="attackV">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">Leaps</span><span id="leapCountDisp" style="font-size:.38rem;color:var(--earth)">0</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">Velocity Shape</div>
+          <canvas id="velCanvas" height="50" style="width:100%;display:block;background:var(--bg);border-radius:1px"></canvas>
+        </div>
+
+        <div class="dsub">
+          <div class="dsub-t">キレ Engine</div>
+          <div style="font-size:.36rem;color:var(--dim);line-height:1.85;margin-bottom:.18rem">
+            ベロシティの立ち上がりが<br>鋭く断ち切るように変化
+          </div>
+          <div class="dg-row"><span class="dg-lbl">Kire level</span><div class="dg-track"><div class="dg-fill" id="kireF" style="background:var(--fire)"></div></div><span class="dg-val" id="kireV" style="color:var(--fire)">0</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">ログ</div>
+          <div id="pulseLog" class="dg-log"><span style="color:rgba(120,96,64,.4)">— pulse waiting —</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ornament panel -->
+    <div class="dock-panel" id="dp-ornament">
+      <div class="dpg dpg-4">
+        <div class="dsub">
+          <div class="dsub-t">Ornament State</div>
+          <div class="dg-row"><span class="dg-lbl">Density</span><div class="dg-track"><div class="dg-fill" id="ornDensF" style="background:var(--orn)"></div></div><span class="dg-val" id="ornDensV" style="color:var(--orn)">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">Triplets</span><div class="dg-track"><div class="dg-fill" id="tripF" style="background:var(--fire)"></div></div><span class="dg-val" id="tripV">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">Silence</span><div class="dg-track"><div class="dg-fill" id="silF" style="background:var(--fog)"></div></div><span class="dg-val" id="silV">0</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">Ornament Curve</div>
+          <canvas id="ornCanvas" height="50" style="width:100%;display:block;background:var(--bg);border-radius:1px"></canvas>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">BPM連動</div>
+          <div style="font-size:.36rem;color:var(--dim);line-height:1.85">
+            BPMが上がると<br>3連符密度が自動で増す<br>
+            <span id="ornBpmDisp" style="color:var(--orn)">—</span>
+          </div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">ログ</div>
+          <div id="ornLog" class="dg-log"><span style="color:rgba(200,112,64,.4)">— ornament waiting —</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Journey panel -->
+    <div class="dock-panel" id="dp-journey">
+      <div class="dpg dpg-3">
+        <div class="dsub">
+          <div class="dsub-t">BPM Journey</div>
+          <div class="dg-row"><span class="dg-lbl">Current</span><span id="journeyBpm" style="font-size:.5rem;color:var(--earth);font-family:'EB Garamond',serif;font-style:italic">60</span></div>
+          <div class="dg-row"><span class="dg-lbl">Progress</span><div class="dg-track"><div class="dg-fill" id="journeyF" style="background:linear-gradient(90deg,var(--drone),var(--fire))"></div></div><span class="dg-val" id="journeyV">0%</span></div>
+          <div class="dg-row"><span class="dg-lbl">Elapsed</span><span id="elapsedDisp" style="font-size:.38rem;color:var(--dim)">0:00</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">Journey Curve</div>
+          <canvas id="journeyCanvas" height="50" style="width:100%;display:block;background:var(--bg);border-radius:1px"></canvas>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">Journey Log</div>
+          <div id="journeyLog" class="dg-log"><span style="color:rgba(200,72,32,.35)">— journey waiting —</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dock-panel" id="dp-expression">
+      <div class="dock-grid">
+        <div class="dsub">
+          <div class="dsub-t">表情 (Expression) — 演奏判断。音質はPianoteqに。</div>
+          <div style="font-size:.34rem;color:var(--dim);line-height:1.6;margin-bottom:.18rem">二値のキレ←→なめらかな弧。ぶつ切り←→レガート。LFOでなくフレーズの呼吸。</div>
+          <div class="pr"><label style="font-size:.36rem">Legato 土台</label><input type="range" id="legDrone" min="0" max="100" value="85" oninput="setExpr('legato.drone',this.value)"><span class="pr-val" id="legDroneV">85</span></div>
+          <div class="pr"><label style="font-size:.36rem">Legato 旋律</label><input type="range" id="legPulse" min="0" max="100" value="35" oninput="setExpr('legato.pulse',this.value)"><span class="pr-val" id="legPulseV">35</span></div>
+          <div class="pr"><label style="font-size:.36rem">Legato 装飾</label><input type="range" id="legOrn" min="0" max="100" value="20" oninput="setExpr('legato.orn',this.value)"><span class="pr-val" id="legOrnV">20</span></div>
+          <div class="pr"><label style="font-size:.36rem">Vel弧 (二値→弧)</label><input type="range" id="velArc" min="0" max="100" value="50" oninput="setExpr('velArc',this.value)"><span class="pr-val" id="velArcV">50</span></div>
+          <div class="pr"><label style="font-size:.36rem">Humanize</label><input type="range" id="humanize" min="0" max="100" value="30" oninput="setExpr('humanize',this.value)"><span class="pr-val" id="humanizeV">30</span></div>
+          <div class="pr"><label style="font-size:.36rem">レングス呼吸</label><input type="range" id="lenBreath" min="0" max="100" value="40" oninput="setExpr('lenBreath',this.value)"><span class="pr-val" id="lenBreathV">40</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">Gate / Length — Ableton Note Length 的 (各声部)</div>
+          <div style="font-size:.34rem;color:var(--dim);line-height:1.6;margin-bottom:.18rem">Length=決定的な長さへの足し引き(ms)。負=食う/詰める(Delayマイナス的)。Gate=その％(枠)。Lengthが一番効く。</div>
+          <div class="pr"><label style="font-size:.36rem">土台 Length</label><input type="range" id="lenDrone" min="-80" max="80" value="0" oninput="setGL('length.drone',this.value)"><span class="pr-val" id="lenDroneV">0</span></div>
+          <div class="pr"><label style="font-size:.36rem">土台 Gate</label><input type="range" id="gateDrone" min="0" max="200" value="100" oninput="setGL('gate.drone',this.value)"><span class="pr-val" id="gateDroneV">100</span></div>
+          <div class="pr"><label style="font-size:.36rem">旋律 Length</label><input type="range" id="lenPulse" min="-80" max="80" value="0" oninput="setGL('length.pulse',this.value)"><span class="pr-val" id="lenPulseV">0</span></div>
+          <div class="pr"><label style="font-size:.36rem">旋律 Gate</label><input type="range" id="gatePulse" min="0" max="200" value="100" oninput="setGL('gate.pulse',this.value)"><span class="pr-val" id="gatePulseV">100</span></div>
+          <div class="pr"><label style="font-size:.36rem">装飾 Length</label><input type="range" id="lenOrn" min="-80" max="80" value="0" oninput="setGL('length.orn',this.value)"><span class="pr-val" id="lenOrnV">0</span></div>
+          <div class="pr"><label style="font-size:.36rem">装飾 Gate</label><input type="range" id="gateOrn" min="0" max="200" value="100" oninput="setGL('gate.orn',this.value)"><span class="pr-val" id="gateOrnV">100</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t">MPE — 各音に個性(発信側の道具)。音律はMTS-ESPなのでPitch Bendは送らない。</div>
+          <div style="font-size:.34rem;color:var(--dim);line-height:1.6;margin-bottom:.18rem">各音にCC74(音色/明るさ)を個別に付与。フレーズの輪郭+音ごとの揺らぎ。君のイメージを音ごとに刻む。</div>
+          <button id="btnMpe" class="btn" onclick="toggleMpe()" style="width:100%;margin-bottom:.16rem;font-size:.4rem">MPE: OFF</button>
+          <div id="mpeCtl" style="display:none">
+            <div class="pr"><label style="font-size:.36rem">輪郭</label>
+              <select id="mpeContour" onchange="MPE.contour=this.value" style="flex:1;font-size:.36rem">
+                <option value="arc" selected>弧 (登って降りる)</option>
+                <option value="rise">上昇</option>
+                <option value="fall">下降</option>
+                <option value="flat">平坦</option>
+              </select>
+            </div>
+            <div class="pr"><label style="font-size:.36rem">土台 Slide</label><input type="range" id="mpeDrone" min="0" max="100" value="30" oninput="setMpe('slide.drone',this.value)"><span class="pr-val" id="mpeDroneV">30</span></div>
+            <div class="pr"><label style="font-size:.36rem">旋律 Slide</label><input type="range" id="mpePulse" min="0" max="100" value="50" oninput="setMpe('slide.pulse',this.value)"><span class="pr-val" id="mpePulseV">50</span></div>
+            <div class="pr"><label style="font-size:.36rem">装飾 Slide</label><input type="range" id="mpeOrn" min="0" max="100" value="60" oninput="setMpe('slide.orn',this.value)"><span class="pr-val" id="mpeOrnV">60</span></div>
+            <div class="pr"><label style="font-size:.36rem">音ごとの揺らぎ</label><input type="range" id="mpeVar" min="0" max="100" value="40" oninput="setMpe('perNoteVar',this.value)"><span class="pr-val" id="mpeVarV">40</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════
+//  MODES — Gismonti's tonal palette
+// ══════════════════════════════════════════════════════
+const MODES = {
+  ionian:{name:'Ionian',degs:[0,2,4,5,7,9,11]},
+  dorian:{name:'Dorian',degs:[0,2,3,5,7,9,10]},
+  phrygian:{name:'Phrygian',degs:[0,1,3,5,7,8,10]},
+  lydian:{name:'Lydian',degs:[0,2,4,6,7,9,11]},
+  mixolydian:{name:'Mixolydian',degs:[0,2,4,5,7,9,10]},
+  aeolian:{name:'Aeolian',degs:[0,2,3,5,7,8,10]},
+  locrian:{name:'Locrian',degs:[0,1,3,5,6,8,10]},
+  mel_minor:{name:'Mel Minor',degs:[0,2,3,5,7,9,11]},
+  dorian_b2:{name:'Dorian B2',degs:[0,1,3,5,7,9,10]},
+  lydian_aug:{name:'Lydian Aug',degs:[0,2,4,6,8,9,11]},
+  lydian_dom:{name:'Lydian Dom',degs:[0,2,4,6,7,9,10]},
+  mixo_b6:{name:'Mixo B6',degs:[0,2,4,5,7,8,10]},
+  locrian_n2:{name:'Locrian N2',degs:[0,2,3,5,6,8,10]},
+  altered:{name:'Altered',degs:[0,1,3,4,6,8,10]},
+  har_minor:{name:'Har Minor',degs:[0,2,3,5,7,8,11]},
+  locrian_n6:{name:'Locrian N6',degs:[0,1,3,5,6,9,10]},
+  ionian_s5:{name:'Ionian S5',degs:[0,2,4,5,8,9,11]},
+  dorian_s4:{name:'Dorian S4',degs:[0,2,3,6,7,9,10]},
+  phrygian_dom:{name:'Phrygian Dom',degs:[0,1,4,5,7,8,10]},
+  lydian_s2:{name:'Lydian S2',degs:[0,3,4,6,7,9,11]},
+  ultralocrian:{name:'Ultralocrian',degs:[0,1,3,4,6,8,9]},
+  har_major:{name:'Har Major',degs:[0,2,4,5,7,8,11]},
+  dorian_b5:{name:'Dorian B5',degs:[0,2,3,5,6,9,10]},
+  phrygian_b4:{name:'Phrygian B4',degs:[0,1,4,5,7,8,10]},
+  lydian_b3:{name:'Lydian B3',degs:[0,2,3,6,7,9,11]},
+  mixo_b2:{name:'Mixo B2',degs:[0,1,4,5,7,9,10]},
+  lydian_aug_s2:{name:'Lydian Aug S2',degs:[0,3,4,6,8,9,11]},
+  double_har:{name:'Double Har',degs:[0,1,4,5,7,8,11]},
+  byzantine:{name:'Byzantine',degs:[0,1,4,5,7,8,11]},
+  hungarian_min:{name:'Hungarian Min',degs:[0,2,3,6,7,8,11]},
+  hungarian_maj:{name:'Hungarian Maj',degs:[0,3,4,6,7,9,10]},
+  oriental:{name:'Oriental',degs:[0,1,4,5,6,9,10]},
+  gypsy:{name:'Gypsy',degs:[0,2,3,6,7,8,11]},
+  wholetone:{name:'Wholetone',degs:[0,2,4,6,8,10]},
+  dim_wh:{name:'Dim Wh',degs:[0,2,3,5,6,8,9,11]},
+  dim_hw:{name:'Dim Hw',degs:[0,1,3,4,6,7,9,10]},
+  augmented:{name:'Augmented',degs:[0,3,4,7,8,11]},
+  tritone:{name:'Tritone',degs:[0,1,4,6,7,10]},
+  maj_pent:{name:'Maj Pent',degs:[0,2,4,7,9]},
+  min_pent:{name:'Min Pent',degs:[0,3,5,7,10]},
+  blues:{name:'Blues',degs:[0,3,5,6,7,10]},
+  egyptian:{name:'Egyptian',degs:[0,2,5,7,10]},
+  man_gong:{name:'Man Gong',degs:[0,3,5,8,10]},
+  ritusen:{name:'Ritusen',degs:[0,2,5,7,9]},
+  in_sen:{name:'In Sen',degs:[0,1,5,7,8]},
+  hirajoshi:{name:'Hirajoshi',degs:[0,2,3,7,8]},
+  iwato:{name:'Iwato',degs:[0,1,5,6,10]},
+  kumoi:{name:'Kumoi',degs:[0,2,3,7,9]},
+  yo:{name:'Yo',degs:[0,2,5,7,9]},
+  insen2:{name:'Insen2',degs:[0,1,5,7,10]},
+  akebono:{name:'Akebono',degs:[0,2,3,7,9]},
+  bhairav:{name:'Bhairav',degs:[0,1,4,5,7,8,11]},
+  yaman:{name:'Yaman',degs:[0,2,4,6,7,9,11]},
+  kafi:{name:'Kafi',degs:[0,2,3,5,7,9,10]},
+  bhairavi:{name:'Bhairavi',degs:[0,1,3,5,7,8,10]},
+  todi:{name:'Todi',degs:[0,1,3,6,7,8,11]},
+  marwa:{name:'Marwa',degs:[0,1,4,6,7,9,11]},
+  purvi:{name:'Purvi',degs:[0,1,4,6,7,8,11]},
+  des:{name:'Des',degs:[0,2,4,5,7,9,10]},
+  malkauns:{name:'Malkauns',degs:[0,3,5,8,10]},
+  bhoopali:{name:'Bhoopali',degs:[0,2,4,7,9]},
+  darbari:{name:'Darbari',degs:[0,2,3,5,7,8,10]},
+  charukeshi:{name:'Charukeshi',degs:[0,2,4,5,7,8,10]},
+  kirwani:{name:'Kirwani',degs:[0,2,3,5,7,8,11]},
+  ahirbhairav:{name:'Ahirbhairav',degs:[0,1,4,5,7,9,10]},
+  madhuvanti:{name:'Madhuvanti',degs:[0,3,4,6,7,9,11]},
+  hamsadhwani:{name:'Hamsadhwani',degs:[0,2,4,7,11]},
+  shree:{name:'Shree',degs:[0,1,4,6,7,8,11]},
+  pilu:{name:'Pilu',degs:[0,2,3,4,5,7,9,10,11]},
+  hijaz:{name:'Hijaz',degs:[0,1,4,5,7,8,10]},
+  nahawand:{name:'Nahawand',degs:[0,2,3,5,7,8,10]},
+  kurd:{name:'Kurd',degs:[0,1,3,5,7,8,10]},
+  ajam:{name:'Ajam',degs:[0,2,4,5,7,9,11]},
+  saba:{name:'Saba',degs:[0,2,3,4,7,8,10]},
+  bayati:{name:'Bayati',degs:[0,2,3,5,7,8,10]},
+  hijazkar:{name:'Hijazkar',degs:[0,1,4,5,7,8,11]},
+  suzidil:{name:'Suzidil',degs:[0,1,4,5,7,8,11]},
+  phrygian_greek:{name:'Phrygian Greek',degs:[0,1,3,5,7,8,10]},
+  chromatic_dorian:{name:'Chromatic Dorian',degs:[0,1,4,5,7,8,11]},
+  enigmatic:{name:'Enigmatic',degs:[0,1,4,6,8,10,11]},
+  neapolitan_min:{name:'Neapolitan Min',degs:[0,1,3,5,7,8,11]},
+  neapolitan_maj:{name:'Neapolitan Maj',degs:[0,1,3,5,7,9,11]},
+  prometheus:{name:'Prometheus',degs:[0,2,4,6,9,10]},
+  scriabin:{name:'Scriabin',degs:[0,1,4,7,9]},
+  blues_maj:{name:'Blues Maj',degs:[0,2,3,4,7,9]},
+  blues_nine:{name:'Blues Nine',degs:[0,2,3,4,5,6,7,9,10,11]},
+  bebop_dom:{name:'Bebop Dom',degs:[0,2,4,5,7,9,10,11]},
+  bebop_maj:{name:'Bebop Maj',degs:[0,2,4,5,7,8,9,11]},
+  bebop_dorian:{name:'Bebop Dorian',degs:[0,2,3,4,5,7,9,10]},
+  six_tone_sym:{name:'Six Tone Sym',degs:[0,1,4,5,8,9]},
+  leading_whole:{name:'Leading Whole',degs:[0,2,4,6,8,10,11]},
+  chromatic:{name:'Chromatic',degs:[0,1,2,3,4,5,6,7,8,9,10,11]}
+};
+const NOTE_NAMES = ['C','C#','D','E♭','E','F','F#','G','A♭','A','B♭','B'];
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let currentMode = 'dorian';
+let playing = false;
+let midiOut = null, midiAccess = null;
+
+// Three layers
+let droneSteps  = [];
+let pulseSteps  = [];
+let ornSteps    = [];
+
+// Playback indices
+let droneIdx = 0, pulseIdx = 0, ornIdx = 0;
+let playTimer = null;
+let barCount = 0;
+
+// BPM Journey engine
+const JOURNEY = {
+  enabled:   false,  // ★独立トグル: ARCと無関係にJourneyのon/off. 既定offで«勝手に始まらない».
+  bpm:       60,
+  startBpm:  60,
+  endBpm:    150,
+  elapsed:   0,      // seconds
+  duration:  300,    // seconds
+  startTime: null,
+  history:   [],
+};
+
+// ── EXPRESSION —演奏判断(MIDIレイヤー)。音質はPianoteqに任せる。 ──
+// per-voice legato + phrase-arc velocity + humanize + length breath.
+// these RENDER the stored notes; they never change which notes are chosen.
+// ── GATE / LENGTH (per voice) — Ableton Note Length 的。解釈B:
+// Salvadorの決定性(短/長のdur)は残し、そこにLength(±ms)を足し引きし、Gate(%)で倍率。
+// Length 負 = 音を食う/詰める(Delayのマイナスフィードバック的、Salvador独自)。
+const GATELEN = {
+  gate:   {drone:100, pulse:100, orn:100},   // 0-200 %  — Lengthに対する倍率(枠)
+  length: {drone:0,   pulse:0,   orn:0},     // -80..+80 ms — 決定的durへの足し引き
+};
+const EXPRESSION = {
+  legato:   {drone:0.85, pulse:0.35, orn:0.20},  // 0=ぶつ切り … 1=次の音まで繋ぐ
+  velArc:   0.5,    // 0 = binary キレ (今までの良さ) … 1 = なめらかなフレーズの弧
+  humanize: 0.3,    // micro variation in vel/timing/length (0=機械的 … 1=人間的)
+  lenBreath:0.4,    // length breathes with the phrase (0=固定 … 1=呼吸する)
+  arcPhase: 0,      // running phrase position, advanced by the pulse layer
+};
+// phrase-arc weight at a given index within the phrase (0→1→0 over the phrase) — the breath.
+// this is NOT an LFO: it follows the musical phrase length, rising to a peak and settling.
+function phraseArc(idx, len){
+  if(len<2) return 0.5;
+  const t=(idx%len)/(len-1);          // 0..1 across the phrase
+  return Math.sin(t*Math.PI);          // 0 → 1 (mid-phrase peak) → 0
+}
+function hrand(amt){ return 1 + (Math.random()*2-1)*amt; }   // humanize multiplier
+
+// ── 3声部«共有»のmicro-timing(まとまりの核): tick毎に一度だけ更新. 全声部が同じ揺れを使う ──
+let _sharedMicro=0;   // -1..+1, tickごとに更新
+// ── スウィング(声部別, 0-100%): 奇数stepを後ろへずらす ──
+const SWING={ drone:0, pulse:0, orn:0 };
+function setSwing(voice,val){ const v=parseInt(val); SWING[voice]=v; const l=document.getElementById('sw'+voice+'V'); if(l)l.textContent=(v>0?'後'+v:v<0?'前'+(-v):'0'); }
+// ── シーケンスinvert(声部別): pitch=音程反転(軸で高低反転) / retro=逆再生(順序反転) ──
+const INVERT={ drone:{pitch:false,retro:false}, pulse:{pitch:false,retro:false}, orn:{pitch:false,retro:false} };
+function invertPitch(steps){
+  // 音程反転(非破壊): 各stepのmidiを«軸»(有効音の中央)で反転. 元のmidiは _om に保存済み.
+  const act=steps.filter(s=>s.active&&s.midi!=null); if(act.length<2) return;
+  const mids=act.map(s=>s.midi); const axis=Math.round((Math.min(...mids)+Math.max(...mids))/2);
+  steps.forEach(s=>{ if(s.midi!=null) s.midi = 2*axis - s.midi; });
+}
+function applyInvert(voice){
+  const arr = voice==='drone'?droneSteps : voice==='pulse'?pulseSteps : ornSteps;
+  const iv=INVERT[voice];
+  // ★非破壊: 毎回«元のシーケンス»から再構築する. だからOFFで完全に元へ戻る.
+  // 各stepに _om(元midi)/_oi(元の並び順)を最初に一度だけ記録.
+  arr.forEach((s,i)=>{ if(s._om===undefined) s._om=s.midi; if(s._oi===undefined) s._oi=i; });
+  // まず元の並び・元のmidiへ完全復元
+  arr.sort((a,b)=>a._oi-b._oi);
+  arr.forEach(s=>{ s.midi=s._om; });
+  // その上で、現在ONのものだけを適用
+  if(iv.retro) arr.reverse();          // 逆再生(順序反転)
+  if(iv.pitch) invertPitch(arr);       // 音程反転
+  buildGrid(voice); if(voice==='pulse')drawPulseCurve();
+}
+function toggleInvert(voice,kind){
+  if(typeof pushUndo==='function')pushUndo();
+  INVERT[voice][kind]=!INVERT[voice][kind];
+  applyInvert(voice);                  // 常に«元から»再計算 → OFFで戻る、組み合わせも壊れない
+  if(typeof allNotesOff==='function')allNotesOff();   // 反転で宙に浮いた音を消す
+  const b=document.getElementById('inv'+voice+kind); if(b)b.classList.toggle('act',INVERT[voice][kind]);
+  jLog(voice+' '+(kind==='pitch'?'音程反転':'逆再生')+': '+(INVERT[voice][kind]?'ON':'OFF'));
+}
+
+// ── PRIME GOVERNANCE — which prime "colours" the whole piece. ──
+// 3 = skeleton (fifths, decisive, static-strong / Pythagorean)
+// 5 = colour   (thirds, lyrical, emotional / sings)
+// 7 = otherworld(natural 7th, blues/raga, floating, furthest from ET)
+const PRIME = {
+  governing: 3,
+};
+// the musical character of each governing prime, applied across all layers.
+const PRIME_CHAR = {
+  3: { name:'3 — 骨格(5度・力強い・静的)', accentEvery:3, leapDegrees:[3,4], tuplet:3, poly:[3,5] },
+  5: { name:'5 — 色彩(3度・叙情・歌う)',   accentEvery:5, leapDegrees:[2,5], tuplet:5, poly:[5,3] },
+  7: { name:'7 — 異界(自然7度・浮遊)',     accentEvery:7, leapDegrees:[6,4], tuplet:7, poly:[7,5] },
+  9: { name:'9 — テンション(9th・3²・混じる)', accentEvery:9, leapDegrees:[1,5], tuplet:9, poly:[9,7] },
+  11:{ name:'11 — 極北(♯4・最も遠い・宙吊り)', accentEvery:11,leapDegrees:[6,1], tuplet:11,poly:[11,7] },
+};
+function primeChar(){ return PRIME_CHAR[PRIME.governing]||PRIME_CHAR[3]; }
+// ── MPE — per-note individual expression (発信側でしか作れない道具). ──
+// MTS-ESP handles tuning, so we send NO pitch bend (it would fight MTS-ESP).
+// Instead: per-note timbre (CC74 "slide") + a pressure/brightness contour, so each
+// note carries its own character — a way to imprint an artistic image per note.
+const MPE = {
+  on:false,
+  slide:{drone:0.3, pulse:0.5, orn:0.6},   // CC74 amount (brightness/timbre) per voice
+  perNoteVar:0.4,                          // how much each note's character varies
+  contour:'arc',                           // 'arc' | 'rise' | 'fall' | 'flat'
+};
+function mpeCC74(voice, idx, len){
+  if(!MPE.on) return null;
+  const base = (MPE.slide[voice]||0);
+  // contour across the phrase gives a shape; perNoteVar adds individuality
+  let shape;
+  const t = len>1 ? (idx%len)/(len-1) : 0.5;
+  if(MPE.contour==='arc') shape=Math.sin(t*Math.PI);
+  else if(MPE.contour==='rise') shape=t;
+  else if(MPE.contour==='fall') shape=1-t;
+  else shape=0.5;
+  let val = base*0.5 + shape*base*0.5;
+  val *= (1 + (Math.random()*2-1)*MPE.perNoteVar*0.3);   // per-note individuality
+  return Math.max(0,Math.min(127, Math.round(val*127)));
+}
+
+// ── CHORD TASTES — Jamal/Ciranda-style colours. each step can be tinted; when lit,
+// the chord tones merge with the note directly above it (即興でコードが瞬間的に踊る).
+// intervals are semitone offsets ABOVE the note. 2-4 notes selectable via chordSize.
+const CHORD_TASTES=[
+  {name:'—',           iv:[]},
+  {name:'min7 冷たい浮遊', iv:[3,7,10]},
+  {name:'maj7 解決',     iv:[4,7,11]},
+  {name:'dom7 緊張',     iv:[4,7,10]},
+  {name:'min9 開いた',    iv:[3,7,10,14]},
+  {name:'maj9 Lydian',  iv:[4,7,11,14]},
+  {name:'dom7#9 Hendrix',iv:[4,10,15]},
+  {name:'dom7alt 最大緊張',iv:[4,8,10]},
+  {name:'sus4 解決しない', iv:[5,7,10]},
+  {name:'sus2 問い',     iv:[2,7,9]},
+  {name:'quartal McCoy', iv:[5,10,15]},
+  {name:'min7b5 暗',     iv:[3,6,10]},
+  {name:'maj7#11 浮く',   iv:[4,7,11,18]},
+  {name:'6/9 明るい',     iv:[4,9,14]},
+  {name:'aug 重力喪失',    iv:[4,8]},
+];
+// per-step chord tint (taste index) for pulse and ornament. 0 = none.
+let pulseChord=[], ornChord=[];
+let CHORD_TASTE={pulse:1, orn:1};   // which taste the "brush" paints
+let CHORD_SIZE={pulse:3, orn:3};    // 2-4 notes
+function buildChordRow(voice){
+  ensureChordArrays();
+  const rowId=voice==='pulse'?'pulseChordRow':'ornChordRow';
+  const row=document.getElementById(rowId); if(!row)return;
+  const arr=voice==='pulse'?pulseChord:ornChord;
+  const n=voice==='pulse'?pulseSteps.length:ornSteps.length;
+  let html='';
+  for(let i=0;i<n;i++){ html+='<div class="chord-cell'+(arr[i]?' lit':'')+'" onclick="paintChord(\''+voice+'\','+i+')" title="'+(arr[i]?CHORD_TASTES[arr[i]].name:'クリックで色付け')+'"></div>'; }
+  row.innerHTML=html;
+}
+function populateChordTastes(){
+  ['pulse','orn'].forEach(function(voice){
+    const sel=document.getElementById(voice+'ChordTaste'); if(!sel)return;
+    sel.innerHTML=CHORD_TASTES.map(function(t,i){ return '<option value="'+i+'"'+(i===CHORD_TASTE[voice]?' selected':'')+'>'+t.name+'</option>'; }).join('');
+  });
+}
+function ensureChordArrays(){
+  while(pulseChord.length<pulseSteps.length) pulseChord.push(0);
+  while(ornChord.length<ornSteps.length) ornChord.push(0);
+  pulseChord.length=pulseSteps.length; ornChord.length=ornSteps.length;
+}
+function paintChord(voice,idx){
+  ensureChordArrays();
+  const arr=voice==='pulse'?pulseChord:ornChord;
+  arr[idx]= arr[idx]?0:CHORD_TASTE[voice];   // toggle paint
+  buildChordRow(voice);
+}
+function setChordTaste(voice,v){ CHORD_TASTE[voice]=parseInt(v); }
+function setChordSize(voice,v){ CHORD_SIZE[voice]=Math.max(2,Math.min(4,parseInt(v))); }
+// chord tones for a step (above the note), respecting chordSize
+function chordTonesFor(voice,idx){
+  const arr=voice==='pulse'?pulseChord:ornChord;
+  const t=arr[idx]; if(!t)return [];
+  const taste=CHORD_TASTES[t]; if(!taste||!taste.iv.length)return [];
+  return taste.iv.slice(0, CHORD_SIZE[voice]-1+1).slice(0, Math.max(0,CHORD_SIZE[voice]-1));
+}
+
+// ── MACRO 即興 — 4 one-button scene triggers (5 elements each). ──
+// element keys map to controls/engine. Execute applies; press again reverts to BASE
+// (the current left-panel state, captured live); pressing another macro switches.
+const MACRO_COUNT=4;
+const MACROS=[];               // each: {drone,scale,prime,root,pattern}
+let MACRO_ARMED=-1;            // which macro is currently applied (-1 = base)
+let MACRO_APPLIED_SNAP=null;   // JSON of the scene as applied, to detect dropdown edits
+let MACRO_BASE=null;          // snapshot of base state to revert to
+function defaultMacro(i){
+  const scales=Object.keys(MODES); const drones=Object.keys(DRONE_TYPES);
+  // seed each macro with a different flavour so they're useful out of the box
+  const seeds=[
+    {drone:'fifth',      scale:'dorian',    prime:'3', root:'64', pattern:'salvador', drift:'off',
+     rhythm:{drone:{rate:'4分',rhythm:'off',k:3,n:8,groups:[2,2,3],rot:0,on:false},pulse:{rate:'8分',rhythm:'euclid',k:3,n:8,groups:[3,2,2],rot:0,on:true},orn:{rate:'16分',rhythm:'euclid',k:5,n:16,groups:[2,2,3],rot:0,on:true}}},   // M1: トレシーヨ+ボサノヴァ(ブラジル)
+    {drone:'rootless',   scale:'lydian',    prime:'5', root:'62', pattern:'ostinato', drift:'auto',
+     rhythm:{drone:{rate:'4分',rhythm:'off',k:3,n:8,groups:[2,2,3],rot:0,on:false},pulse:{rate:'8分',rhythm:'additive',k:5,n:8,groups:[2,2,3],rot:0,on:true},orn:{rate:'8分',rhythm:'euclid',k:7,n:12,groups:[2,2,3],rot:0,on:true}}},   // M2: ラチェニッツァ+西アフリカ鐘(バルカン×アフリカ)
+    {drone:'fifth7',     scale:'bhairavi',  prime:'7', root:'59', pattern:'call',     drift:'off',
+     rhythm:{drone:{rate:'4分',rhythm:'off',k:3,n:8,groups:[3,2,2],rot:0,on:false},pulse:{rate:'8分',rhythm:'additive',k:5,n:8,groups:[3,2,2],rot:0,on:true},orn:{rate:'16分',rhythm:'euclid',k:5,n:8,groups:[2,2,3],rot:0,on:true}}},   // M3: Rupak(インド)+シンキーヨ
+    {drone:'quartal_rl', scale:'malkauns',  prime:'5', root:'57', pattern:'salvador', drift:'auto',
+     rhythm:{drone:{rate:'付点8分',rhythm:'euclid',k:2,n:5,groups:[2,3],rot:0,on:true},pulse:{rate:'8分',rhythm:'euclid',k:4,n:9,groups:[2,2,2,3],rot:0,on:true},orn:{rate:'16分',rhythm:'euclid',k:7,n:16,groups:[2,2,3],rot:0,on:true}}},   // M4: ペルシャ+トルコ+サンバ(全開ポリメーター)
+  ];
+  return seeds[i]||seeds[0];
+}
+function snapshotBase(){
+  return {
+    drone:DRONE.type,
+    scale:currentMode,
+    prime:String(PRIME.governing),
+    root:document.getElementById('rootSel').value,
+    pattern:document.getElementById('pulsePattern').value,
+    drift:(DRIFT.auto?'auto':(DRIFT.manual!==0?'manual':'off')),
+    rhythm:JSON.parse(JSON.stringify(TRACK)),   // ★リズムセクション(各トラックのrate/rhythm/k/n/groups/rot/on)
+  };
+}
+function applyScene(s){
+  // drone
+  if(s.drone){ DRONE.type=s.drone; const d=document.getElementById('droneType'); if(d)d.value=s.drone; }
+  // scale
+  if(s.scale && MODES[s.scale]){ currentMode=s.scale; const m=document.getElementById('modeSel'); if(m)m.value=s.scale; const md=document.getElementById('modeDisplay'); if(md)md.textContent=getMode().name; }
+  // prime
+  if(s.prime){ const ps=document.getElementById('primeSel'); if(ps)ps.value=s.prime; PRIME.governing=parseInt(s.prime); const pc=primeChar(); POLY.droneCyc=pc.poly[0]; POLY.pulseCyc=pc.poly[1]; const pd=document.getElementById('polyDrone'); if(pd)pd.value=POLY.droneCyc; const pp=document.getElementById('polyPulse'); if(pp)pp.value=POLY.pulseCyc; if(typeof updatePolyLcm==='function')updatePolyLcm(); }
+  // root
+  if(s.root){ const r=document.getElementById('rootSel'); if(r)r.value=s.root; }
+  // pattern
+  if(s.pattern){ const pt=document.getElementById('pulsePattern'); if(pt)pt.value=s.pattern; }
+  // inner-voice drift (Jarrett) — off / auto / hold-manual
+  if(s.drift!==undefined){
+    if(s.drift==='auto'){ DRIFT.auto=true; }
+    else if(s.drift==='off'){ DRIFT.auto=false; DRIFT.manual=0; DRIFT.autoVal=0; }
+    else if(s.drift==='manual'){ DRIFT.auto=false; }  // keep current manual offset
+    const b=document.getElementById('btnDriftAuto'); if(b){b.style.color=DRIFT.auto?'var(--earth)':'';b.classList.toggle('act',DRIFT.auto);}
+    if(typeof updateDriftDisp==='function')updateDriftDisp();
+  }
+  // ★リズムセクション復元(M1-M4がリズムの場も持つ = リズム即興)
+  if(s.rhythm){
+    ['drone','pulse','orn'].forEach(v=>{ if(s.rhythm[v]) Object.assign(TRACK[v], s.rhythm[v]); });
+    if(typeof syncRhythmUI==='function'){ ['drone','pulse','orn'].forEach(v=>syncRhythmUI(v)); }
+    if(typeof allNotesOff==='function')allNotesOff();
+  }
+  generateAll();
+}
+function fireMacro(i){
+  if(MACRO_ARMED===i){
+    const nowSnap=JSON.stringify(MACROS[i]);
+    if(nowSnap===MACRO_APPLIED_SNAP){
+      // unchanged since last execute → revert to base
+      if(MACRO_BASE) applyScene(MACRO_BASE);
+      MACRO_ARMED=-1; MACRO_BASE=null; MACRO_APPLIED_SNAP=null; updateMacroUI();
+      jLog('マクロ'+(i+1)+' 解除 → 基本設定に戻る'); return;
+    } else {
+      // dropdowns changed → re-apply the new content (stay armed)
+      pushUndo();
+      applyScene(MACROS[i]);
+      MACRO_APPLIED_SNAP=nowSnap; updateMacroUI();
+      jLog('マクロ'+(i+1)+' 再実行(変更を反映)'); return;
+    }
+  }
+  // arming a macro: capture base only if we're coming from base (not switching)
+  if(MACRO_ARMED===-1){ MACRO_BASE=snapshotBase(); }
+  pushUndo();
+  applyScene(MACROS[i]);
+  MACRO_ARMED=i; MACRO_APPLIED_SNAP=JSON.stringify(MACROS[i]); updateMacroUI();
+  jLog('マクロ'+(i+1)+' 発火');
+}
+function setMacroField(i,field,val){ MACROS[i][field]=val; }
+function buildMacros(){
+  const bar=document.getElementById('macroBar'); if(!bar)return;
+  if(MACROS.length===0){ for(let i=0;i<MACRO_COUNT;i++)MACROS.push(defaultMacro(i)); }
+  const scales=Object.keys(MODES), drones=Object.keys(DRONE_TYPES);
+  const primes=['3','5','7','9','11'];
+  const roots=[]; for(let mi=36;mi<=76;mi++)roots.push(mi);
+  const rootName=function(mi){ const nm=['C','C#','D','E♭','E','F','F#','G','A♭','A','B♭','B']; return nm[mi%12]+(Math.floor(mi/12)-1); };
+  const patterns=['salvador','ostinato','call'];
+  let html='';
+  for(let i=0;i<MACRO_COUNT;i++){
+    const M=MACROS[i];
+    const sel=function(field,opts,labels){ return '<select onchange="setMacroField('+i+',\''+field+'\',this.value)">'+opts.map(function(o,k){ return '<option value="'+o+'"'+(String(M[field])===String(o)?' selected':'')+'>'+(labels?labels[k]:o)+'</option>'; }).join('')+'</select>'; };
+    html+='<div class="macro" id="macro'+i+'">'
+      +'<div class="macro-hd"><span class="macro-ttl">M'+(i+1)+'</span><button class="macro-go" onclick="fireMacro('+i+')">▶ 発火</button></div>'
+      +sel('drone',drones,drones.map(function(d){return DRONE_TYPES[d].name.split(' ')[0];}))
+      +sel('scale',scales,scales.map(function(s){return MODES[s].name;}))
+      +sel('prime',primes,primes.map(function(p){return '貫:'+p;}))
+      +sel('root',roots,roots.map(rootName))
+      +sel('pattern',patterns)
+      +sel('drift',['off','auto','manual'],['ドリフト:なし','ドリフト:AUTO','ドリフト:手動保持'])
+      +'<div style="display:flex;gap:.15rem;align-items:center;margin-top:.15rem"><button class="btn" onclick="captureAllToMacro('+i+')" style="font-size:.34rem;flex:1;color:var(--gold)" title="今の全設定(場・スケール・ルート・リズム)をこのMに保存">⤓ 全設定を取込</button><button class="btn" onclick="captureRhythmToMacro('+i+')" style="font-size:.34rem;flex:1" title="今のリズムだけをこのMに保存">⤓ リズム</button><span id="macroRhy'+i+'" style="font-size:.3rem;color:var(--earth)"></span></div>'
+      +'</div>';
+  }
+  bar.innerHTML=html;
+}
+function updateMacroUI(){
+  for(let i=0;i<MACRO_COUNT;i++){ const el=document.getElementById('macro'+i); if(el)el.classList.toggle('armed',MACRO_ARMED===i);
+    const ri=document.getElementById('macroRhy'+i); if(ri&&MACROS[i]){ const r=MACROS[i].rhythm; ri.textContent = r ? (['drone','pulse','orn'].filter(v=>r[v]&&r[v].on).map(v=>v[0].toUpperCase()).join('')||'—') : ''; }
+  }
+}
+// ★現在の各トラックのリズム設定を、このMに保存(リズム即興)
+// ★今の«全設定»(場・スケール・ルート・パターン・ドリフト・リズム)をこのMに保存
+function captureAllToMacro(i){
+  if(!MACROS[i])return;
+  MACROS[i]=snapshotBase();   // snapshotBaseが全状態(リズム含む)を捕まえる
+  // ドロップダウンUIも同期
+  if(typeof buildMacros==='function'){ buildMacros(); }
+  if(MACRO_ARMED===i) MACRO_APPLIED_SNAP=JSON.stringify(MACROS[i]);
+  updateMacroUI();
+  jLog('M'+(i+1)+' に今の全設定を保存');
+}
+function captureRhythmToMacro(i){
+  if(!MACROS[i])return;
+  MACROS[i].rhythm=JSON.parse(JSON.stringify(TRACK));
+  updateMacroUI();
+  jLog('M'+(i+1)+' に現在のリズムを取込');
+}
+function toggleMpe(){ MPE.on=!MPE.on; const b=document.getElementById('btnMpe'); if(b){b.textContent='MPE: '+(MPE.on?'ON':'OFF');b.style.color=MPE.on?'var(--earth)':'';} const c=document.getElementById('mpeCtl'); if(c)c.style.display=MPE.on?'block':'none'; jLog(MPE.on?'MPE ON — 各音にCC74で個性。君のイメージを音ごとに。':'MPE OFF'); }
+function setMpe(path,val){ const v=parseInt(val)/100; if(path.indexOf('slide.')===0){ MPE.slide[path.split('.')[1]]=v; } else { MPE[path]=v; } const idmap={'slide.drone':'mpeDrone','slide.pulse':'mpePulse','slide.orn':'mpeOrn','perNoteVar':'mpeVar'}; const lbl=document.getElementById(idmap[path]+'V'); if(lbl)lbl.textContent=val; }
+function setGL(path,val){
+  const v=parseInt(val); const [k,voice]=path.split('.');
+  GATELEN[k][voice]=v;
+  const idmap={'length.drone':'lenDrone','gate.drone':'gateDrone','length.pulse':'lenPulse','gate.pulse':'gatePulse','length.orn':'lenOrn','gate.orn':'gateOrn'};
+  const lbl=document.getElementById(idmap[path]+'V'); if(lbl)lbl.textContent=val;
+}
+function setExpr(path,val){
+  const v=parseInt(val)/100;
+  if(path.indexOf('legato.')===0){ EXPRESSION.legato[path.split('.')[1]]=v; }
+  else { EXPRESSION[path]=v; }
+  const id={'legato.drone':'legDrone','legato.pulse':'legPulse','legato.orn':'legOrn','velArc':'velArc','humanize':'humanize','lenBreath':'lenBreath'}[path];
+  const lbl=document.getElementById(id+'V'); if(lbl)lbl.textContent=val;
+  if(typeof drawVelCanvas==='function') drawVelCanvas();
+}
+function setPrime(p){
+  PRIME.governing=parseInt(p);
+  const pc=primeChar();
+  // unify the polyrhythm cycles to the prime's signature
+  POLY.droneCyc=pc.poly[0]; POLY.pulseCyc=pc.poly[1];
+  const pd=document.getElementById('polyDrone'); if(pd)pd.value=POLY.droneCyc;
+  const pp=document.getElementById('polyPulse'); if(pp)pp.value=POLY.pulseCyc;
+  updatePolyLcm();
+  generateAll();
+  pLog('貫く素数 = '+pc.name);
+}
+
+// 3:5 POLYRHYTHM engine — drone and pulse turn on independent cycles,
+// realigning only at LCM(3,5)=15. The sustained mismatch is the suspension.
+// ══════════════════════════════════════════════════════
+//  RHYTHM ENGINE — 世界のリズムを«二つの原理»で生成
+//  ① ユークリッド(分割): Bjorklundアルゴリズム. kヒットをn stepに最も均等に分散.
+//     Toussaint 2005: 世界中のリズムがE(k,n)で表せる(インドtala除く).
+//  ② 加算(additive): 短(2)長(3)を足す. アクサク(バルカン/トルコ)・tala構造.
+// ══════════════════════════════════════════════════════
+// Bjorklund: E(k,n) → 長さnのbool配列, k個のtrue が最も均等に分散
+function euclidRhythm(k, n){
+  k=Math.max(0,Math.min(n,k|0)); n=Math.max(1,n|0);
+  if(k===0) return new Array(n).fill(false);
+  if(k===n) return new Array(n).fill(true);
+  // Bjorklund本体(正しい実装): a個の[1..]グループとb個の[0..]グループを、
+  // 短い方の個数が1以下になるまで、前から結合していく.
+  let a=k, b=n-k;
+  let A=[], B=[];
+  for(let i=0;i<a;i++) A.push([true]);
+  for(let i=0;i<b;i++) B.push([false]);
+  while(B.length>1){
+    const cnt=Math.min(A.length, B.length);
+    const nA=[];
+    for(let i=0;i<cnt;i++) nA.push(A[i].concat(B[i]));
+    let leftover;
+    if(A.length>cnt) leftover=A.slice(cnt);   // Aが余る
+    else leftover=B.slice(cnt);               // Bが余る
+    A=nA; B=leftover;
+  }
+  return A.concat(B).flat();
+}
+// 回転: リズムを rot ステップ回す. rot=0で純粋なBjorklund出力、
+// 任意のrotで«民族リズムらしい開始点»に. 君が«全ての可能性»を試せる.
+function rotateRhythm(arr, rot){
+  const n=arr.length; if(n===0) return arr;
+  rot=((rot%n)+n)%n;
+  return arr.slice(rot).concat(arr.slice(0,rot));
+}
+// ユークリッドの名前付きプリセット(Toussaint原典の実データ)
+const EUCLID_PRESETS = {
+  'E(2,5) ペルシャ/Take Five':      [2,5],
+  'E(3,4) カッワーリー':            [3,4],
+  'E(3,7) ブルガリア/Money':        [3,7],
+  'E(3,8) トレシーヨ/ハバネラ':      [3,8],
+  'E(4,9) トルコ・アクサク':         [4,9],
+  'E(5,8) シンキーヨ':              [5,8],
+  'E(5,12) 南アフリカ/Venda':       [5,12],
+  'E(5,16) ボサノヴァ':             [5,16],
+  'E(7,8) トゥアレグ':              [7,8],
+  'E(7,12) 西アフリカ鐘':           [7,12],
+  'E(7,16) サンバ/ブラジル':        [7,16],
+  'E(9,16) 中央アフリカ':           [9,16],
+  'E(4,7) ルーマニア':              [4,7],
+  'E(11,24) アカ・ピグミー':        [11,24],
+};
+// 加算リズム: グループ配列[2,2,3]→ 各グループの«頭»でヒット. 長さ=Σgroups.
+function additiveRhythm(groups){
+  const total=groups.reduce((a,b)=>a+b,0);
+  const arr=new Array(total).fill(false);
+  let pos=0;
+  for(const g of groups){ arr[pos]=true; pos+=g; }   // 各グループ頭にアクセント(ヒット)
+  return arr;
+}
+// 加算の名前付きプリセット(実データ: バルカン・アクサク・インドtala構造)
+const ADDITIVE_PRESETS = {
+  '2+3 (アクサク最小 Q-S)':        [2,3],
+  '3+2+2 (Rupak 7拍/インド)':      [3,2,2],
+  '2+2+3 (ラチェニッツァ 7/8)':     [2,2,3],
+  '2+2+2+3 (Blue Rondo 9/8)':      [2,2,2,3],
+  '2+3+2+3 (Jhaptal 10拍/インド)': [2,3,2,3],
+  '3+3+2 (クルド 8/8)':            [3,3,2],
+  '2+2+2+2+3 (11/8)':             [2,2,2,2,3],
+  '5+2+3+4 (Dhamar 14拍/インド)':  [5,2,3,4],
+  '3+2+3+2+2 (12/8 変則)':         [3,2,3,2,2],
+};
+
+const POLY = {
+  on:        false,
+  droneCyc:  3,    // drone re-accents every 3 grid units
+  pulseCyc:  5,    // pulse phrase turns every 5 grid units
+  ornCyc:    7,    // ornament adds a third prime (3:5:7 → LCM 105) if desired
+  grid:      0,    // running uniform-grid counter
+};
+
+// ══════════════════════════════════════════════════════
+//  TRACK RHYTHM — 各トラック独立の«速さ×ステップ数×リズム×回転»
+//  真のポリリズム/ポリメーター. 3声が独立した時間の原理を持つ.
+// ══════════════════════════════════════════════════════
+// レート: マスター最小単位(=16分音符)の«何倍»でそのトラックが1歩進むか.
+//   数が小さいほど速い. 3連符・付点も含む«かなりの種類».
+const RATE_TABLE = {
+  '全音符':        16,
+  '2分':           8,
+  '付点4分':        6,
+  '4分':           4,
+  '3連4分(2拍3連)': 8/3,
+  '付点8分':        3,
+  '8分':           2,
+  '3連8分':        4/3,
+  '16分':          1,
+  '3連16分':       2/3,
+  '32分':          0.5,
+};
+// 各トラックの状態. rhythm='off'なら従来通り(全stepオン、既存挙動).
+const TRACK = {
+  drone: { rate:'4分',  rhythm:'off', k:3, n:8, groups:[2,2,3], rot:0, on:false },
+  pulse: { rate:'8分',  rhythm:'off', k:5, n:8, groups:[3,2,2], rot:0, on:false },
+  orn:   { rate:'16分', rhythm:'off', k:7, n:12,groups:[2,2,3], rot:0, on:false },
+};
+// あるトラックの«現在のリズムパターン»(bool配列)を返す. rhythm種別で分岐.
+function trackPattern(voice){
+  const t=TRACK[voice]; if(!t||t.rhythm==='off') return null;
+  let pat;
+  if(t.rhythm==='euclid') pat=euclidRhythm(t.k, t.n);
+  else if(t.rhythm==='additive') pat=additiveRhythm(t.groups);
+  else return null;
+  return rotateRhythm(pat, t.rot);
+}
+// ポリメーターが有効か(どれか1トラックでもrate/rhythmを独立指定してるか)
+function polymeterActive(){ return TRACK.drone.on || TRACK.pulse.on || TRACK.orn.on; }
+// マスターグリッド(16分単位)のカウンタ. 各トラックが自分のrateで進む.
+const MASTER = { grid:0, patIdx:{drone:0,pulse:0,orn:0} };
+// ── リズムUI制御 ──
+function setTrackRhythm(v, key, val){
+  const t=TRACK[v]; if(!t) return;
+  if(key==='mode'){ t.rhythm=val; t.on=(val!=='off');
+    const er=document.getElementById('rhy_'+v+'_euclidrow'); if(er)er.style.display=(val==='euclid')?'':'none';
+    const ar=document.getElementById('rhy_'+v+'_addrow'); if(ar)ar.style.display=(val==='additive')?'':'none';
+  }
+  else if(key==='rate') t.rate=val;
+  else if(key==='k') t.k=Math.max(0,parseInt(val)||0);
+  else if(key==='n') t.n=Math.max(1,parseInt(val)||1);
+  else if(key==='rot') t.rot=parseInt(val)||0;
+  else if(key==='groups') t.groups=val.split(',').map(x=>Math.max(1,parseInt(x.trim())||1)).filter(x=>x);
+  vizRhythm(v);
+  if(typeof allNotesOff==='function')allNotesOff();
+}
+function applyEuclidPreset(v,name){ if(!name||!EUCLID_PRESETS[name])return; const [k,n]=EUCLID_PRESETS[name]; TRACK[v].k=k;TRACK[v].n=n;TRACK[v].rot=0;
+  const ke=document.getElementById('rhy_'+v+'_k');if(ke)ke.value=k; const ne=document.getElementById('rhy_'+v+'_n');if(ne)ne.value=n; const re=document.getElementById('rhy_'+v+'_rot');if(re)re.value=0; vizRhythm(v); }
+function applyAddPreset(v,name){ if(!name||!ADDITIVE_PRESETS[name])return; TRACK[v].groups=ADDITIVE_PRESETS[name].slice(); TRACK[v].rot=0;
+  const ge=document.getElementById('rhy_'+v+'_groups');if(ge)ge.value=TRACK[v].groups.join(','); vizRhythm(v); }
+function vizRhythm(v){
+  const el=document.getElementById('rhy_'+v+'_viz'); if(!el)return;
+  const pat=trackPattern(v);
+  el.textContent = pat ? pat.map(x=>x?'●':'·').join('') : '';
+}
+function syncRhythmUI(v){
+  const t=TRACK[v]; if(!t)return;
+  const md=document.getElementById('rhy_'+v+'_mode'); if(md)md.value=t.rhythm;
+  const rt=document.getElementById('rhy_'+v+'_rate'); if(rt)rt.value=t.rate;
+  const ke=document.getElementById('rhy_'+v+'_k'); if(ke)ke.value=t.k;
+  const ne=document.getElementById('rhy_'+v+'_n'); if(ne)ne.value=t.n;
+  const re=document.getElementById('rhy_'+v+'_rot'); if(re)re.value=t.rot;
+  const re2=document.getElementById('rhy_'+v+'_rot2'); if(re2)re2.value=t.rot;
+  const ge=document.getElementById('rhy_'+v+'_groups'); if(ge)ge.value=(t.groups||[]).join(',');
+  const er=document.getElementById('rhy_'+v+'_euclidrow'); if(er)er.style.display=(t.rhythm==='euclid')?'':'none';
+  const ar=document.getElementById('rhy_'+v+'_addrow'); if(ar)ar.style.display=(t.rhythm==='additive')?'':'none';
+  vizRhythm(v);
+}
+function initRhythmUI(){
+  ['drone','pulse','orn'].forEach(v=>{
+    const rs=document.getElementById('rhy_'+v+'_rate');
+    if(rs){ rs.innerHTML=Object.keys(RATE_TABLE).map(r=>`<option value="${r}"${TRACK[v].rate===r?' selected':''}>${r}</option>`).join(''); }
+    // プリセットドロップダウンを埋める
+    document.querySelectorAll('#rhy_'+v+'_euclidrow select').forEach(sel=>{
+      if(sel.onchange && sel.getAttribute('onchange').includes('applyEuclid'))
+        sel.innerHTML='<option value="">プリセット…</option>'+Object.keys(EUCLID_PRESETS).map(k=>`<option value="${k}">${k}</option>`).join('');
+    });
+    document.querySelectorAll('#rhy_'+v+'_addrow select').forEach(sel=>{
+      if(sel.onchange && sel.getAttribute('onchange').includes('applyAdd'))
+        sel.innerHTML='<option value="">プリセット…</option>'+Object.keys(ADDITIVE_PRESETS).map(k=>`<option value="${k}">${k}</option>`).join('');
+    });
+  });
+}
+
+// キレ (Kire) engine
+const KIRE = {
+  level:   0,      // 0-1, how much "切れ" is active
+  decay:   0.95,
+  history: [],
+};
+
+// Drone breathing
+const DRONE = {
+  breathPhase: 0,
+  breathAmt:   0,
+  muted:       false,
+  type:        'fifth',   // which interval structure (see DRONE_TYPES)
+};
+// ── DRONE TYPES — the voicing of the held field (历史的に裏付けあり) ──
+// intervals = semitone offsets from root that sound in the drone.
+// MTS-ESP handles micro-tuning; we send pure Note On/Off, so "just intonation"
+// here means choosing the right scale-degree intervals (the ratios live in MTS-ESP).
+const DRONE_TYPES={
+  pure:    {name:'Pure — ルートのみ',          intervals:[0]},
+  fifth:   {name:'5度 (3:2) — 神聖・基本',      intervals:[0,7]},
+  fourth:  {name:'4度 (4:3) — 裏の緊張',        intervals:[0,5]},
+  octave:  {name:'8度 (2:1) — 豊かな単純',       intervals:[-12,0,12]},
+  sixth:   {name:'長6度 — Marwa的な浮遊',        intervals:[0,9]},
+  seventh: {name:'7度 — 5弦タンプーラの緊張',     intervals:[0,10]},
+  fifth7:  {name:'5度+7度 (PA-NI) — 豊かな緊張',  intervals:[0,7,10]},
+  sus2:    {name:'sus2 — 開いた問い',            intervals:[0,2,7]},
+  sus4:    {name:'sus4 — 解決しない',            intervals:[0,5,7]},
+  // ── Jarrett rootless voicings — ルートを省略、機能が宙吊り、どこへでも進める ──
+  rootless:   {name:'Rootless — +4,+10,+14 (Jarrett宙吊り)', intervals:[4,10,14]},
+  rootless_b: {name:'Rootless+ — +4,+10,+14,+18 (Lydian)',   intervals:[4,10,14,18]},
+  rootless_m: {name:'Rootless min — +3,+10,+14 (暗い宙吊り)', intervals:[3,10,14]},
+  quartal_rl: {name:'Quartal rootless — +5,+10,+15 (McCoy)',  intervals:[5,10,15]},
+  auto:    {name:'AUTO — スケール連動(ラーガの知恵)', intervals:null},
+};
+// ── 内声の半音ドリフト (Jarrett's inner-voice semitone motion) ──
+// the drone's MIDDLE voices shift by semitones — the source of Jarrett's colour shift.
+// AUTO = a slow, musical drift (my best image); manual = step the inner voice ±1 by button.
+const DRIFT = {
+  auto:false,
+  manual:0,        // accumulated manual semitone offset on the inner voice(s)
+  autoPhase:0,     // running phase for AUTO
+  autoVal:0,       // current AUTO semitone offset (-2..+2, eased)
+};
+// which voice indices count as "inner" (skip the lowest = the foundation, and the very top)
+function innerVoiceShift(){
+  if(DRIFT.auto) return DRIFT.autoVal + DRIFT.manual;
+  return DRIFT.manual;
+}
+
+// ══════════════════════════════════════════════════════
+//  ARC ENGINE — Jarrett-logic "designed improvisation" mode
+//  Structure fixed; content randomized each generation.
+//  A → Bridge1 → B(climax) → Bridge2 → C(return)
+//  Implements: rootless contention(3:5), delayed-root focus, semitone slip,
+//  contrary divergence/return, dwell escalation, descent gravity,
+//  >1-octave climax, every-note-chosen.
+// ══════════════════════════════════════════════════════
+const ARC = {
+  on:false, t0:0, baseRoot:42,
+  curRoot:0,        // current pedal root (semitones from baseRoot)
+  rootless:false, climax:false, octShift:0, nakiArmed:false,
+  bassDescend:0,    // contrary-motion: bass steps down at climax
+  _waveTop:0, _curScene:'',
+  spiral:0.15,      // ★螺旋の量: 0=不変(同じ弧の反復) → 1=劇的手前(めまい). 周回ごとの変異.
+  _lap:0,           // 現在の周回数
+};
+const ARC_OVERRIDE={active:false,degs:[0]};
+
+// ── ジャレット極意「手動」パレット — ARC OFF時に、声部ごとに取捨選択(ボタンインプロ) ──
+// ARC ON時は従来通りARCが自動制御. ARC OFF時はここのフラグが効く.
+// 既存のARC実装(声部固定の発火)を、そのまま«手動でも»使えるよう外出し.
+const MANEUVERS = {
+  drone: { rootless:false, contrary:false, octaveBreak:false, naki:false, dwell:false, transition:false, space:false },
+  pulse: { rootless:false, contrary:false, octaveBreak:false, naki:false, dwell:false, transition:false, space:false },
+  orn:   { rootless:false, contrary:false, octaveBreak:false, naki:false, dwell:false, transition:false, space:false },
+};
+// 各極意が«今»効いてるか(ARC自動 か 手動MANEUVERS か)を一元判定
+function maneuverOn(voice, key){
+  if(ARC.on){
+    // ARC ON: ARCの自動状態を見る. ただし«元々ARCが対象にしてた声部»だけ(ARC挙動を壊さない).
+    if(key==='rootless')    return voice==='drone' && ARC.rootless;
+    if(key==='contrary')    return voice==='drone' && ARC.bassDescend!==0;
+    if(key==='octaveBreak') return voice==='orn'   && ARC.climax && ARC.octShift>0;
+    if(key==='naki')        return voice==='orn'   && ARC.naki;
+    return false;
+  }
+  // ARC OFF: 手動パレット(3声部どれでも)
+  return !!(MANEUVERS[voice] && MANEUVERS[voice][key]);
+}
+function allNotesOff(){ if(midiOut)for(let c=0;c<16;c++)midiOut.send([0xB0|c,123,0]); }
+function toggleManeuver(voice,key){
+  if(typeof pushUndo==='function')pushUndo();
+  MANEUVERS[voice][key]=!MANEUVERS[voice][key];
+  allNotesOff();   // ★極意切替時、宙に浮いた音(長い滞在・跳んだ音)を消す → «戻らない»を断つ
+  const b=document.getElementById('mnv_'+voice+'_'+key);
+  if(b)b.classList.toggle('act',MANEUVERS[voice][key]);
+  jLog(voice+' '+key+': '+(MANEUVERS[voice][key]?'ON':'OFF'));
+}
+
+// ── PITCH-CLASS COLOR per field (offsets from that field's OWN root) ──
+// We follow Jarrett: not named scales, but the actual note-sets, by note-count.
+// minor field (like F#m / Em): 5 notes  = minor pentatonic [0,3,5,7,10]
+// major/home field (like E):   6 notes  = [0,2,4,7,9, and +5(4th) as color] = [0,2,4,5,7,9]→pick 6
+// We store as offsets from the field root.
+const FIELD_COLOR = {
+  minor:[0,3,5,7,10],          // 5 notes
+  home:[0,2,4,7,9,11],         // 6 notes (major + maj7 shimmer)
+  bright:[0,2,4,7,9,11],       // 6 notes
+  rootless:[4,7,9,2],          // 4 notes, NO root(0) → ambiguous float (3rd,5th,6th,9th)
+};
+
+// ── ARC TIMELINE as FIELDS + TRANSITIONS (every change is a connected glide) ──
+// kind: 'field' (stable) | 'glide' (connected transition) | 'climax' | 'ritard'
+// roots are semitone offsets from baseRoot. Home field = 0 (where user sets root).
+// Journey: home(0) → glide down -2 → field(-2) with restless -1 pokes → 
+//          climax in -2 (contrary motion, ONE octave break, one 泣き) →
+//          glide → bright fields → glide back → home(0) → ritard.
+const ARC_TL = [
+  {kind:'field', root:0,  color:'aeolian', dur:55, poke:false, tease:-2},   // home minor, tease the -2
+  {kind:'glide', from:0,  to:-2,         dur:22},                          // CONNECTED down to -2
+  {kind:'field', root:-2, color:'dorian',  dur:60, poke:true},              // -2 home, restless -1 pokes
+  {kind:'climax',root:-2, color:'dorian',  dur:45},                         // contrary climax, octave×1, 泣き
+  {kind:'glide', from:-2, to:3,          dur:18},                          // up to bright (G-ish)
+  {kind:'field', root:3,  color:'lydian',dur:34},                         // bright field
+  {kind:'glide', from:3,  to:-3,         dur:18},                          // to D-ish
+  {kind:'field', root:-3, color:'lydian',dur:30},                         // 
+  {kind:'glide', from:-3, to:0,          dur:22},                          // CONNECTED back home
+  {kind:'field', root:0,  color:'aeolian', dur:40, ritard:true},            // home, settle
+];
+// ── ARCカスタムモード: 君が«弧そのもの»を設計する. 自動=ARC_TL / カスタム=ARC_CUSTOM ──
+ARC.mode='auto';   // 'auto' | 'custom'
+let ARC_CUSTOM = JSON.parse(JSON.stringify(ARC_TL));   // 編集可能なコピー(初期は自動と同じ)
+function arcTL(){ return ARC.mode==='custom' ? ARC_CUSTOM : ARC_TL; }
+function arcTotal(){ return arcTL().reduce((s,x)=>s+x.dur,0); }
+
+// set the active note-color (override degrees) for a field root + color name
+function setColor(rootOff, colorName, stsOverride){
+  // ★君の設計: 自動モード=左上スケールが«物語の基本». カスタム=各場が個別(seg.color).
+  //   自動では、弧はルートと表情の旅. スケールは君が左上で決めた土台で統一.
+  //   移行の内部(rootless/home)は、色でなく«浮遊»の役なので自動でもそのまま使う.
+  let col;
+  const isFieldScale = MODES[colorName];   // dorian/aeolian等の«場のスケール»か(移行内部でないか)
+  if(ARC.mode!=='custom' && isFieldScale){
+    // 自動: 左上スケール(currentMode)を基本に. seg.colorのスケール名は無視(ルートの弧だけ生かす).
+    col = (MODES[currentMode]||MODES.dorian).degs.slice();
+  } else if(isFieldScale){
+    // カスタム: 各場の個別スケール(seg.color)に従う.
+    col = MODES[colorName].degs.slice();
+  } else {
+    col = (FIELD_COLOR[colorName]||FIELD_COLOR.minor).slice(); // 移行の内部: rootless/home
+  }
+  if(stsOverride && stsOverride.length){ col=stsOverride.slice(); }
+  ARC.curRoot=rootOff;
+  ARC_OVERRIDE.active=true;
+  ARC_OVERRIDE.degs = col.map(n=>(((rootOff+n)%12)+12)%12).sort((a,b)=>a-b);
+  generateAll();
+}
+// アーク進行表示: 上部に«今どの場か・進行%・実効ルート»を出す
+function updateArcProgress(now, seg, idx, local){
+  const box=document.getElementById('arcProgress'); if(!box) return;
+  const TL=arcTL(); const total=arcTotal();
+  const pct=total>0?Math.min(100,(now/total)*100):0;
+  const f=document.getElementById('arcProgFill'); if(f)f.style.width=pct.toFixed(1)+'%';
+  const info=document.getElementById('arcProgInfo');
+  if(info){
+    const NN=['C','C#','D','E♭','E','F','F#','G','A♭','A','B♭','B'];
+    const kindName={field:'場',glide:'移行',climax:'絶頂',ritard:'減速'}[seg.kind]||seg.kind;
+    const segRoot = (ARC.baseRoot||getRoot()) + (seg.kind==='glide'?(seg.to||0):(seg.root||0));
+    const noteName=NN[((segRoot%12)+12)%12];
+    const modeTxt=ARC.mode==='custom'?'カスタム':'自動';
+    let where;
+    const scaleName = (ARC.mode!=='custom' && MODES[seg.color])
+      ? (MODES[currentMode]?MODES[currentMode].name:currentMode)   // 自動: 左上スケール(発音と一致)
+      : (MODES[seg.color] ? MODES[seg.color].name : (seg.color||'')); // カスタム: 個別
+    if(seg.kind==='glide') where=`移行 ST${seg.from>=0?'+':''}${seg.from}→ST${seg.to>=0?'+':''}${seg.to}`;
+    else where=`${kindName} ST${(seg.root||0)>=0?'+':''}${seg.root||0} (${noteName}) ${scaleName}`;
+    info.textContent=`${modeTxt} ${idx+1}/${TL.length} · ${where} · ${(now/60|0)}:${String((now|0)%60).padStart(2,'0')}/${(total/60).toFixed(1)}分`;
+  }
+}
+function showArcProgress(on){
+  const box=document.getElementById('arcProgress'); if(box) box.style.display=on?'':'none';
+}
+// アーク動作中の«実効ルート»: 左上でなくARC基準を使う(堂々巡り防止)
+function getArcRoot(){ return ARC.on ? (ARC.baseRoot + ARC.curRoot) : getRoot(); }
+
+// find current segment + local phase
+function arcSeg(now){
+  const TL=arcTL();
+  let acc=0;
+  for(let i=0;i<TL.length;i++){
+    if(now < acc+TL[i].dur) return {seg:TL[i], idx:i, local:(now-acc)/TL[i].dur, acc};
+    acc+=TL[i].dur;
+  }
+  const last=TL.length-1;
+  return {seg:TL[last], idx:last, local:1, acc:acc-TL[last].dur};
+}
+
+let _arcLastIdx=-1;
+// ★螺旋の継ぎ目: 周回ごとに弧を«少しずつ»変異させる. 量はARC.spiralで.
+//   スタートは常に左上の磁場(baseRoot)で保証. 終点は自由. ループで辻褄が合う.
+function setArcSpiral(v){ ARC.spiral=Math.max(0,Math.min(1,(parseInt(v)||0)/100)); const d=document.getElementById('arcSpiralV'); if(d)d.textContent=v; }
+function onArcLap(){
+  const amt=ARC.spiral;
+  if(amt<=0.001){ _arcLastIdx=-1; return; }   // 0=不変(同じ弧の反復)
+  const TL=arcTL();
+  // 変異の«確率»と«大きさ»をspiralでスケール(少しずつ → 劇的手前).
+  TL.forEach((seg,i)=>{
+    if(i===0) return;   // 最初の場=スタートは左上で固定(君の«スタートの保証»)
+    if(seg.kind==='field' || seg.kind==='climax'){
+      // dur(場の長さ)をゆらす: ±(spiral*40%)
+      if(Math.random()<0.3+amt*0.5){
+        const base=seg._durBase||(seg._durBase=seg.dur);
+        seg.dur=Math.max(12, Math.round(base*(1+(Math.random()*2-1)*amt*0.6)));
+      }
+      // root(磁場の高さ)をゆらす: spiralが大きいほど遠くへ. ±(spiral*5半音まで)
+      if(Math.random()<amt*0.6){
+        const rb=(seg._rootBase!==undefined?seg._rootBase:(seg._rootBase=seg.root));
+        const swing=Math.round((Math.random()*2-1)*amt*5);
+        seg.root=rb+swing;
+      }
+    }
+  });
+  // 音符も少し作り直す(螺旋の«新しい顔»). mutatePulseは既存の小変化.
+  if(typeof mutatePulse==='function' && Math.random()<0.4+amt*0.5) mutatePulse();
+  if(amt>0.5 && typeof generateOrnament==='function' && Math.random()<amt*0.5) generateOrnament();
+  _arcLastIdx=-1;   // 次フレームで色を再適用
+}
+function driveArc(){
+  if(!ARC.on || !playing) return;
+  const total=arcTotal();
+  const raw=(Date.now()-ARC.t0)/1000;
+  // ★弧のループ: 全長に達したら«次の周回»へ. 時間を折り返す(円環でなく螺旋).
+  const lap=total>0?Math.floor(raw/total):0;
+  const now=total>0?(raw%total):raw;
+  if(lap!==ARC._lap){
+    ARC._lap=lap;
+    onArcLap();   // 継ぎ目: 周回ごとに«少しずつ»変異(螺旋). スタートは左上で保証済み.
+  }
+  const {seg,idx,local}=arcSeg(now);
+  updateArcProgress(now, seg, idx, local);
+
+  // reset transient flags each frame
+  ARC.rootless=false; ARC.climax=false; ARC.octShift=0; ARC.bassDescend=0;
+
+  // ---- FIELD ----
+  if(seg.kind==='field'){
+    if(idx!==_arcLastIdx){ setColor(seg.root, seg.color, seg.sts);
+      jLog('ARC '+(now/60|0)+':'+String((now|0)%60).padStart(2,'0')+' [磁場 '+seg.root+'] '+seg.color); }
+    // restless -1 pokes: twice within the field, dip to root-1 then snap back (the 短気 -3↔-2)
+    if(seg.poke){
+      const p1=(local>0.30&&local<0.40), p2=(local>0.62&&local<0.72);
+      if(p1||p2){ if(ARC.curRoot!==seg.root-1) setColor(seg.root-1, seg.color, seg.sts); }
+      else { if(ARC.curRoot!==seg.root) setColor(seg.root, seg.color, seg.sts); }
+    }
+    // tease (見え隠れ): hint toward the target by ONE semitone step, then retreat.
+    // Never jump the full distance — that was the sudden-move bug.
+    if(seg.tease!==undefined){
+      const dir=Math.sign(seg.tease-seg.root)||-1;
+      const inT=(local>0.80&&local<0.86);
+      if(inT){ if(ARC.curRoot!==seg.root+dir) setColor(seg.root+dir, 'rootless'); ARC.rootless=true; }
+      else if(local>=0.86){ if(ARC.curRoot!==seg.root) setColor(seg.root, seg.color, seg.sts); }
+    }
+    if(seg.ritard && JOURNEY.enabled){
+      // ★ARCの減速はJourneyシステムと«和音として»動く: Journey ONの時だけBPMに触れる.
+      //   Journey OFFなら、ARCはBPMを一切いじらない(独立王国をやめる).
+      const top=ARC._waveTop||(ARC._waveTop=Math.max(58,JOURNEY.bpm));
+      JOURNEY.bpm = top + (42-top)*local;   // slow to 42
+    }
+  }
+
+  // ---- GLIDE (connected: settle → rootless float → SEMITONE WALK → land) ----
+  // No jumps. The only root motion is ±1 per step. Target is felt via the float's
+  // ambiguity, not a sudden flash. This is what kills the "素人 sudden move".
+  else if(seg.kind==='glide'){
+    if(idx!==_arcLastIdx){ jLog('ARC 移行 '+seg.from+'→'+seg.to+' (ルート抜き→半音歩行→着地)'); }
+    const dir = Math.sign(seg.to - seg.from) || -1;
+    const steps = Math.abs(seg.to - seg.from);
+    // phase 1 (0-0.20): hold FROM, begin lifting root (rootless onset)
+    if(local<0.20){
+      ARC.rootless = (local>0.10);
+      if(ARC.curRoot!==seg.from) setColor(seg.from, local>0.10?'rootless':'home');
+    // phase 2 (0.20-0.40): full rootless float on FROM (3:5 contention)
+    } else if(local<0.40){
+      ARC.rootless=true;
+      if(ARC.curRoot!==seg.from) setColor(seg.from,'rootless');
+    // phase 3 (0.40-0.85): SEMITONE WALK from→to, strictly ±1 per step (the 波)
+    } else if(local<0.85){
+      const w=(local-0.40)/0.45;                  // 0..1 across the walk
+      const stepNow = seg.from + dir*Math.min(steps, Math.round(w*steps));
+      ARC.rootless = (w<0.65);                     // float until almost landed
+      if(ARC.curRoot!==stepNow) setColor(stepNow, w<0.65?'rootless':'home');
+    // phase 4 (0.85-1): land, root+5th settles
+    } else {
+      if(ARC.curRoot!==seg.to) setColor(seg.to,'home');
+    }
+  }
+
+  // ---- CLIMAX (contrary motion: top rises, bass descends; ONE octave break; one 泣き) ----
+  else if(seg.kind==='climax'){
+    if(idx!==_arcLastIdx){ setColor(seg.root, seg.color, seg.sts); ARC.nakiArmed=true;
+      jLog('ARC 昇天 — 対位法(上昇×下降ベース階段)・オクターブ1回・泣き少し'); }
+    // contrary motion: bass steps DOWN as we approach apex (brain feels ASCENT)
+    ARC.bassDescend = -Math.round(local*4);       // bass drifts down up to 4 semitones (stairs)
+    // build: drift opens the inner voices as we rise
+    DRIFT.manual = Math.round(local*3);
+    // THE single apex: octave break, brief, only near peak (local 0.55-0.70)
+    if(local>0.55 && local<0.70){ ARC.octShift=12; ARC.climax=true; }
+    // 泣き: one careful appoggiatura just after the apex
+    if(local>0.70 && local<0.76 && ARC.nakiArmed){ ARC.naki=true; ARC.nakiArmed=false; }
+    else { ARC.naki=false; }
+  }
+
+  _arcLastIdx=idx;
+}
+
+// AUTO: choose the drone interval from the scale itself, tanpura-style.
+// prefer 5th; if scale has no 5th, use 4th; if neither, use 6th, then 7th.
+function autoDroneIntervals(){
+  const degs=getMode().degs;
+  const has=function(iv){ return degs.indexOf(iv)>=0; };
+  if(has(7)) return [0,7];           // Pa present → 5th
+  if(has(5)) return [0,5];           // no Pa, Ma present → 4th
+  if(has(9)) return [0,9];           // Marwa-like → 6th
+  if(has(10)||has(11)) return [0, has(11)?11:10]; // → 7th
+  return [0];                         // fallback: pure
+}
+function droneIntervals(){
+  if(DRONE.type==='auto') return autoDroneIntervals();
+  return (DRONE_TYPES[DRONE.type]||DRONE_TYPES.fifth).intervals;
+}
+
+// Ornament density (follows BPM)
+let ornHistory = [];
+
+// MIDI Slave
+const SLAVE = {
+  active:false,running:false,clockInPort:null,
+  ppqn:24,pulsesPerStep:6,pulseCount:0,
+  bpmSmoothed:60,bpmAlpha:0.15,lastPulseTime:0,
+  tempoMode:'follow',   // 'follow' = obey Ableton tempo; 'accel' = keep Salvador's 60→150 curve on top
+};
+// the journey's acceleration RATIO at the current elapsed time (1.0 = start, end/start at finish)
+function journeyRatio(){
+  const dur=parseInt(document.getElementById('journeyDur').value)||300;
+  const mode=document.getElementById('accelMode').value;
+  if(dur===0||mode==='manual') return 1;
+  const t=Math.min(1, JOURNEY.elapsed/dur);
+  const start=parseInt(document.getElementById('bpmStart').value)||60;
+  const end=parseInt(document.getElementById('bpmEnd').value)||150;
+  let bpm;
+  if(mode==='linear') bpm=start+(end-start)*t;
+  else if(mode==='ease'){ const e=t<0.5?2*t*t:-1+(4-2*t)*t; bpm=start+(end-start)*e; }
+  else if(mode==='step'){ const bs=[start,start+(end-start)*0.2,start+(end-start)*0.45,start+(end-start)*0.75,end]; bpm=bs[Math.min(4,Math.floor(t*4))]; }
+  else bpm=start;
+  return bpm/start;   // ratio ≥ 1
+}
+
+let audioCtx = null, _keepNode = null;
+
+// ══════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════
+function getRoot() { return parseInt(document.getElementById('rootSel').value)||64; }
+function getMode() {
+  if(ARC.on && ARC_OVERRIDE.active){ return {name:'ARC', degs:ARC_OVERRIDE.degs}; }
+  return MODES[currentMode]||MODES.dorian;
+}
+function getCurrentBpm() { return JOURNEY.bpm; }
+
+function getScalePool(loOff, hiOff){
+  const root=getArcRoot(), mode=getMode();
+  const lo=root+(loOff||-14), hi=root+(hiOff||22);
+  const pool=[];
+  for(let o=-2;o<=3;o++) mode.degs.forEach(d=>{
+    const m=root+d+o*12;
+    if(m>=lo&&m<=hi) pool.push(m);
+  });
+  return [...new Set(pool)].sort((a,b)=>a-b);
+}
+
+function snapToMode(midi){
+  const root=getArcRoot(), degs=getMode().degs;
+  const pcs=degs.map(d=>(root+d)%12);
+  const pc=midi%12;
+  let best=pcs[0],bd=12;
+  pcs.forEach(sp=>{const d=Math.min(Math.abs(sp-pc),12-Math.abs(sp-pc));if(d<bd){bd=d;best=sp;}});
+  let nm=Math.floor(midi/12)*12+best;
+  if(Math.abs(nm-midi)>6)nm+=midi>nm?12:-12;
+  return Math.max(24,Math.min(108,nm));
+}
+
+function midiName(m){ return NOTE_NAMES[m%12]+(Math.floor(m/12)-1); }
+
+// ══════════════════════════════════════════════════════
+//  LAYER 1: DRONE — E + B 持続音
+// ══════════════════════════════════════════════════════
+function generateDrone(){
+  if(typeof _prevState!=='undefined') pushUndo();
+  const root=getArcRoot();
+  const ivs=droneIntervals();              // the chosen voicing (5th, 4th, sus2, auto, …)
+  // the lowest interval gets a low-octave reinforcement for depth
+  const lo=Math.min.apply(null,ivs);
+  const notes=ivs.map(function(iv){ return root+iv; });
+
+  droneSteps = [];
+  const cycleLen = 6;                        // 6 pulses = one measure (the "3" of 3:5)
+  for(let i=0;i<cycleLen;i++){
+    const beat=i%3;
+    if(beat===0){
+      // downbeat: low-octave depth + the full voicing, descending velocity
+      droneSteps.push({midi:root+lo-12, active:true, vel:0.42, dur:6, isLow:true, isInner:false});
+      notes.forEach(function(m,k){
+        // k===0 is the foundation (root or lowest); k>=1 are inner/upper voices that drift
+        droneSteps.push({midi:m, active:true, vel:0.36-k*0.05, dur:6, isLow:false, isInner:k>=1});
+      });
+    } else {
+      // weak beats: the voicing notes, lighter & probabilistic (breathing)
+      notes.forEach(function(m,k){
+        droneSteps.push({midi:m, active:Math.random()<(0.6-k*0.08), vel:0.20-k*0.02, dur:4, isLow:false, isInner:k>=1});
+      });
+    }
+  }
+
+  buildGrid('drone');
+  const label=notes.map(midiName).join(' + ');
+  const ed=document.getElementById('droneEDisp'); if(ed)ed.textContent=midiName(notes[0]);
+  const bd=document.getElementById('droneBDisp'); if(bd)bd.textContent=notes[1]!=null?midiName(notes[1]):'—';
+  const nd=document.getElementById('droneNoteDisp'); if(nd)nd.textContent=label;
+  dLog('↻ Drone ['+(DRONE_TYPES[DRONE.type]||{}).name+']: '+label);
+}
+function setDroneType(v){ DRONE.type=v; generateDrone(); }
+function updateDriftDisp(){ const d=document.getElementById('driftDisp'); if(d){ const s=innerVoiceShift(); d.textContent=(s>=0?'+':'')+s; } }
+function generateArc(){
+  // Structure is fixed (connected glides); "生成" re-seeds the randomized note choices.
+  if(ARC.on){
+    _arcLastIdx=-1;   // force re-apply of current segment's color next frame
+    // ★現在の弧セグメントのスケールを即適用(未再生でも発音準備を正す).
+    //   setColorが自動=左上/カスタム=個別を判定する. これが無いとARC_OVERRIDEが古いまま.
+    const _now=(playing && ARC.t0)?((Date.now()-ARC.t0)/1000):0;
+    const _s=arcSeg(_now).seg;
+    if(_s && _s.kind!=='glide') setColor(_s.root||0, _s.color, _s.sts);
+  }
+  pushUndo();
+  generateAll();   // ★実際に音符を作り直す(getArcRootでARCの弧に沿った新しい中身).
+  buildGrid('drone'); buildGrid('pulse'); buildGrid('orn');
+  const total=arcTotal();
+  const st=document.getElementById('arcStatus');
+  const base=(ARC.baseRoot||getRoot());
+  const names=['C','C#','D','E♭','E','F','F#','G','A♭','A','B♭','B'];
+  const rn=m=>names[(((base+m)%12)+12)%12];
+  // ★飾りをやめ、実際の弧(arcTL)から自動生成. システムに繋がった説明.
+  const TL=arcTL();
+  const parts=TL.map(seg=>{
+    if(seg.kind==='glide') return `〜${rn(seg.to)}`;
+    const sc=(ARC.mode!=='custom' && MODES[seg.color])?(MODES[currentMode]?MODES[currentMode].name:currentMode):(MODES[seg.color]?MODES[seg.color].name:seg.color);
+    const tag=seg.kind==='climax'?'↑':(seg.ritard?'⤵':'');
+    return `${rn(seg.root)} ${sc}${tag}`;
+  });
+  const modeTxt=ARC.mode==='custom'?'カスタム':'自動';
+  const desc=`${modeTxt}の弧 ${(total/60).toFixed(1)}分 · ${TL.length}場 : `+parts.join(' → ');
+  if(st)st.textContent=desc;
+  jLog(desc);
+}
+// ── ARCカスタムモード ──
+function toggleArcMode(){
+  if(typeof pushUndo==='function')pushUndo();
+  ARC.mode = ARC.mode==='custom' ? 'auto' : 'custom';
+  const b=document.getElementById('btnArcMode'); if(b) b.textContent='モード: '+(ARC.mode==='custom'?'カスタム':'自動');
+  const e=document.getElementById('btnArcEdit'); if(e) e.style.display = ARC.mode==='custom'?'':'none';
+  if(ARC.mode!=='custom'){ const ed=document.getElementById('arcEditor'); if(ed) ed.style.display='none'; }
+  _arcLastIdx=-1;   // 次フレームで色を再適用
+  jLog('ARCモード: '+(ARC.mode==='custom'?'カスタム(自分の弧)':'自動(既定の弧)'));
+}
+function toggleArcEditor(){
+  const ed=document.getElementById('arcEditor'); if(!ed) return;
+  const show = ed.style.display==='none';
+  ed.style.display = show?'':'none';
+  if(show) renderArcEditor();
+}
+const ARC_COLORS=['minor','home','bright','rootless'];
+const ARC_KINDS={field:'場',glide:'移行',climax:'絶頂',ritard:'減速'};
+function renderArcEditor(){
+  const box=document.getElementById('arcEditorRows'); if(!box) return;
+  box.innerHTML='';
+  ARC_CUSTOM.forEach((seg,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:.2rem;align-items:center;margin-bottom:.15rem;font-size:.36rem';
+    const kind=ARC_KINDS[seg.kind]||seg.kind;
+    let html=`<span style="flex:0 0 2.4rem;color:var(--earth)">${i+1}. ${kind}</span>`;
+    // root(場/絶頂) or from→to(移行)
+    if(seg.kind==='glide'){
+      const gr=(typeof getRoot==='function'?getRoot():42);
+      const fSt='ST'+((seg.from||0)>0?'+':'')+(seg.from||0);
+      const tSt='ST'+((seg.to||0)>0?'+':'')+(seg.to||0);
+      const fNm=NOTE_NAMES[(((gr+(seg.from||0))%12)+12)%12];
+      const tNm=NOTE_NAMES[(((gr+(seg.to||0))%12)+12)%12];
+      html+=`<label style="font-size:.32rem">from</label><input type="number" value="${seg.from||0}" onchange="arcEdit(${i},'from',this.value)" style="width:1.8rem;font-size:.34rem"><span style="font-size:.3rem;color:var(--earth)">${fSt}</span><span style="font-size:.3rem;color:var(--dim)">${fNm}</span>`;
+      html+=`<label style="font-size:.32rem">to</label><input type="number" value="${seg.to||0}" onchange="arcEdit(${i},'to',this.value)" style="width:1.8rem;font-size:.34rem"><span style="font-size:.3rem;color:var(--earth)">${tSt}</span><span style="font-size:.3rem;color:var(--dim)">${tNm}</span>`;
+    } else {
+      const r=seg.root||0;
+      const stTxt = 'ST'+(r>0?'+':'')+r;
+      const baseMidi = (typeof getRoot==='function'?getRoot():42) + r;
+      const nm = NOTE_NAMES[((baseMidi%12)+12)%12] + (Math.floor(baseMidi/12)-1);
+      html+=`<label style="font-size:.32rem">root</label><input type="number" value="${r}" onchange="arcEdit(${i},'root',this.value)" style="width:2rem;font-size:.34rem">`;
+      html+=`<span style="font-size:.32rem;color:var(--earth);flex:0 0 auto" title="中心音からの半音(ST表記)">${stTxt}</span>`;
+      html+=`<span style="font-size:.32rem;color:var(--dim);flex:0 0 auto" title="実際の音名(参考)">= ${nm}</span>`;
+      // ★スケール統一: 左上と同じ全MODESスケールから選べる(4色でなく数十)
+      const scaleOpts = Object.keys(MODES).map(k=>`<option value="${k}"${seg.color===k?' selected':''}>${MODES[k].name}</option>`).join('');
+      html+=`<select onchange="arcEdit(${i},'color',this.value)" style="font-size:.32rem;width:5rem" title="この場のスケール(左上と同じ言語)">`+scaleOpts+`</select>`;
+    }
+    html+=`<label style="font-size:.32rem">dur</label><input type="number" value="${seg.dur}" onchange="arcEdit(${i},'dur',this.value)" style="width:2.6rem;font-size:.34rem"><span style="font-size:.3rem;color:var(--dim)">秒</span>`;
+    html+=`<button class="btn" onclick="arcMoveSeg(${i},-1)" style="font-size:.32rem;padding:.04rem .2rem" title="上へ">↑</button>`;
+    html+=`<button class="btn" onclick="arcDelSeg(${i})" style="font-size:.32rem;padding:.04rem .2rem" title="削除">✕</button>`;
+    row.innerHTML=html;
+    box.appendChild(row);
+    // ★ST行: 場/絶頂は、そのcolorの«可能なST»を並べ、使用STを取捨選択できる
+    if(seg.kind!=='glide'){
+      const full=(MODES[seg.color]?MODES[seg.color].degs:(FIELD_COLOR[seg.color]||FIELD_COLOR.minor));
+      const stRow=document.createElement('div');
+      stRow.style.cssText='display:flex;gap:.15rem;align-items:center;margin:0 0 .25rem 2.6rem;flex-wrap:wrap';
+      const limited = !!seg.sts;
+      let sh=`<span style="font-size:.3rem;color:var(--dim);flex:0 0 auto">使用ST:</span>`;
+      full.forEach(st=>{
+        const on = limited ? seg.sts.includes(st) : true;   // 限定なし=全部ON(そのまま)
+        sh+=`<button onclick="arcToggleST(${i},${st})" style="font-size:.32rem;padding:.05rem .28rem;border-radius:.2rem;cursor:pointer;border:1px solid var(--bd);background:${on?'var(--earth)':'transparent'};color:${on?'#161210':'var(--dim)'}">ST${st>=0?'+':''}${st}</button>`;
+      });
+      sh+=`<span style="font-size:.3rem;color:${limited?'var(--earth)':'var(--dim)'};margin-left:.2rem">${limited?'限定中':'そのまま(全ST)'}</span>`;
+      stRow.innerHTML=sh;
+      box.appendChild(stRow);
+    }
+    return;
+  });
+  const total=ARC_CUSTOM.reduce((s,x)=>s+(+x.dur||0),0);
+  const t=document.createElement('div'); t.style.cssText='font-size:.34rem;color:var(--earth);margin-top:.2rem';
+  t.textContent='弧の全長: '+Math.round(total)+'秒 ('+(total/60).toFixed(1)+'分)';
+  box.appendChild(t);
+}
+function arcEdit(i,key,val){
+  if(!ARC_CUSTOM[i]) return;
+  ARC_CUSTOM[i][key] = (key==='color') ? val : parseFloat(val);
+  if(key==='color'){ delete ARC_CUSTOM[i].sts; }   // 色を変えたらST限定はリセット
+  renderArcEditor();   // ★どの値を変えても再描画(root変更でST表記・音名も更新)
+}
+// ST限定のトグル: そのセグメントで、あるSTを使う/使わない
+function arcToggleST(i,st){
+  const seg=ARC_CUSTOM[i]; if(!seg) return;
+  const full=(MODES[seg.color]?MODES[seg.color].degs.slice():(FIELD_COLOR[seg.color]||FIELD_COLOR.minor).slice());
+  if(!seg.sts){ seg.sts=full.slice(); }        // 初回: 全部を«選択済み»から始める
+  const p=seg.sts.indexOf(st);
+  if(p>=0) seg.sts.splice(p,1); else seg.sts.push(st);
+  // 全部選ばれてる/空 → «そのまま»(限定なし)に戻す
+  if(seg.sts.length===0 || seg.sts.length===full.length) delete seg.sts;
+  renderArcEditor();
+}
+function arcAddSeg(kind){
+  const seg = kind==='glide' ? {kind:'glide',from:0,to:0,dur:18}
+            : kind==='climax'? {kind:'climax',root:0,color:'dorian',dur:40}
+            : {kind:'field',root:0,color:'aeolian',dur:40};
+  ARC_CUSTOM.push(seg); renderArcEditor();
+}
+function arcDelSeg(i){ ARC_CUSTOM.splice(i,1); renderArcEditor(); }
+function arcMoveSeg(i,dir){
+  const j=i+dir; if(j<0||j>=ARC_CUSTOM.length) return;
+  const t=ARC_CUSTOM[i]; ARC_CUSTOM[i]=ARC_CUSTOM[j]; ARC_CUSTOM[j]=t; renderArcEditor();
+}
+function arcResetCustom(){ ARC_CUSTOM=JSON.parse(JSON.stringify(ARC_TL)); renderArcEditor(); jLog('カスタムの弧を既定へ戻した'); }
+
+function toggleArc(){
+  if(typeof pushUndo==='function')pushUndo();
+  ARC.on=!ARC.on;
+  const b=document.getElementById('btnArc');
+  if(b){ b.textContent='弧 ARC: '+(ARC.on?'ON':'OFF'); b.classList.toggle('act-arc',ARC.on); }
+  if(ARC.on){
+    // capture starting root as the transposable reference (F#m scene sits on it)
+    ARC.baseRoot = getRoot();
+    // ★カスタムは«場の1番目»がスタートルート定義 / 自動は左上がスタート
+    ARC.curRoot = (ARC.mode==='custom' && ARC_CUSTOM[0]) ? (ARC_CUSTOM[0].root||0) : 0;
+    _arcLastIdx=-1; ARC.t0=Date.now(); ARC._waveTop=0;
+    showArcProgress(true);
+    // set journey duration to the full arc length so the journey UI matches
+    const jd=document.getElementById('journeyDur'); if(jd){ const tot=arcTotal(); jd.value=String(tot); }
+    generateArc();
+    jLog('ARC ON — Playを押すと、ラティス8分の旅が始まる。開始ルート='+ARC.baseRoot);
+  } else {
+    ARC.rootless=false; ARC.climax=false; ARC.octShift=0;
+    ARC_OVERRIDE.active=false;
+    showArcProgress(false);
+    jLog('ARC OFF — 通常モードに戻る');
+  }
+}
+function toggleDriftAuto(){ DRIFT.auto=!DRIFT.auto; const b=document.getElementById('btnDriftAuto'); if(b){b.style.color=DRIFT.auto?'var(--earth)':'';b.classList.toggle('act',DRIFT.auto);} jLog(DRIFT.auto?'内声ドリフト AUTO — 半音の色彩変化が自動で漂う(Jarrett)':'内声ドリフト AUTO 解除'); updateDriftDisp(); }
+function driftStep(n){ DRIFT.manual+=n; updateDriftDisp(); jLog('内声 '+(DRIFT.manual>=0?'+':'')+DRIFT.manual+' 半音'); }
+function driftReset(){ DRIFT.manual=0; DRIFT.autoVal=0; updateDriftDisp(); jLog('内声ドリフト 0 に戻した'); }
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function lcm(a,b){return a*b/gcd(a,b);}
+function updatePolyLcm(){ const el=document.getElementById('polyLcm'); if(el)el.textContent=lcm(lcm(POLY.droneCyc,POLY.pulseCyc),POLY.ornCyc); }
+function togglePoly(){ POLY.on=!POLY.on; POLY.grid=0; const b=document.getElementById('btnPoly'); if(b){b.textContent='3:5 ポリリズム: '+(POLY.on?'ON':'OFF'); b.style.color=POLY.on?'var(--pulse)':'';} const c=document.getElementById('polyCtl'); if(c)c.style.display=POLY.on?'block':'none'; pLog(POLY.on?'3:5 ポリリズム ON — 3と5が独立に回り、15で揃う':'3:5 OFF — 決定的な短/長に戻る'); }
+function setPoly(k,v){ POLY[k]=Math.max(2,parseInt(v)||2); POLY.grid=0; updatePolyLcm(); }
+
+// ══════════════════════════════════════════════════════
+//  LAYER 2: PULSE — メロディ骨格
+// ══════════════════════════════════════════════════════
+function generatePulse(){
+  pushUndo();
+  const pattern = document.getElementById('pulsePattern').value;
+  const steps   = parseInt(document.getElementById('pulseSteps').value)||12;
+  const leapProb= parseInt(document.getElementById('leapProb').value)/100;
+  const attack  = parseInt(document.getElementById('pulseAttack').value)/100;
+  const pool    = getScalePool(-2, 16);
+
+  pulseSteps = [];
+  let pos = Math.floor(pool.length*0.45); // mid register
+  let leapCount = 0;
+
+  for(let i=0;i<steps;i++){
+    // Pattern: Salvador = repeating 3-4 note motif with occasional leaps
+    let active = true;
+    let dur;
+
+    if(pattern==='salvador'){
+      // Core 3-note motif that repeats with variations
+      // Gismonti: decisive, no middle ground on duration
+      dur = Math.random()<0.5 ? 2 : 4; // short or long, not medium
+      active = Math.random()<0.82;
+    } else if(pattern==='ostinato'){
+      dur = 2; // all short — relentless
+      active = Math.random()<0.88;
+    } else if(pattern==='call'){
+      dur = i%4===0 ? 6 : 2; // phrase structure
+      active = Math.random()<0.75;
+    } else {
+      dur = [2,4,6][Math.floor(Math.random()*3)];
+      active = Math.random()<0.78;
+    }
+
+    // Melody movement: キレ = decisive leaps
+    const pc=primeChar();
+    const doLeap = Math.random()<leapProb;
+    if(doLeap){
+      // 4th or 5th leap (Gismontiの男気)
+      const leap = pc.leapDegrees[Math.random()<0.6?0:1]; // leap by the governing prime
+      const dir  = Math.random()<0.5 ? 1 : -1;
+      pos = Math.max(0,Math.min(pool.length-1, pos+dir*leap));
+      leapCount++;
+    } else {
+      // Stepwise, but still decisive
+      const dir = Math.random()<0.52 ? 1 : -1;
+      pos = Math.max(0,Math.min(pool.length-1, pos+dir));
+    }
+
+    // Velocity: キレ = sharp attack
+    // Binary: either strong or very soft (no midrange ambiguity)
+    const isAccent = i%pc.accentEvery===0 || (Math.random()<0.25 && dur>=4);
+    const baseVel  = attack*0.8 + KIRE.level*0.15;
+    const vel = isAccent
+      ? Math.min(1, baseVel + 0.15 + (Math.random()-0.5)*0.08)
+      : Math.max(0.12, baseVel*0.35 + (Math.random()-0.5)*0.06);
+    // キレ: velocity is binary — no gradual crescendo
+    // Either hit hard or barely touch
+
+    pulseSteps.push({
+      midi:pool[pos], active, vel:Math.min(1,vel), dur,
+      isAccent, leapFrom: doLeap ? pos : null, mutDelta:0
+    });
+  }
+
+  buildGrid('pulse');
+  drawPulseCurve();
+  document.getElementById('leapCountDisp').textContent=leapCount+'/'+steps;
+  document.getElementById('pulsePatDisp').textContent=pattern;
+  pLog('↻ Pulse: '+pattern+' ('+leapCount+' leaps)');
+}
+
+// ══════════════════════════════════════════════════════
+//  LAYER 3: ORNAMENT — 3連符と間
+// ══════════════════════════════════════════════════════
+function generateOrnament(){
+  pushUndo();
+  const density   = parseInt(document.getElementById('ornDensity').value)/100;
+  const tripletP  = parseInt(document.getElementById('tripletProb').value)/100;
+  const silenceP  = parseInt(document.getElementById('silenceProb').value)/100;
+  const bpmSync   = document.getElementById('ornBpmSync').value==='1';
+
+  // BPM-synced density: faster = denser ornaments
+  const bpmFactor = bpmSync ? Math.min(1, (JOURNEY.bpm-60)/90) : 0;
+  const effectiveDens = Math.min(1, density + bpmFactor*0.4);
+
+  const pool    = getScalePool(-1, 18);
+  const baseLen = Math.max(pulseSteps.length, 12);
+  ornSteps = [];
+
+  // Build ornament as decoration layer on top of pulse
+  // Triplets divide a pulse step into 3; silence is intentional rest
+  let pos = pulseSteps.length>0
+    ? pool.findIndex(m=>m>=pulseSteps[0].midi)||Math.floor(pool.length*0.5)
+    : Math.floor(pool.length*0.5);
+
+  const rhythmTypes = [];
+
+  for(let i=0;i<baseLen;i++){
+    // Reference pulse note at this position
+    const pulseNote = pulseSteps[i%Math.max(1,pulseSteps.length)];
+    const pMidi = pulseNote ? pulseNote.midi : pool[pos];
+
+    // Decide ornament type for this step
+    const rand = Math.random();
+
+    // 間 (silence) is placed MUSICALLY, not randomly: strongest at phrase ends
+    // (end of a pulse cycle) and right after a strong accent — letting it resonate.
+    const phraseLen = Math.max(1, pulseSteps.length);
+    const atPhraseEnd = (i % phraseLen) === (phraseLen-1);
+    const afterAccent = pulseNote && pulseNote.isAccent;
+    let silenceWeight = silenceP * 0.4;                 // low baseline (less random silence)
+    if(atPhraseEnd) silenceWeight = silenceP * 1.8;     // breathe at the end of a phrase
+    else if(afterAccent) silenceWeight = silenceP * 1.3;// let an accent ring
+    silenceWeight = Math.min(0.95, silenceWeight);
+
+    if(rand < silenceWeight){
+      // Intentional silence — "間": not absence, but tension/resonance
+      ornSteps.push({midi:pMidi, active:Math.random()<0.10, vel:0.12, dur:2, isRest:true, type:'rest'});
+      rhythmTypes.push('—');
+
+    } else if(rand < silenceWeight + tripletP * effectiveDens){
+      // PRIME-tuplet burst: N notes in the space of 2, where N = the governing prime.
+      // 3→triplet(skeleton), 5→quintuplet(lyrical flow), 7→septuplet(otherworldly).
+      // The tuplet flows as its own layer (別次元): a contour that drifts across the beat.
+      const pc=primeChar(); const N=pc.tuplet;
+      const dir = Math.random()<0.5?1:-1;
+      pos = Math.max(0,Math.min(pool.length-1,pool.findIndex(m=>m>=pMidi)));
+      // a flowing line: each tuplet note steps in a coherent direction (drifts), not random jumps
+      for(let t=0;t<N;t++){
+        if(t>0){
+          // mostly stepwise drift, occasional turn — makes the tuplet a flowing line, not noise
+          const turn = Math.random()<0.25 ? -dir : dir;
+          const step = Math.random()<0.3?2:1;
+          pos = Math.max(0,Math.min(pool.length-1, pos+turn*step));
+        }
+        // velocity arc across the tuplet: accent the first, swell gently through (breathing)
+        const arc = Math.sin((t/(N-1))*Math.PI);          // 0→1→0 across the tuplet
+        const tVel = t===0 ? 0.6+Math.random()*0.2 : (0.22+arc*0.22);
+        ornSteps.push({midi:pool[pos], active:Math.random()<0.92, vel:tVel, dur:2, type:'tuplet', tripletPos:t, tupletN:N});
+      }
+      rhythmTypes.push(N+'連');
+
+    } else if(effectiveDens>0.3 && Math.random()<effectiveDens*0.5){
+      // Single ornament note (grace note toward pulse)
+      const ornPos = Math.max(0,Math.min(pool.length-1, pool.findIndex(m=>m>=pMidi)+(Math.random()<0.5?1:-1)));
+      const ornVel = 0.3+Math.random()*0.25;
+      ornSteps.push({midi:pool[ornPos], active:true, vel:ornVel, dur:2, type:'grace'});
+      rhythmTypes.push('♪');
+
+    } else {
+      // No independent ornament — but still send pulse note on this channel
+      // (Ornament channel doubles the pulse when not ornamenting)
+      const doubleVel = pulseNote ? pulseNote.vel*0.55 : 0.25;
+      ornSteps.push({midi:pMidi, active:true, vel:doubleVel, dur:4, type:'double'});
+      rhythmTypes.push('·');
+    }
+  }
+
+  buildGrid('orn');
+  const triplets=rhythmTypes.filter(r=>r==='3連').length;
+  const rests=rhythmTypes.filter(r=>r==='—').length;
+  document.getElementById('ornRhythmDisp').textContent=
+    '3連:'+triplets+' 間:'+rests+'/'+baseLen;
+  oLog('↻ Orn: 3連='+triplets+' 間='+rests+' dens='+(effectiveDens*100).toFixed(0)+'%');
+}
+
+function generateAll(){
+  generateDrone();
+  generatePulse();
+  generateOrnament();
+  updateDroneUI();
+}
+
+// ══════════════════════════════════════════════════════
+//  BUILD GRID
+// ══════════════════════════════════════════════════════
+function buildGrid(layer){ if(layer==='pulse'&&typeof buildChordRow==='function')setTimeout(function(){buildChordRow('pulse');},0); if(layer==='orn'&&typeof buildChordRow==='function')setTimeout(function(){buildChordRow('orn');},0);
+  const elId = layer+'Grid';
+  const el = document.getElementById(elId); if(!el) return;
+  const steps = layer==='drone'?droneSteps:layer==='pulse'?pulseSteps:ornSteps;
+  const col = layer==='drone'?'var(--vine)':layer==='pulse'?'var(--pulse)':'var(--orn)';
+  el.innerHTML='';
+
+  steps.forEach((s,i)=>{
+    const d=document.createElement('div');
+    const isDrone=layer==='drone';
+    d.className='nc'+(isDrone?' drone-note':'')+(s.isRest?' rest':'');
+    d.id=`${layer}Step${i}`;
+    // Velocity bar: sharp, binary feel
+    const h=s.active?3+Math.round(s.vel*32):1;
+    const c=s.active?col:'rgba(255,255,255,.03)';
+    const note=s.midi?NOTE_NAMES[s.midi%12]:'—';
+    // Duration symbol: キレの二値性
+    const durSym=s.dur<=2?'·':s.dur<=4?'—':'——';
+    d.innerHTML=`<span class="nc-name${s.active?' on':''}">${note}</span>
+      <div class="nc-bar" style="height:${h}px;background:${c};opacity:${0.4+s.vel*0.6}"></div>
+      <span class="nc-dur">${durSym}</span>
+      <span class="nc-num">${i+1}</span>`;
+    d.addEventListener('click',()=>{pushUndo();s.active=!s.active;buildGrid(layer);});
+    d.addEventListener('contextmenu',e=>{e.preventDefault();
+      // Right click cycles velocity: キレの二値性
+      s.vel=s.vel>0.5?0.2:0.85;
+      buildGrid(layer);
+    });
+    el.appendChild(d);
+  });
+
+  const info=document.getElementById(layer+'Info');
+  if(info)info.textContent=steps.length+' steps · '+steps.filter(s=>s.active).length+' active';
+
+  // Update channel display
+  const chDisp=document.getElementById(layer+'ChDisp');
+  if(chDisp){
+    const chEl=document.getElementById(layer+'Ch');
+    if(chEl)chDisp.textContent=chEl.value;
+  }
+
+  if(layer==='pulse') drawPulseCurve();
+}
+
+function drawPulseCurve(){
+  const cv=document.getElementById('pulseCurve');if(!cv||!cv.getContext)return;
+  const W=cv.width,H=cv.height,ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
+  const act=pulseSteps.filter(s=>s.active);if(act.length<2)return;
+  const mids=act.map(s=>s.midi),mn=Math.min(...mids)-1,mx=Math.max(...mids)+1;
+  ctx.beginPath();
+  act.forEach((s,i)=>{
+    const x=(i/(act.length-1))*W,y=H-((s.midi-mn)/(mx-mn))*(H-4)-2;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle='rgba(120,96,64,.65)';ctx.lineWidth=1.2;ctx.stroke();
+}
+
+function onRootChange(){
+  if(droneSteps.length||pulseSteps.length) remapToMode();
+  generateDrone(); // drone always based on root
+}
+
+function populateDroneTypes(){
+  const sel=document.getElementById('droneType'); if(!sel)return;
+  sel.innerHTML=Object.keys(DRONE_TYPES).map(function(k){ return '<option value="'+k+'"'+(k===DRONE.type?' selected':'')+'>'+DRONE_TYPES[k].name+'</option>'; }).join('');
+  sel.value=DRONE.type;
+}
+function populateModes(){
+  const sel=document.getElementById('modeSel'); if(!sel)return;
+  sel.innerHTML=Object.keys(MODES).map(function(k){ return '<option value="'+k+'"'+(k==='dorian'?' selected':'')+'>'+MODES[k].name+'</option>'; }).join('');
+  sel.value=currentMode;
+}
+function onModeChange(){
+  currentMode=document.getElementById('modeSel').value;
+  document.getElementById('modeDisplay').textContent=getMode().name;
+  if(pulseSteps.length||ornSteps.length) remapToMode();
+}
+
+function remapToMode(){
+  [pulseSteps,ornSteps].forEach(steps=>steps.forEach(s=>{
+    if(s.midi)s.midi=snapToMode(s.midi);
+  }));
+  buildGrid('pulse');buildGrid('orn');drawPulseCurve();
+}
+
+// ══════════════════════════════════════════════════════
+//  BPM JOURNEY ENGINE
+// ══════════════════════════════════════════════════════
+function updateJourney(elapsedMs){
+  if(!playing) return;
+  if(!JOURNEY.enabled){
+    // ★Journey OFF: 推移はしないが«基本BPM»(Start BPM)は常に反映する.
+    //   これが無いとスタンドアロン再生のテンポが固定/初期値のまま動かせなかった.
+    const base=parseInt(document.getElementById('bpmStart').value)||60;
+    if(!SLAVE.active) JOURNEY.bpm=base;   // スレーブ時はAbletonが決めるので触らない
+    return;
+  }
+  JOURNEY.elapsed = elapsedMs/1000;
+
+  const dur = parseInt(document.getElementById('journeyDur').value)||300;
+  const mode = document.getElementById('accelMode').value;
+  if(dur===0||mode==='manual') return;
+
+  const t = Math.min(1, JOURNEY.elapsed/dur);
+  const start = parseInt(document.getElementById('bpmStart').value)||60;
+  const end   = parseInt(document.getElementById('bpmEnd').value)||150;
+
+  let bpm;
+  if(mode==='linear'){
+    bpm = start + (end-start)*t;
+  } else if(mode==='ease'){
+    // Ease-in-out: organic acceleration
+    const ease = t<0.5 ? 2*t*t : -1+(4-2*t)*t;
+    bpm = start + (end-start)*ease;
+  } else if(mode==='step'){
+    // Gismonti的: discrete jumps at key points
+    const steps=[0, 0.25, 0.5, 0.75, 1.0];
+    const bpms=[start, start+(end-start)*0.2, start+(end-start)*0.45, start+(end-start)*0.75, end];
+    const si=Math.min(4,Math.floor(t*4));
+    bpm=bpms[si];
+  } else bpm=start;
+
+  JOURNEY.bpm = Math.max(start, Math.min(end, bpm));
+  JOURNEY.history.push(JOURNEY.bpm);
+  if(JOURNEY.history.length>200) JOURNEY.history.shift();
+
+  updateJourneyUI();
+
+  // Auto-regenerate ornament + paint milestone when BPM crosses thresholds
+  const bpmRounded=Math.round(JOURNEY.bpm);
+  if(t>0&&bpmRounded%20===0&&Math.random()<0.3){
+    generateOrnament();
+    basquiatBpmMilestone(bpmRounded);
+    oLog('↻ BPM '+bpmRounded+' — orn updated');
+    jLog('★ '+bpmRounded+' BPM milestone');
+  }
+}
+
+function bpmStep(delta){
+  JOURNEY.bpm=Math.max(40,Math.min(220,JOURNEY.bpm+delta));
+  updateJourneyUI();
+  jLog('→ BPM '+Math.round(JOURNEY.bpm));
+}
+
+function bpmReset(){
+  JOURNEY.bpm=parseInt(document.getElementById('bpmStart').value)||60;
+  JOURNEY.elapsed=0;
+  JOURNEY.history=[];
+  JOURNEY.startTime=null;
+  updateJourneyUI();
+}
+
+// ══════════════════════════════════════════════════════
+//  KIRE ENGINE — ベロシティの切れ
+// ══════════════════════════════════════════════════════
+function fireKire(){
+  // Instant キレ: boost velocity sharpness, make durations more binary
+  KIRE.level = Math.min(1, KIRE.level + 0.4);
+  pulseSteps.forEach(s=>{
+    if(!s.active) return;
+    // Binary velocity: either very high or very low
+    s.vel = s.vel > 0.45 ? Math.min(1, s.vel*1.35+0.1) : Math.max(0.08, s.vel*0.6);
+    // Binary duration: round to 2 or 4
+    s.dur = s.dur <= 3 ? 2 : 4;
+  });
+  buildGrid('pulse');
+  drawVelCanvas();
+  basquiatKire();
+  KIRE.history.push(KIRE.level);
+  pLog('⚡ キレ: '+Math.round(KIRE.level*100)+'%');
+  document.getElementById('kireLabel').textContent='キレ '+Math.round(KIRE.level*100)+'%';
+}
+
+function kireTick(){
+  KIRE.level = Math.max(0, KIRE.level*KIRE.decay-0.005);
+  KIRE.history.push(KIRE.level);
+  if(KIRE.history.length>100) KIRE.history.shift();
+}
+
+function muteLayer(layer){
+  if(layer==='drone'){
+    DRONE.muted=!DRONE.muted;
+    const btn=document.getElementById('btnDroneMute');
+    if(btn){btn.textContent=DRONE.muted?'Unmute Drone':'Mute Drone';btn.style.color=DRONE.muted?'var(--fire)':'var(--vine)';}
+    dLog(DRONE.muted?'🔇 Drone muted':'🔊 Drone active');
+  }
+}
+
+function breathePulse(){
+  // Manual breath: slight velocity swell on drone
+  DRONE.breathAmt=1;
+  dLog('∿ Breathe');
+}
+
+// ══════════════════════════════════════════════════════
+//  PLAYBACK
+// ══════════════════════════════════════════════════════
+function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function startKeepAlive(){const ctx=getAudioCtx();if(_keepNode)return;_keepNode=ctx.createOscillator();const g=ctx.createGain();g.gain.value=0;_keepNode.connect(g);g.connect(ctx.destination);_keepNode.start();}
+
+const _wC=`const T={};self.onmessage=function(e){const{type,id,delay}=e.data;if(type==='set'){T[id]=setTimeout(()=>{delete T[id];self.postMessage({id})},delay)}else if(type==='clear'){clearTimeout(T[id]);delete T[id]}};`;
+let _tw=null;const _tc={};let _tn=1;
+function getTW(){if(_tw)return _tw;try{const b=new Blob([_wC],{type:'application/javascript'});_tw=new Worker(URL.createObjectURL(b));_tw.onmessage=e=>{const cb=_tc[e.data.id];if(cb){delete _tc[e.data.id];cb();}};}catch(e){_tw=null;}return _tw;}
+function bgTimeout(fn,ms){
+  const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume();
+  const w=getTW();
+  if(w){const id=_tn++;const dl=ctx.currentTime+ms/1000;_tc[id]=()=>{const rem=(dl-ctx.currentTime)*1000;if(rem>2){const id2=_tn++;_tc[id2]=fn;w.postMessage({type:'set',id:id2,delay:Math.max(0,rem-1)});}else fn();};w.postMessage({type:'set',id,delay:Math.max(0,ms-5)});return{cancelled:false,cancel:()=>{w.postMessage({type:'clear',id});delete _tc[id];}};}
+  const dl=ctx.currentTime+ms/1000;const tid={cancelled:false};let t=null;
+  function check(){if(tid.cancelled)return;const rem=(dl-ctx.currentTime)*1000;if(rem<=1)fn();else{t=setTimeout(check,rem<25?1:Math.max(1,rem-20));}}
+  t=setTimeout(check,Math.max(1,ms-20));
+  tid.cancel=()=>{tid.cancelled=true;if(t)clearTimeout(t);};
+  return tid;
+}
+
+document.addEventListener('visibilitychange',()=>{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume();if(!document.hidden&&midiOut)for(let c=0;c<16;c++)midiOut.send([0xB0|c,123,0]);});
+
+function togglePlay(){playing?stopAll():startPlay();}
+function startPlay(){
+  const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume();
+  startKeepAlive();
+  playing=true;droneIdx=0;pulseIdx=0;ornIdx=0;barCount=0;POLY.grid=0;
+  MASTER.grid=0; MASTER.patIdx={drone:0,pulse:0,orn:0};
+  JOURNEY.startTime=Date.now();
+  // ★スタンドアロン時、再生開始でJOURNEY.bpm(=再生テンポ)を必ず初期化する.
+  //   これが無いと前回の値/未設定のままquarterMs=60000/bpmが異常になり、
+  //   最初のtickのbaseMsが巨大→次tickが来ない→単音が固まる(シーケンスが進まない).
+  if(!SLAVE.active){
+    JOURNEY.bpm = JOURNEY.enabled ? (parseInt(document.getElementById('bpmStart').value)||60)
+                                  : (parseInt(document.getElementById('bpmStart').value)||60);
+  }
+  if(ARC.on){ ARC.t0=Date.now(); _arcLastIdx=-1; ARC._waveTop=0; }
+  document.getElementById('btnPlay').textContent='■ Stop';
+  getBsqtCtx(); // ensure canvas initialized
+  if(SLAVE.active&&SLAVE.running)return;
+  tick();
+}
+function stopAll(){
+  playing=false;
+  if(playTimer){playTimer.cancelled=true;playTimer=null;}
+  document.getElementById('btnPlay').textContent='▶ Play';
+  document.getElementById('stepDisplay').textContent='—';
+  droneIdx=0;pulseIdx=0;ornIdx=0;
+  if(midiOut)for(let c=0;c<16;c++)midiOut.send([0xB0|c,123,0]);
+  document.querySelectorAll('.nc.playing').forEach(e=>e.classList.remove('playing'));
+}
+
+let _tickCount=0;
+function tick(){
+  if(!playing)return;
+  if(SLAVE.active&&SLAVE.running){playing=true;return;}
+
+  const bpm=JOURNEY.bpm;
+  // Step duration: based on pulse step's dur ratio
+  const curPulse=pulseSteps[pulseIdx%Math.max(1,pulseSteps.length)];
+  const ratio=curPulse?curPulse.dur:4;
+  const quarterMs=60000/bpm;
+  // キレ: micro-timing is tighter (less rubato than Jarrett)
+  // 3:5 POLY MODE: uniform grid (every unit = an 8th note), so the 3-cycle and
+  // 5-cycle lock in TIME and realign at 15. Otherwise, decisive short/long durations.
+  const baseMs = polymeterActive() ? Math.max(20, quarterMs*0.25)   // ★ポリメーター: 16分マスター(一貫した基準=2倍問題も解消)
+               : POLY.on ? Math.max(30, quarterMs*0.5) : Math.max(30, quarterMs*(ratio/4));
+  // Gismontiのルバートは微細 — 迷いなし
+  const micro=(Math.random()-0.5)*baseMs*0.03;
+  // ★3声部«共有»のmicro揺れをこのtickで一度だけ決める(まとまりの核). sendStepが全声部で同じ値を使う.
+  _sharedMicro=(Math.random()*2-1);
+
+  // Highlight
+  document.querySelectorAll('#droneGrid .nc').forEach((e,i)=>e.classList.toggle('playing',i===droneIdx%Math.max(1,droneSteps.length)));
+  document.querySelectorAll('#pulseGrid .nc').forEach((e,i)=>e.classList.toggle('playing',i===pulseIdx%Math.max(1,pulseSteps.length)));
+  document.querySelectorAll('#ornGrid .nc').forEach((e,i)=>e.classList.toggle('playing',i===ornIdx%Math.max(1,ornSteps.length)));
+
+  // Send MIDI
+  const droneSustain=parseInt(document.getElementById('droneSustain').value)/100;
+  if(polymeterActive()){
+    // ★ポリメーター: 各トラックが自分のrateで進み、自分のリズムパターンで発火.
+    //   マスターは16分. rate=そのトラックが«16分の何倍»ごとに1歩進むか.
+    const rateUnits=v=>RATE_TABLE[TRACK[v].rate]||4;
+    const g=MASTER.grid;
+    const fireVoice=(v, steps, chId, durScale)=>{
+      const t=TRACK[v];
+      const ru=rateUnits(v);
+      // このトラックが«今»進むタイミングか(16分グリッドがrateの倍数)
+      if(g % Math.max(1,Math.round(ru)) !== 0) return;
+      const idx = v==='drone'?droneIdx : v==='pulse'?pulseIdx : ornIdx;
+      // リズムパターン: onなら«そのステップがヒットか»を見る. offなら常に鳴る.
+      let hit=true;
+      if(t.on){
+        const pat=trackPattern(v);
+        if(pat && pat.length){ hit = pat[MASTER.patIdx[v] % pat.length]; }
+      }
+      const durMs = baseMs*Math.max(1,Math.round(ru))*durScale;
+      if(hit && !(v==='drone'&&DRONE.muted)) sendStep(steps, idx, chId, 0, durMs);
+    };
+    fireVoice('drone', droneSteps, 'droneCh', droneSustain);
+    fireVoice('pulse', pulseSteps, 'pulseCh', 0.9);
+    fireVoice('orn',   ornSteps,   'ornCh',   0.55);
+  } else if(POLY.on){
+    // 3:5 — drone steps advance on the 3-grid, pulse on the 5-grid, independently.
+    // drone hits only when grid aligns to its cycle; pulse only on its cycle.
+    const onDrone = (POLY.grid % POLY.droneCyc)===0;
+    const onPulse = (POLY.grid % POLY.pulseCyc)===0;
+    const onOrn   = (POLY.grid % POLY.ornCyc)===0;
+    if(!DRONE.muted && onDrone) sendStep(droneSteps, droneIdx, 'droneCh', 0, baseMs*POLY.droneCyc*droneSustain);
+    if(onPulse) sendStep(pulseSteps, pulseIdx, 'pulseCh', 0, baseMs*POLY.pulseCyc*0.9);
+    if(onOrn)   sendStep(ornSteps,   ornIdx,   'ornCh',   0, baseMs*0.55);
+  } else {
+    if(!DRONE.muted) sendStep(droneSteps, droneIdx, 'droneCh', 0, baseMs*droneSustain);
+    sendStep(pulseSteps, pulseIdx, 'pulseCh', 0, baseMs);
+    sendStep(ornSteps,   ornIdx,   'ornCh',   0, baseMs*0.55);
+  }
+
+  // Basquiat painting
+  const ds=droneSteps[droneIdx%Math.max(1,droneSteps.length)];
+  if(ds&&ds.active&&!DRONE.muted) basquiatDrone(ds.midi,ds.vel);
+  const ps=pulseSteps[pulseIdx%Math.max(1,pulseSteps.length)];
+  if(ps&&ps.active) basquiatPulse(ps.midi,ps.vel,ps.isAccent,ps.leapFrom!==null);
+  const os=ornSteps[ornIdx%Math.max(1,ornSteps.length)];
+  if(os&&os.type&&os.type!=='skip') basquiatOrnament(os.midi||64,os.vel||0.3,os.type);
+
+  document.getElementById('stepDisplay').textContent=`${barCount+1}:${(pulseIdx%3)+1}`;
+
+  if(polymeterActive()){
+    // ★ポリメーター: 各トラックが自分のrateで進む. マスターは16分.
+    const rateUnits=v=>Math.max(1,Math.round(RATE_TABLE[TRACK[v].rate]||4));
+    MASTER.grid++;
+    const adv=(v, len, isPulse)=>{
+      if(MASTER.grid % rateUnits(v) !== 0) return;
+      MASTER.patIdx[v]++;
+      if(v==='drone'){ droneIdx++; if(droneIdx>=droneSteps.length)droneIdx=0; }
+      else if(v==='pulse'){ pulseIdx++; if(pulseIdx>=pulseSteps.length){pulseIdx=0;barCount++;onLoopEnd();} }
+      else { ornIdx++; if(ornIdx>=ornSteps.length)ornIdx=0; }
+    };
+    adv('drone'); adv('pulse',0,true); adv('orn');
+  } else if(POLY.on){
+    droneIdx++; if(droneIdx>=droneSteps.length){droneIdx=0;}
+    pulseIdx++; if(pulseIdx>=pulseSteps.length){pulseIdx=0;barCount++;onLoopEnd();}
+    ornIdx++;   if(ornIdx>=ornSteps.length){ornIdx=0;}
+  } else {
+    // ★通常のスタンドアロン再生(ポリメーターもPOLYもOFF). これが無いとidxが進まず単音固まってた.
+    droneIdx++; if(droneIdx>=droneSteps.length){droneIdx=0;}
+    pulseIdx++; if(pulseIdx>=pulseSteps.length){pulseIdx=0;barCount++;onLoopEnd();}
+    ornIdx++;   if(ornIdx>=ornSteps.length){ornIdx=0;}
+  }
+
+  _tickCount++;
+  kireTick();
+
+  // Journey update
+  if(JOURNEY.startTime&&_tickCount%8===0){
+    const elapsed=Date.now()-JOURNEY.startTime;
+    updateJourney(elapsed);
+    drawJourneyCanvas();
+  }
+  if(_tickCount%4===0){updateKireUI();updateOrnUI();}
+  if(_tickCount%12===0){drawVelCanvas();drawOrnCanvas();}
+
+  // Jarrett inner-voice AUTO drift — a slow, musical semitone wander (my best image)
+  if(DRIFT.auto){
+    DRIFT.autoPhase += 0.008;
+    // a gentle wander: mostly 0/+1/-1, occasionally +2/-2 — eased, never jumpy
+    const w = Math.sin(DRIFT.autoPhase)*1.2 + Math.sin(DRIFT.autoPhase*0.37)*0.9;
+    DRIFT.autoVal = Math.round(w);   // -2..+2, slowly changing
+    const d=document.getElementById('driftDisp'); if(d)d.textContent=(innerVoiceShift()>=0?'+':'')+innerVoiceShift();
+  }
+  // Drone breathing
+  DRONE.breathPhase=(DRONE.breathPhase||0)+0.04;
+  const breathAmt=parseInt(document.getElementById('droneBreathe').value)/100;
+  DRONE.breathAmt=0.5+Math.sin(DRONE.breathPhase)*0.5;
+  const breathPct=(DRONE.breathAmt*100).toFixed(0);
+  const bf=document.getElementById('breatheF');if(bf)bf.style.width=breathPct+'%';
+  const bv=document.getElementById('breatheV');if(bv)bv.textContent=breathPct;
+  // Pulse drone orb
+  const orb=document.getElementById('droneOrb');
+  if(orb){orb.classList.toggle('pulse',_tickCount%6<2);}
+
+  playTimer=bgTimeout(tick,baseMs+micro);
+}
+
+function onLoopEnd(){
+  // Auto-mutate pulse occasionally (迷いなし: small changes only)
+  if(Math.random()<0.25) mutatePulse();
+  // Ornament follows BPM
+  if(document.getElementById('ornBpmSync').value==='1'&&Math.random()<0.15){
+    generateOrnament();
+  }
+}
+
+function mutatePulse(){
+  // Small mutations: velocity or one note, not big changes
+  const pool=getScalePool(-2,16);
+  pulseSteps.forEach(s=>{
+    // Velocity drift — maintain binary feel
+    if(Math.random()<0.2){
+      s.vel=s.vel>0.5?Math.min(1,s.vel+(Math.random()-0.3)*0.12):Math.max(0.08,s.vel+(Math.random()-0.7)*0.1);
+    }
+    // Rare pitch change (1 note at a time)
+    if(Math.random()<0.06){
+      const cur=pool.findIndex(m=>m>=s.midi);
+      const dir=Math.random()<0.5?1:-1;
+      const ni=Math.max(0,Math.min(pool.length-1,cur+dir));
+      if(ni!==cur)s.midi=pool[ni];
+    }
+  });
+  buildGrid('pulse');
+}
+
+function voiceKey(chId){ return chId==='droneCh'?'drone':chId==='pulseCh'?'pulse':'orn'; }
+function sendStep(steps,idx,chId,octOff,durMs){
+  if(!steps.length||!midiOut)return;
+  const s=steps[idx%steps.length];if(!s||!s.active)return;
+  const ch=(parseInt(document.getElementById(chId)?.value||1)-1);
+  let baseMidi=s.midi+octOff;
+  // Jarrett inner-voice semitone drift — only the drone's inner voices move
+  if(chId==='droneCh' && s.isInner){
+    const sh=innerVoiceShift();
+    if(sh!==0) baseMidi=snapToMode(baseMidi+sh);   // shift then snap into the scale
+  }
+  const voice=voiceKey(chId);
+  // ── ジャレット極意(3声部どれでも) ── 声部固定をやめ、その声部でONなら効く
+  // 浮遊(rootless): 音を1oct持ち上げ、低い錨を消す(3抜き浮遊の感覚)
+  if(maneuverOn(voice,'rootless') && (voice!=='drone' || s.isLow)){
+    baseMidi += 12;
+  }
+  // 反行(contrary): この声部を下げる(上との間が開き上昇の錯覚)
+  if(maneuverOn(voice,'contrary')){
+    baseMidi += (ARC.on ? ARC.bassDescend : -5);   // ARC自動は既存値、手動-5半音(要検証)
+  }
+  // 飛出(octaveBreak): 枠を1oct超える(感動の瞬間)
+  if(maneuverOn(voice,'octaveBreak')){
+    if(ARC.on ? true : (Math.random()<0.28)) baseMidi += 12;   // 手動28%(実データ25%寄せ・要検証)
+  }
+  // 泣き(naki): 上方倚音(すぐ下に解決)
+  if(maneuverOn(voice,'naki') && Math.random()<0.5){
+    baseMidi += 2;
+  }
+  // 移行(transition): 根の移動を5度/4度中心に(実データ: 5度17%/4度15%が骨格).
+  //   この声部が時々5度(±7)か4度(±5)跳ぶ. 移行の«骨格»を声部で作る.
+  if(maneuverOn(voice,'transition') && (idx%2)===0){
+    const r=Math.random();
+    if(r<0.17) baseMidi += (Math.random()<0.5?7:-7);        // 5度(17%・実データ)
+    else if(r<0.32) baseMidi += (Math.random()<0.5?5:-5);   // 4度(15%・実データ)
+  }
+  // 空間(space): 低音と旋律の距離を開ける(実データ: 中央値19半音, 25%が2oct超).
+  //   高い声部(pulse/orn)は上へ、低い声部(drone)は下へ押し、間を開ける.
+  if(maneuverOn(voice,'space')){
+    if(voice==='orn') baseMidi += 12;         // 装飾をさらに上へ(2oct方向)
+    else if(voice==='pulse') baseMidi += 7;   // 旋律を少し上へ
+    else if(voice==='drone' && s.isLow) baseMidi -= 12;  // 低音をさらに下へ
+  }
+  const m=Math.max(0,Math.min(127,baseMidi));
+  const E=EXPRESSION;
+
+  // ── VELOCITY: blend binary キレ (stored vel) with a phrase arc ──
+  const kireBoost=KIRE.level*0.15;
+  let velNorm = s.vel + kireBoost;                       // 0..~1 (the binary/decisive value)
+  // phrase arc: rise to a mid-phrase peak and settle — the breath, not an LFO
+  const arc = phraseArc(idx, steps.length);              // 0..1
+  // velArc=0 → pure stored (binary キレ kept); velArc=1 → shaped by the arc
+  const shaped = velNorm*(1-E.velArc) + (0.35 + arc*0.55)*E.velArc * (velNorm>0.15?1:0.6);
+  velNorm = shaped;
+  // humanize: subtle per-note variation (never on accents, to keep キレ crisp)
+  if(!s.isAccent) velNorm *= hrand(E.humanize*0.18);
+  let v=Math.round(velNorm*100+10);
+  v=Math.max(8,Math.min(120,v));
+
+  // ── LENGTH: base slot, then legato extension + breath ──
+  let base=durMs*(s.dur/4);
+  // legato: 0 = clean cut (0.88, 今までの良さ) … 1 = hold to (slightly past) the next slot
+  const lg=E.legato[voice]||0;
+  let factor = 0.88*(1-lg) + 1.05*lg;                    // 0.88 → 1.05 (overlap = legato)
+  // length breathes with the phrase: longer at the peak, shorter at edges
+  factor *= (1 + (arc-0.5)*E.lenBreath*0.5);
+  // humanize the length a touch
+  factor *= hrand(E.humanize*0.12);
+  let dur=base*factor;
+  // ── GATE / LENGTH (修正) ── Gate=枠の%(純粋な倍率), Length=±msの独立した微調整(Gate後に加算)
+  // 旧: (dur+gl_len)*gl_gate → GateがLength offsetまで拡大し、短い音符で不自然だった.
+  // 新: dur*gl_gate + gl_len → Gateは割合、Lengthは絶対ms. 短短長どの音符でもLengthが一定に効く.
+  const gl_len=(GATELEN.length[voice]||0);     // ±80 ms(絶対の足し引き)
+  const gl_gate=(GATELEN.gate[voice]!=null?GATELEN.gate[voice]:100)/100;  // 0-2.0(枠の倍率)
+  dur = dur*gl_gate + gl_len;
+  dur = Math.max(8, dur);   // floor so a note still sounds
+  // 滞在のムラ(dwell): 基本さっと、時々じっくり居座る.
+  //   実データ「低音0.5-0.8秒、要所5-6秒」の«ムラ»を、stepMs基準で作る(生秒だと音が重なるため).
+  if(maneuverOn(voice,'dwell')){
+    if(Math.random()<0.18) dur = Math.min(durMs*3.5, dur*4);  // 18%でじっくり(step間隔の3.5倍まで=要所)
+    else dur = Math.min(dur, durMs*0.5);                       // 基本はさっと(step間隔の半分)
+  }
+
+  // ── timing: 3声部で«共有»のmicro揺れ(まとまり)+ 声部別スウィング ──
+  // 旧: 各声部が独立乱数でずれ→3声がバラけた. 新: 同じtickは共有の揺れを使う→まとまる.
+  let delay=0;
+  if(!s.isAccent && E.humanize>0){ delay += _sharedMicro*E.humanize*8; }   // 3声共有(±ms)
+  // スウィング: 奇数stepを後ろへ(声部別). 標準的なスウィング定義.
+  const sw=(SWING[voice]||0)/100;                // -0.8..+0.8
+  if(sw!==0 && (idx%2)===1){
+    // 前後両方に振るため: 基準を«最大振り幅»だけ後ろに置き、そこから前(負)/後ろ(正)へ.
+    const swingMax=durMs*0.33;                    // 振り幅の最大
+    delay += swingMax + durMs*sw*0.33;            // sw=-0.8で基準より前、+0.8で基準より後ろ
+  }
+
+  // chord tones above the note (即興でコードが踊る) — pulse/orn only, when this step is tinted
+  let chordTones=[];
+  if(voice==='pulse'||voice==='orn'){
+    const ct=chordTonesFor(voice, idx%((voice==='pulse'?pulseChord:ornChord).length||1));
+    chordTones = ct.map(function(iv){ return Math.max(0,Math.min(127,m+iv)); });
+  }
+  const cc74 = mpeCC74(voice, idx, steps.length);
+  const fire=()=>{
+    if(!midiOut)return;
+    if(cc74!=null){ midiOut.send([0xB0|ch,74,cc74]); }   // per-note timbre (MPE slide)
+    midiOut.send([0x90|ch,m,v]);
+    chordTones.forEach(function(cm){ midiOut.send([0x90|ch,cm,Math.round(v*0.82)]); });
+    setTimeout(()=>{ if(!midiOut)return; midiOut.send([0x80|ch,m,0]); chordTones.forEach(function(cm){ midiOut.send([0x80|ch,cm,0]); }); },dur);
+  };
+  if(delay>0.5){ setTimeout(fire, delay); } else { fire(); }
+}
+
+// ══════════════════════════════════════════════════════
+//  MIDI
+// ══════════════════════════════════════════════════════
+function initMIDI(){if(!navigator.requestMIDIAccess){setMidiSt(false,'N/A');return;}navigator.requestMIDIAccess().then(ma=>{midiAccess=ma;ma.onstatechange=()=>{populatePorts();populateIn();};populatePorts();populateIn();}).catch(()=>setMidiSt(false,'denied'));}
+function populatePorts(){const sel=document.getElementById('midiDevSel');if(!sel||!midiAccess)return;const prev=sel.value;sel.innerHTML='<option value="">—</option>';midiAccess.outputs.forEach((p,id)=>{const o=document.createElement('option');o.value=id;o.textContent=p.name;sel.appendChild(o);});if(prev)sel.value=prev;[...sel.options].forEach(o=>{if(o.textContent.includes('IAC')&&!sel.value){sel.value=o.value;selectMidiOut(sel.value);}});}
+function populateIn(){const sel=document.getElementById('clockInSel');if(!sel||!midiAccess)return;const prev=sel.value;sel.innerHTML='<option value="">—</option>';midiAccess.inputs.forEach((p,id)=>{const o=document.createElement('option');o.value=id;o.textContent=p.name;sel.appendChild(o);});if(prev)sel.value=prev;}
+function selectMidiOut(id){if(!id){midiOut=null;setMidiSt(false,'—');return;}midiOut=midiAccess?.outputs.get(id);if(midiOut)setMidiSt(true,midiOut.name);}
+function setMidiSt(ok,name){const dot=document.getElementById('midiDot'),stat=document.getElementById('midiStatus');if(dot)dot.classList.toggle('on',ok);if(stat){stat.textContent=ok?'✓ '+name:name;stat.style.color=ok?'var(--vine)':'var(--dim)';}}
+function selectClockIn(id){if(SLAVE.clockInPort)SLAVE.clockInPort.onmidimessage=null;if(!id||!midiAccess)return;SLAVE.clockInPort=midiAccess.inputs.get(id);if(SLAVE.clockInPort)SLAVE.clockInPort.onmidimessage=onClockMsg;}
+function setSlaveTempoMode(v){ SLAVE.tempoMode=v; jLog(v==='accel'?'Slave: 加速保持モード — Abletonに同期しつつSalvadorが内的に加速':'Slave: 従属モード — Abletonテンポに完全同期'); }
+function toggleSlave(){SLAVE.active=!SLAVE.active;const btn=document.getElementById('btnSlave');if(btn){btn.textContent=SLAVE.active?'Slave: ON':'Slave: OFF';btn.style.color=SLAVE.active?'var(--vine)':'';}if(SLAVE.active){if(playTimer){playTimer.cancelled=true;playTimer=null;}}else if(playing)tick();}
+function onClockMsg(e){const d=e.data[0];if(d===0xFA){SLAVE.running=true;SLAVE.pulseCount=0;if(playTimer){playTimer.cancelled=true;playTimer=null;}playing=true;droneIdx=0;pulseIdx=0;ornIdx=0;barCount=0;POLY.grid=0;JOURNEY.startTime=Date.now();startKeepAlive();const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume();document.getElementById('btnPlay').textContent='■ Stop';return;}if(d===0xFB){SLAVE.running=true;if(!playing){playing=true;startKeepAlive();document.getElementById('btnPlay').textContent='■ Stop';}return;}if(d===0xFC){SLAVE.running=false;playing=false;if(playTimer){playTimer.cancelled=true;playTimer=null;}document.getElementById('btnPlay').textContent='▶ Play';if(midiOut)for(let c=0;c<16;c++)midiOut.send([0xB0|c,123,0]);return;}if(d!==0xF8||!SLAVE.active||!SLAVE.running)return;const now=e.timeStamp||performance.now();if(SLAVE.lastPulseTime>0){const iv=now-SLAVE.lastPulseTime;const ibpm=60000/(iv*SLAVE.ppqn);if(ibpm>20&&ibpm<220)SLAVE.bpmSmoothed=SLAVE.bpmSmoothed*(1-SLAVE.bpmAlpha)+ibpm*SLAVE.bpmAlpha;}SLAVE.lastPulseTime=now;SLAVE.pulseCount++;
+// accel mode: subdivide Ableton's clock more finely as the journey climbs (genuine acceleration, still locked to the grid)
+let effPPS=SLAVE.pulsesPerStep;
+if(SLAVE.tempoMode==='accel' && JOURNEY.enabled){ const r=journeyRatio(); effPPS=Math.max(2,Math.round(SLAVE.pulsesPerStep/Math.max(1,r))); }
+if(SLAVE.pulseCount>=effPPS){SLAVE.pulseCount=0;if(playing)slaveStep();}if(SLAVE.pulseCount===0){
+  JOURNEY.elapsed=(Date.now()-(JOURNEY.startTime||Date.now()))/1000;
+  if(SLAVE.tempoMode==='accel' && JOURNEY.enabled){
+    // Ableton sets the BASE pulse; Salvador's own 60→150 curve rides on top as a ratio.
+    // ★Journey独立トグルON時のみ. OFFならAbletonのBPMをそのまま使う(勝手に加速しない).
+    JOURNEY.bpm=SLAVE.bpmSmoothed*journeyRatio();
+  } else {
+    JOURNEY.bpm=SLAVE.bpmSmoothed;
+  }
+  document.getElementById('bpmLive').textContent=Math.round(JOURNEY.bpm);
+  updateJourneyUI();
+}}
+function slaveStep(){if(!playing)return;const effBpm=(SLAVE.tempoMode==='accel')?JOURNEY.bpm:SLAVE.bpmSmoothed;const sMs=60000/Math.max(1,effBpm)/4;const ds=parseInt(document.getElementById('droneSustain').value)/100;
+  if(POLY.on){
+    const onD=(POLY.grid%POLY.droneCyc)===0, onP=(POLY.grid%POLY.pulseCyc)===0, onO=(POLY.grid%POLY.ornCyc)===0;
+    if(!DRONE.muted&&onD)sendStep(droneSteps,droneIdx,'droneCh',0,sMs*POLY.droneCyc*ds);
+    if(onP)sendStep(pulseSteps,pulseIdx,'pulseCh',0,sMs*POLY.pulseCyc*0.9);
+    if(onO)sendStep(ornSteps,ornIdx,'ornCh',0,sMs*0.55);
+    POLY.grid++;
+    if((POLY.grid%POLY.droneCyc)===0){droneIdx++;if(droneIdx>=droneSteps.length)droneIdx=0;}
+    if((POLY.grid%POLY.pulseCyc)===0){pulseIdx++;if(pulseIdx>=pulseSteps.length){pulseIdx=0;barCount++;onLoopEnd();}}
+    if((POLY.grid%POLY.ornCyc)===0){ornIdx++;if(ornIdx>=ornSteps.length)ornIdx=0;}
+    kireTick();return;
+  }
+  if(!DRONE.muted)sendStep(droneSteps,droneIdx,'droneCh',0,sMs*ds);sendStep(pulseSteps,pulseIdx,'pulseCh',0,sMs);sendStep(ornSteps,ornIdx,'ornCh',0,sMs*0.55);droneIdx++;if(droneIdx>=droneSteps.length)droneIdx=0;pulseIdx++;if(pulseIdx>=pulseSteps.length){pulseIdx=0;barCount++;onLoopEnd();}ornIdx++;if(ornIdx>=ornSteps.length)ornIdx=0;kireTick();}
+
+function exportMIDI(){
+  const bpm=Math.round(JOURNEY.bpm);const tpb=480;const µs=Math.round(60000000/bpm);
+  function wv(v){const b=[];b.push(v&0x7F);v>>=7;while(v>0){b.unshift((v&0x7F)|0x80);v>>=7;}return b;}
+  function i32(v){return[(v>>24)&0xFF,(v>>16)&0xFF,(v>>8)&0xFF,v&0xFF];}
+  function i16(v){return[(v>>8)&0xFF,v&0xFF];}
+  const allTracks=[[droneSteps,'droneCh'],[pulseSteps,'pulseCh'],[ornSteps,'ornCh']];
+  const trackData=[];
+  allTracks.forEach(([steps,chId])=>{
+    const ch=(parseInt(document.getElementById(chId)?.value||1)-1);
+    const ev=[];let t=0;
+    steps.forEach(s=>{if(!s.active||!s.midi)return;const stk=Math.round(tpb*(s.dur/4));ev.push([t,[0x90|ch,s.midi,Math.round(s.vel*100+10)]]);ev.push([t+Math.round(stk*.88),[0x80|ch,s.midi,0]]);t+=stk;});
+    ev.sort((a,b)=>a[0]-b[0]);let lt=0;const td=[];
+    td.push(...[0,0xFF,0x51,0x03,...i32(µs).slice(1)]);
+    ev.forEach(([t2,msg])=>{td.push(...wv(t2-lt),...msg);lt=t2;});
+    td.push(0,0xFF,0x2F,0);
+    trackData.push(td);
+  });
+  const hdr=[0x4D,0x54,0x68,0x64,0,0,0,6,0,1,...i16(trackData.length),...i16(tpb)];
+  const allBytes=[...hdr];
+  trackData.forEach(td=>{allBytes.push(...[0x4D,0x54,0x72,0x6B,...i32(td.length)],...td);});
+  const bytes=new Uint8Array(allBytes);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'audio/midi'}));
+  a.download=`gismonti_salvador_${currentMode}_${bpm}bpm.mid`;a.click();
+}
+
+// ══════════════════════════════════════════════════════
+//  UI UPDATES
+// ══════════════════════════════════════════════════════
+function updateJourneyUI(){
+  const bpm=JOURNEY.bpm;
+  const start=parseInt(document.getElementById('bpmStart').value)||60;
+  const end=parseInt(document.getElementById('bpmEnd').value)||150;
+  const t=Math.max(0,Math.min(1,(bpm-start)/(end-start)));
+  const bf=document.getElementById('bpmFill');if(bf)bf.style.width=(t*100).toFixed(0)+'%';
+  const bv=document.getElementById('bpmVal');if(bv)bv.textContent=Math.round(bpm);
+  const bl=document.getElementById('bpmLive');if(bl)bl.textContent=Math.round(bpm);
+  const mb=document.getElementById('miniBpm');if(mb)mb.style.width=(t*100).toFixed(0)+'%';
+  const jb=document.getElementById('journeyBpm');if(jb)jb.textContent=Math.round(bpm);
+  const jf=document.getElementById('journeyF');if(jf)jf.style.width=(t*100).toFixed(0)+'%';
+  const jv=document.getElementById('journeyV');if(jv)jv.textContent=(t*100).toFixed(0)+'%';
+  // Elapsed
+  const sec=Math.round(JOURNEY.elapsed);
+  const ed=document.getElementById('elapsedDisp');
+  if(ed)ed.textContent=Math.floor(sec/60)+':'+(sec%60).toString().padStart(2,'0');
+}
+
+function updateKireUI(){
+  const kf=document.getElementById('kireF');if(kf)kf.style.width=(KIRE.level*100).toFixed(0)+'%';
+  const kv=document.getElementById('kireV');if(kv)kv.textContent=(KIRE.level*100).toFixed(0);
+  const af=document.getElementById('attackF');
+  const attack=parseInt(document.getElementById('pulseAttack').value)||85;
+  if(af)af.style.width=attack+'%';
+  const av=document.getElementById('attackV');if(av)av.textContent=attack;
+}
+
+function updateOrnUI(){
+  const dens=parseInt(document.getElementById('ornDensity').value)/100;
+  const bpmSync=document.getElementById('ornBpmSync').value==='1';
+  const bpmFactor=bpmSync?Math.min(1,(JOURNEY.bpm-60)/90):0;
+  const eff=Math.min(1,dens+bpmFactor*0.4);
+  const of=document.getElementById('ornDensF');if(of)of.style.width=(eff*100).toFixed(0)+'%';
+  const ov=document.getElementById('ornDensV');if(ov)ov.textContent=(eff*100).toFixed(0);
+  const tf=document.getElementById('tripF');
+  const trip=parseInt(document.getElementById('tripletProb').value)||55;
+  if(tf)tf.style.width=(trip*eff)+'%';
+  const tv=document.getElementById('tripV');if(tv)tv.textContent=(trip*eff).toFixed(0);
+  const sf=document.getElementById('silF');
+  const sil=parseInt(document.getElementById('silenceProb').value)||25;
+  if(sf)sf.style.width=sil+'%';
+  const sv=document.getElementById('silV');if(sv)sv.textContent=sil;
+  const mo=document.getElementById('miniOrn');if(mo)mo.style.width=(eff*100).toFixed(0)+'%';
+  const obd=document.getElementById('ornBpmDisp');
+  if(obd)obd.textContent='BPM '+Math.round(JOURNEY.bpm)+' → dens '+Math.round(eff*100)+'%';
+}
+
+function updateDroneUI(){
+  const chEl=document.getElementById('droneCh');
+  const disp=document.getElementById('droneChDisp');
+  if(chEl&&disp)disp.textContent=chEl.value;
+}
+
+// Canvas draws
+function drawVelCanvas(){
+  const cv=document.getElementById('velCanvas');if(!cv||!cv.getContext)return;
+  const W=cv.parentElement?.offsetWidth||160;cv.width=W;cv.height=50;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,50);
+  const total=pulseSteps.length;
+  const act=pulseSteps.filter(s=>s.active);if(act.length<2)return;
+  const E=EXPRESSION;
+  // draw the SHAPED velocity (what's actually sent): binary キレ blended with phrase arc
+  pulseSteps.forEach((s,i)=>{
+    if(!s.active)return;
+    const arc=phraseArc(i,total);
+    let vn=s.vel;
+    const shaped=vn*(1-E.velArc)+(0.35+arc*0.55)*E.velArc*(vn>0.15?1:0.6);
+    const x=(i/total)*W;
+    const barW=Math.max(1,(W/total)-1);
+    const h=shaped*46;
+    ctx.fillStyle=shaped>0.55?'rgba(120,96,64,.85)':'rgba(120,96,64,.3)';
+    ctx.fillRect(x,50-h,barW,h);
+  });
+  // overlay the phrase-arc curve (the breath) faintly
+  ctx.beginPath();
+  for(let i=0;i<total;i++){ const a=phraseArc(i,total); const x=(i/total)*W; const y=50-(0.35+a*0.55)*46; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.strokeStyle='rgba(200,112,64,.35)';ctx.lineWidth=1;ctx.stroke();
+}
+
+function drawJourneyCanvas(){
+  const cv=document.getElementById('journeyCanvas');if(!cv||!cv.getContext)return;
+  const W=cv.parentElement?.offsetWidth||160;cv.width=W;cv.height=50;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,50);
+  const h=JOURNEY.history;if(h.length<2)return;
+  const start=parseInt(document.getElementById('bpmStart').value)||60;
+  const end=parseInt(document.getElementById('bpmEnd').value)||150;
+  ctx.beginPath();
+  h.forEach((v,i)=>{const x=(i/h.length)*W,y=50-((v-start)/(end-start))*46-2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='rgba(200,72,32,.7)';ctx.lineWidth=1.3;ctx.stroke();
+}
+
+function drawOrnCanvas(){
+  const cv=document.getElementById('ornCanvas');if(!cv||!cv.getContext)return;
+  const W=cv.parentElement?.offsetWidth||160;cv.width=W;cv.height=50;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,50);
+  const act=ornSteps.filter(s=>s.active);if(act.length<2)return;
+  // Show triplets as clusters, silences as gaps
+  let x=0;
+  ornSteps.forEach((s,i)=>{
+    const bw=W/ornSteps.length;
+    if(s.type==='triplet'){
+      ctx.fillStyle='rgba(200,112,64,.7)';
+      ctx.fillRect(x,50-s.vel*40-2,bw-1,s.vel*40+2);
+    } else if(s.type==='rest'||!s.active){
+      ctx.fillStyle='rgba(44,52,44,.5)';
+      ctx.fillRect(x,46,bw-1,3);
+    } else if(s.type==='grace'){
+      ctx.fillStyle='rgba(200,112,64,.35)';
+      ctx.fillRect(x,50-s.vel*25-2,bw-1,s.vel*25+2);
+    }
+    x+=bw;
+  });
+}
+
+function drawDroneCanvas(){
+  const cv=document.getElementById('droneCanvas');if(!cv||!cv.getContext)return;
+  const W=cv.parentElement?.offsetWidth||160;cv.width=W;cv.height=50;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,50);
+  // Show drone as flat continuous wave with breathing variation
+  ctx.beginPath();
+  for(let x=0;x<W;x++){
+    const t=x/W;
+    const breath=0.5+Math.sin(t*Math.PI*8+DRONE.breathPhase)*0.15;
+    const y=30-breath*20;
+    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='rgba(48,72,56,.7)';ctx.lineWidth=1.2;ctx.stroke();
+  ctx.lineTo(W,50);ctx.lineTo(0,50);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,50);
+  g.addColorStop(0,'rgba(48,72,56,.15)');g.addColorStop(1,'rgba(48,72,56,.02)');
+  ctx.fillStyle=g;ctx.fill();
+}
+
+// ══════════════════════════════════════════════════════
+//  UNDO / REDO / SAVE / LOAD
+// ══════════════════════════════════════════════════════
+const UMAX=30;let _us=[],_rs=[],_prevState=null;
+// every control that defines the instrument's state — nothing escapes (逃さない)
+const STATE_CONTROLS=['rootSel','modeSel','primeSel','pulsePattern','pulseSteps',
+  'leapProb','pulseAttack','ornDensity','tripletProb','silenceProb','ornBpmSync',
+  'droneSustain','droneBreathe','droneType','bpmStart','bpmEnd','journeyDur','accelMode',
+  'slaveTempoMode','polyDrone','polyPulse','polyOrn','legDrone','legPulse','legOrn','velArc','humanize','lenBreath','lenDrone','gateDrone','lenPulse','gatePulse','lenOrn','gateOrn','mpeContour','mpeDrone','mpePulse','mpeOrn','mpeVar','swdrone','swpulse','sworn'];
+function captureState(){
+  const ctl={};
+  STATE_CONTROLS.forEach(function(id){ const el=document.getElementById(id); if(el)ctl[id]=el.value; });
+  return {
+    droneSteps:JSON.parse(JSON.stringify(droneSteps)),
+    pulseSteps:JSON.parse(JSON.stringify(pulseSteps)),
+    ornSteps:JSON.parse(JSON.stringify(ornSteps)),
+    currentMode, root:document.getElementById('rootSel').value, bpm:Math.round(JOURNEY.bpm),
+    ctl:ctl,
+    engine:{ primeGov:PRIME.governing, droneType:DRONE.type, droneMuted:DRONE.muted,
+             polyOn:POLY.on, polyD:POLY.droneCyc, polyP:POLY.pulseCyc, polyO:POLY.ornCyc,
+             slaveTempo:SLAVE.tempoMode, expr:JSON.parse(JSON.stringify(EXPRESSION)), gatelen:JSON.parse(JSON.stringify(GATELEN)), mpe:JSON.parse(JSON.stringify(MPE)),
+             // ★新機能もundo対象に
+             arcOn:ARC.on, arcMode:ARC.mode, arcCustom:JSON.parse(JSON.stringify(ARC_CUSTOM)),
+             maneuvers:JSON.parse(JSON.stringify(MANEUVERS)),
+             swing:JSON.parse(JSON.stringify(SWING)),
+             invert:JSON.parse(JSON.stringify(INVERT)),
+             journeyEnabled:JOURNEY.enabled }
+  };
+}
+function pushUndo(){ if(_restoring) return; const snap=captureState(); const sj=JSON.stringify(snap); if(_us.length && JSON.stringify(_us[_us.length-1])===sj) return; _us.push(snap); if(_us.length>UMAX)_us.shift(); _rs=[]; updateUndoBtns(); _prevState=captureState(); }
+function commitChange(){
+  if(_restoring) return;   // ★復元中はredoスタックを消さない
+  if(_prevState){
+    const pj=JSON.stringify(_prevState);
+    if(!_us.length || JSON.stringify(_us[_us.length-1])!==pj){
+      _us.push(_prevState); if(_us.length>UMAX)_us.shift(); _rs=[]; updateUndoBtns();
+    }
+  }
+  setTimeout(function(){ _prevState=captureState(); }, 0);
+}
+function initUndoTracking(){
+  _prevState=captureState();
+  // every state-defining control commits an undo step when it changes
+  STATE_CONTROLS.forEach(function(id){
+    const el=document.getElementById(id); if(!el)return;
+    const evt = (el.tagName==='SELECT'||el.type==='number') ? 'change' : 'change';
+    el.addEventListener('change', commitChange);
+  });
+  // engine toggles (buttons) that aren't form controls: wrap them
+  ['btnPoly','primeSel','droneType','slaveTempoMode'].forEach(function(id){
+    const el=document.getElementById(id); if(el && el.tagName!=='SELECT' && el.tagName!=='INPUT'){ el.addEventListener('click', commitChange); }
+  });
+}
+function applyState(s){
+  droneSteps=JSON.parse(JSON.stringify(s.droneSteps));
+  pulseSteps=JSON.parse(JSON.stringify(s.pulseSteps));
+  ornSteps=JSON.parse(JSON.stringify(s.ornSteps));
+  currentMode=s.currentMode||'dorian';
+  JOURNEY.bpm=s.bpm||60;
+  // restore every control value
+  if(s.ctl){ Object.keys(s.ctl).forEach(function(id){ const el=document.getElementById(id); if(el){ el.value=s.ctl[id]; const v=document.getElementById(id+'V'); if(v)v.textContent=el.value; } }); }
+  // restore engine state
+  if(s.engine){
+    PRIME.governing=s.engine.primeGov||3;
+    DRONE.type=s.engine.droneType||'fifth'; DRONE.muted=!!s.engine.droneMuted;
+    POLY.on=!!s.engine.polyOn; POLY.droneCyc=s.engine.polyD||3; POLY.pulseCyc=s.engine.polyP||5; POLY.ornCyc=s.engine.polyO||7;
+    SLAVE.tempoMode=s.engine.slaveTempo||'follow'; if(s.engine.expr)Object.assign(EXPRESSION,s.engine.expr); if(s.engine.gatelen)Object.assign(GATELEN,s.engine.gatelen); if(s.engine.mpe)Object.assign(MPE,s.engine.mpe);
+    // ★新機能の復元
+    if(s.engine.arcOn!==undefined){ ARC.on=s.engine.arcOn; const ab=document.getElementById('btnArc'); if(ab){ab.textContent='弧 ARC: '+(ARC.on?'ON':'OFF');ab.classList.toggle('act-arc',ARC.on);} }
+    if(s.engine.arcMode){ ARC.mode=s.engine.arcMode; const amb=document.getElementById('btnArcMode'); if(amb)amb.textContent='モード: '+(ARC.mode==='custom'?'カスタム':'自動'); const aeb=document.getElementById('btnArcEdit'); if(aeb)aeb.style.display=ARC.mode==='custom'?'':'none'; }
+    if(s.engine.arcCustom){ ARC_CUSTOM=JSON.parse(JSON.stringify(s.engine.arcCustom)); if(document.getElementById('arcEditor')&&document.getElementById('arcEditor').style.display!=='none')renderArcEditor(); }
+    if(s.engine.maneuvers){ Object.keys(MANEUVERS).forEach(v=>Object.assign(MANEUVERS[v],s.engine.maneuvers[v]||{})); ['drone','pulse','orn'].forEach(v=>['rootless','contrary','octaveBreak','naki','dwell','transition','space'].forEach(k=>{const b=document.getElementById('mnv_'+v+'_'+k);if(b)b.classList.toggle('act',!!MANEUVERS[v][k]);})); }
+    if(s.engine.swing){ Object.assign(SWING,s.engine.swing); ['drone','pulse','orn'].forEach(v=>{const el=document.getElementById('sw'+v);if(el){el.value=SWING[v];const l=document.getElementById('sw'+v+'V');if(l)l.textContent=SWING[v];}}); }
+    if(s.engine.invert){ ['drone','pulse','orn'].forEach(v=>{ if(s.engine.invert[v]){ Object.assign(INVERT[v],s.engine.invert[v]); ['pitch','retro'].forEach(k=>{const b=document.getElementById('inv'+v+k);if(b)b.classList.toggle('act',!!INVERT[v][k]);}); } }); }
+    if(s.engine.journeyEnabled!==undefined){ JOURNEY.enabled=s.engine.journeyEnabled; const jb=document.getElementById('btnJourney'); if(jb){jb.textContent=JOURNEY.enabled?'ON':'OFF';jb.classList.toggle('act',JOURNEY.enabled);} }
+  }
+  const rs=document.getElementById('rootSel'); if(rs)rs.value=s.root;
+  const ms=document.getElementById('modeSel'); if(ms)ms.value=currentMode;
+  document.getElementById('modeDisplay').textContent=getMode().name;
+  // sync derived UI
+  const pb=document.getElementById('btnPoly'); if(pb){pb.textContent='3:5 ポリリズム: '+(POLY.on?'ON':'OFF');pb.style.color=POLY.on?'var(--pulse)':'';}
+  const pc=document.getElementById('polyCtl'); if(pc)pc.style.display=POLY.on?'block':'none';
+  if(typeof updatePolyLcm==='function')updatePolyLcm();
+  buildGrid('drone');buildGrid('pulse');buildGrid('orn');drawPulseCurve();updateJourneyUI();updateUndoBtns();
+}
+let _restoring=false;   // ★undo/redo復元中フラグ: この間はcommitChangeを抑止(redoスタックを守る)
+function undo(){ if(!_us.length)return; _restoring=true; _rs.push(captureState()); applyState(_us.pop()); _prevState=captureState(); _restoring=false; updateUndoBtns(); }
+function redo(){ if(!_rs.length)return; _restoring=true; _us.push(captureState()); applyState(_rs.pop()); _prevState=captureState(); _restoring=false; updateUndoBtns(); }
+function updateUndoBtns(){const u=document.getElementById('btnUndo'),r=document.getElementById('btnRedo');if(u)u.style.opacity=_us.length?'1':'.3';if(r)r.style.opacity=_rs.length?'1':'.3';}
+function saveState(){const s=captureState();s._tool='GismontiSalvador';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(s,null,2)],{type:'application/json'}));a.download=`gismonti_salvador_${currentMode}.json`;a.click();}
+function loadState(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const s=JSON.parse(ev.target.result);pushUndo();applyState(s);}catch(err){alert('Load error: '+err.message);}};r.readAsText(f);e.target.value='';}
+
+let _taps=[];
+function toggleJourney(){
+  if(typeof pushUndo==='function')pushUndo();
+  JOURNEY.enabled=!JOURNEY.enabled;
+  const b=document.getElementById('btnJourney');
+  if(b){ b.textContent=JOURNEY.enabled?'ON':'OFF'; b.style.color=JOURNEY.enabled?'var(--earth)':''; b.classList.toggle('act',JOURNEY.enabled); }
+  // ONにした瞬間から«旅»が始まる(再生中でも、今から測る). OFFなら現在BPMで固定.
+  if(JOURNEY.enabled && playing){ JOURNEY.startTime=Date.now(); }
+  jLog('BPM Journey: '+(JOURNEY.enabled?'ON — 旅を始める':'OFF — BPM固定'));
+}
+function tapTempo(){const now=Date.now();_taps.push(now);if(_taps.length>4)_taps.shift();if(_taps.length>=2){const gaps=_taps.slice(1).map((t,i)=>t-_taps[i]);const avg=gaps.reduce((a,b)=>a+b,0)/gaps.length;const bpm=Math.round(60000/avg);if(bpm>30&&bpm<220){JOURNEY.bpm=bpm;updateJourneyUI();}}}
+
+function dLog(msg){const log=document.getElementById('droneLog');if(!log)return;const s=document.createElement('span');s.textContent=msg;s.style.cssText='color:rgba(48,72,56,.75);display:block';log.insertBefore(s,log.firstChild);while(log.children.length>4)log.removeChild(log.lastChild);}
+function pLog(msg){const log=document.getElementById('pulseLog');if(!log)return;const s=document.createElement('span');s.textContent=msg;s.style.cssText='color:rgba(120,96,64,.75);display:block';log.insertBefore(s,log.firstChild);while(log.children.length>4)log.removeChild(log.lastChild);}
+function oLog(msg){const log=document.getElementById('ornLog');if(!log)return;const s=document.createElement('span');s.textContent=msg;s.style.cssText='color:rgba(200,112,64,.75);display:block';log.insertBefore(s,log.firstChild);while(log.children.length>4)log.removeChild(log.lastChild);}
+function jLog(msg){const log=document.getElementById('journeyLog');if(!log)return;const s=document.createElement('span');s.textContent=msg;s.style.cssText='color:rgba(200,72,32,.7);display:block';log.insertBefore(s,log.firstChild);while(log.children.length>4)log.removeChild(log.lastChild);}
+
+// Slider labels
+document.querySelectorAll('input[type=range]').forEach(el=>{
+  const vid=el.id+'V';
+  el.addEventListener('input',()=>{const v=document.getElementById(vid);if(v)v.textContent=el.value;});
+});
+
+// Dock tabs
+(function(){document.querySelectorAll('.dock-tab[data-panel]').forEach(tab=>{tab.addEventListener('click',()=>{const p=tab.dataset.panel;if(tab.classList.contains('active')){toggleDock();return;}document.querySelectorAll('.dock-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.dock-panel').forEach(p2=>p2.classList.remove('active'));const dp=document.getElementById('dp-'+p);if(dp)dp.classList.add('active');const panels=document.getElementById('dockPanels');if(panels){panels.classList.remove('collapsed');document.getElementById('dockColBtn').textContent='▲';}});});})();
+let _dockOpen=true;
+function toggleDock(){_dockOpen=!_dockOpen;const p=document.getElementById('dockPanels'),b=document.getElementById('dockColBtn');if(p)p.classList.toggle('collapsed',!_dockOpen);if(b)b.textContent=_dockOpen?'▲':'▼';}
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.code==='KeyZ'){e.preventDefault();if(e.shiftKey)redo();else undo();}
+  if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='SELECT'){e.preventDefault();togglePlay();}
+  if(e.code==='KeyG'&&e.target.tagName!=='INPUT'){e.preventDefault();generateAll();}
+  if(e.code==='KeyP'&&e.target.tagName!=='INPUT'){e.preventDefault();generatePulse();}
+  if(e.code==='KeyO'&&e.target.tagName!=='INPUT'){e.preventDefault();generateOrnament();}
+  if(e.code==='KeyK'&&e.target.tagName!=='INPUT'){e.preventDefault();fireKire();}
+  if(e.code==='BracketLeft'&&e.target.tagName!=='INPUT'){e.preventDefault();bpmStep(-5);}
+  if(e.code==='BracketRight'&&e.target.tagName!=='INPUT'){e.preventDefault();bpmStep(+5);}
+});
+
+// Animation loop
+let _rafId=null;
+function renderLoop(){
+  drawDroneCanvas();
+  if(ARC.on) driveArc();
+  if(_tickCount%3===0)updateOrnUI();
+  _rafId=requestAnimationFrame(renderLoop);
+}
+
+// ══════════════════════════════════════════════════════
+//  BASQUIAT PAINTING ENGINE
+// ══════════════════════════════════════════════════════
+
+const BSQT = {
+  init: false,
+  // Basquiat palette
+  colors: {
+    bg:      '#1a1208',
+    cream:   '#e8d8a8',
+    red:     '#c82010',
+    yellow:  '#e8c020',
+    blue:    '#1840a0',
+    green:   '#208040',
+    ink:     '#080808',
+    rust:    '#8a3010',
+    white:   '#f0e8d8',
+    ochre:   '#c89820',
+  },
+  // State
+  bgLayer: false,   // background been painted?
+  strokeCount: 0,
+  lastX: -1,
+  lastY: -1,
+  dronePhase: 0,
+};
+
+function getBsqtCtx(){
+  const cv = document.getElementById('basquiatCanvas');
+  if(!cv||!cv.getContext) return null;
+  const W = cv.parentElement?.offsetWidth||800;
+  const H = cv.parentElement?.offsetHeight||320;
+  if(!BSQT.init || cv.width!==W){
+    const tmp=document.createElement('canvas');
+    tmp.width=cv.width; tmp.height=cv.height;
+    const tctx=tmp.getContext('2d');
+    if(BSQT.init) tctx.drawImage(cv,0,0);
+    cv.width=W; cv.height=H;
+    const ctx=cv.getContext('2d');
+    // Basquiat: start with dirty warm black, not clean
+    ctx.fillStyle=BSQT.colors.bg;
+    ctx.fillRect(0,0,W,H);
+    if(BSQT.init) ctx.drawImage(tmp,0,0,W,H);
+    else {
+      // Initial texture: irregular background patches
+      paintInitialTexture(ctx,W,H);
+    }
+    BSQT.init=true;
+  }
+  return cv.getContext('2d');
+}
+
+function paintInitialTexture(ctx,W,H){
+  // Basquiat often starts with raw canvas or rough primer
+  // Warm dark base with irregular patches
+  const patches=[
+    {x:0,    y:0,    w:W*0.6, h:H*0.4, col:'#221508', a:0.6},
+    {x:W*0.4,y:H*0.3,w:W*0.6,h:H*0.5, col:'#180e04', a:0.5},
+    {x:0,    y:H*0.6,w:W*0.5,h:H*0.4, col:'#2a1a08', a:0.4},
+  ];
+  patches.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.a;
+    ctx.fillStyle=p.col;
+    ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.restore();
+  });
+}
+
+function basquiatDrone(midi, vel){
+  // DRONE → horizontal raw line, ノイズのある帯
+  // Like Basquiat's nervous horizontal strokes
+  const ctx=getBsqtCtx(); if(!ctx) return;
+  const cv=document.getElementById('basquiatCanvas');
+  const W=cv.width, H=cv.height;
+  const root=getArcRoot();
+
+  // Y from pitch
+  const y=H-((midi-root+18)/36)*H*0.85-H*0.05;
+  const yCl=Math.max(4,Math.min(H-4,y));
+
+  // Drone: continuous horizontal band, rough edges
+  const breathe=parseInt(document.getElementById('droneBreathe').value)/100;
+  const lineH=Math.max(2, vel*8+2);
+
+  ctx.save();
+  // Basquiat's ink lines: black or very dark
+  ctx.strokeStyle=BSQT.colors.ink;
+  ctx.lineWidth=lineH+Math.random()*3;
+  ctx.globalAlpha=vel*0.6+0.25;
+  ctx.globalCompositeOperation='source-over';
+
+  ctx.beginPath();
+  // Wobbly line — hand-drawn feel
+  ctx.moveTo(0, yCl+(Math.random()-0.5)*4);
+  for(let x=10; x<W; x+=15+Math.random()*20){
+    const jitterY=yCl+(Math.random()-0.5)*lineH*2;
+    ctx.lineTo(x, jitterY);
+  }
+  ctx.lineTo(W, yCl+(Math.random()-0.5)*4);
+  ctx.stroke();
+
+  // Occasional colored fill strip (Basquiat's color field)
+  if(Math.random()<0.12){
+    const bsqColors=[BSQT.colors.cream,BSQT.colors.ochre,BSQT.colors.rust];
+    ctx.globalAlpha=0.08+vel*0.06;
+    ctx.globalCompositeOperation='overlay';
+    ctx.fillStyle=bsqColors[Math.floor(Math.random()*bsqColors.length)];
+    ctx.fillRect(0, yCl-lineH*3, W, lineH*6);
+  }
+  ctx.restore();
+}
+
+function basquiatPulse(midi, vel, isAccent, isLeap){
+  // PULSE → vertical strokes,断ち切るような線
+  // Basquiat's decisive vertical marks
+  const ctx=getBsqtCtx(); if(!ctx) return;
+  const cv=document.getElementById('basquiatCanvas');
+  const W=cv.width, H=cv.height;
+  const root=getArcRoot();
+
+  const y=H-((midi-root+18)/36)*H*0.85-H*0.05;
+  const yCl=Math.max(4,Math.min(H-4,y));
+
+  // X: time-spread with some clustering
+  const x=((BSQT.strokeCount*97+barCount*43)%W*0.9)+W*0.05;
+  BSQT.strokeCount++;
+
+  ctx.save();
+  ctx.globalCompositeOperation='source-over';
+
+  if(isAccent){
+    // Strong accent: thick vertical stroke — キレ
+    ctx.globalAlpha=vel*0.85+0.1;
+    ctx.fillStyle=vel>0.7?BSQT.colors.ink:BSQT.colors.rust;
+    const strokeW=Math.max(3,vel*12+2);
+    const strokeH=Math.max(15,vel*H*0.35);
+    ctx.fillRect(x-strokeW/2, yCl-strokeH/2, strokeW, strokeH);
+
+    // Basquiat adds a crown/halo mark on strong accents
+    if(vel>0.75 && Math.random()<0.35){
+      ctx.strokeStyle=BSQT.colors.cream;
+      ctx.lineWidth=1.5;
+      ctx.globalAlpha=0.6;
+      // Crown: three short vertical ticks above note
+      [-6,0,6].forEach(dx=>{
+        ctx.beginPath();
+        ctx.moveTo(x+dx, yCl-strokeH/2-2);
+        ctx.lineTo(x+dx, yCl-strokeH/2-8);
+        ctx.stroke();
+      });
+    }
+  } else {
+    // Soft note: thin scratchy line
+    ctx.globalAlpha=vel*0.5+0.08;
+    ctx.strokeStyle=BSQT.colors.cream;
+    ctx.lineWidth=1+Math.random();
+    ctx.beginPath();
+    ctx.moveTo(x, yCl-8);
+    ctx.lineTo(x+(Math.random()-0.5)*6, yCl+8);
+    ctx.stroke();
+  }
+
+  // Leap → diagonal slash (Basquiat's energy lines)
+  if(isLeap){
+    ctx.globalAlpha=0.4+vel*0.3;
+    ctx.strokeStyle=BSQT.colors.red;
+    ctx.lineWidth=2+vel*3;
+    const prevY=BSQT.lastY>0?BSQT.lastY:yCl;
+    ctx.beginPath();
+    ctx.moveTo(BSQT.lastX>0?BSQT.lastX:x-30, prevY);
+    ctx.lineTo(x, yCl);
+    ctx.stroke();
+  }
+
+  BSQT.lastX=x; BSQT.lastY=yCl;
+  ctx.restore();
+
+  // Occasional large color splash (Basquiat's raw color fields)
+  if(Math.random()<0.04){
+    ctx.save();
+    const splashCols=[BSQT.colors.red,BSQT.colors.yellow,BSQT.colors.blue,BSQT.colors.green];
+    ctx.globalAlpha=0.06+vel*0.04;
+    ctx.globalCompositeOperation='overlay';
+    ctx.fillStyle=splashCols[Math.floor(Math.random()*splashCols.length)];
+    ctx.fillRect(
+      x-W*0.1+Math.random()*W*0.2,
+      yCl-H*0.15,
+      W*(0.1+Math.random()*0.2),
+      H*(0.15+Math.random()*0.25)
+    );
+    ctx.restore();
+  }
+}
+
+function basquiatOrnament(midi, vel, type){
+  // ORNAMENT → triplet=点の群れ, rest=×記号, grace=小さい◯
+  const ctx=getBsqtCtx(); if(!ctx) return;
+  const cv=document.getElementById('basquiatCanvas');
+  const W=cv.width, H=cv.height;
+  const root=getArcRoot();
+
+  const y=H-((midi-root+18)/36)*H*0.85-H*0.05;
+  const yCl=Math.max(4,Math.min(H-4,y));
+  const x=((BSQT.strokeCount*61+ornIdx*37)%W*0.88)+W*0.06;
+
+  ctx.save();
+  ctx.globalCompositeOperation='source-over';
+
+  if(type==='triplet'){
+    // Three dots — Basquiat's signature dot clusters
+    ctx.fillStyle=BSQT.colors.yellow;
+    ctx.globalAlpha=vel*0.8+0.15;
+    [-5,0,5].forEach((dx,i)=>{
+      const r=1.5+vel*2.5;
+      ctx.beginPath();
+      ctx.arc(x+dx, yCl+(i-1)*4, r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    // Basquiat: sometimes adds a rough outline around clusters
+    if(Math.random()<0.3){
+      ctx.strokeStyle=BSQT.colors.ink;
+      ctx.lineWidth=1;
+      ctx.globalAlpha=0.5;
+      ctx.beginPath();
+      ctx.arc(x, yCl, 8+vel*4, 0, Math.PI*2);
+      ctx.stroke();
+    }
+  }
+  else if(type==='rest'){
+    // × mark — Basquiat's crossed-out elements
+    // "間" = a mark that says "this space is intentional"
+    ctx.strokeStyle=BSQT.colors.cream;
+    ctx.lineWidth=1.5+Math.random();
+    ctx.globalAlpha=0.35+Math.random()*0.2;
+    const sz=5+Math.random()*4;
+    ctx.beginPath();
+    ctx.moveTo(x-sz,yCl-sz); ctx.lineTo(x+sz,yCl+sz);
+    ctx.moveTo(x+sz,yCl-sz); ctx.lineTo(x-sz,yCl+sz);
+    ctx.stroke();
+  }
+  else if(type==='grace'){
+    // Small circle — ornamental mark
+    ctx.strokeStyle=BSQT.colors.ochre;
+    ctx.lineWidth=1;
+    ctx.globalAlpha=0.4+vel*0.3;
+    ctx.beginPath();
+    ctx.arc(x, yCl, 2+vel*3, 0, Math.PI*2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function basquiatKire(){
+  // キレ発動 → black slash + white splatter
+  const ctx=getBsqtCtx(); if(!ctx) return;
+  const cv=document.getElementById('basquiatCanvas');
+  const W=cv.width, H=cv.height;
+
+  ctx.save();
+  // Big black diagonal slash — Basquiat's gestural mark
+  ctx.strokeStyle=BSQT.colors.ink;
+  ctx.lineWidth=8+Math.random()*12;
+  ctx.globalAlpha=0.75+Math.random()*0.2;
+  ctx.globalCompositeOperation='source-over';
+  ctx.beginPath();
+  const sx=Math.random()*W*0.3;
+  const sy=Math.random()*H*0.3;
+  ctx.moveTo(sx,sy);
+  ctx.lineTo(sx+W*(0.2+Math.random()*0.5), sy+H*(0.2+Math.random()*0.5));
+  ctx.stroke();
+
+  // White splatter dots
+  ctx.fillStyle=BSQT.colors.white;
+  ctx.globalAlpha=0.6;
+  for(let i=0;i<6;i++){
+    const r=2+Math.random()*5;
+    const dx=Math.random()*W;
+    const dy=Math.random()*H;
+    ctx.beginPath();
+    ctx.arc(dx,dy,r,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // Red accent streak
+  ctx.strokeStyle=BSQT.colors.red;
+  ctx.lineWidth=3+Math.random()*5;
+  ctx.globalAlpha=0.5;
+  ctx.beginPath();
+  ctx.moveTo(Math.random()*W,Math.random()*H);
+  ctx.lineTo(Math.random()*W,Math.random()*H);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function basquiatBpmMilestone(bpm){
+  // At BPM milestones: paint a number/symbol (Basquiat loved text/numbers)
+  const ctx=getBsqtCtx(); if(!ctx) return;
+  const cv=document.getElementById('basquiatCanvas');
+  const W=cv.width, H=cv.height;
+
+  ctx.save();
+  ctx.globalAlpha=0.25+Math.random()*0.2;
+  ctx.globalCompositeOperation='overlay';
+  // Random position
+  const x=30+Math.random()*(W-80);
+  const y=30+Math.random()*(H-40);
+  const sz=20+Math.random()*28;
+  ctx.font=`bold ${sz}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle=Math.random()<0.5?BSQT.colors.cream:BSQT.colors.red;
+  ctx.fillText(Math.round(bpm)+'', x, y);
+
+  // Basquiat: sometimes crosses out text
+  if(Math.random()<0.4){
+    ctx.strokeStyle=BSQT.colors.ink;
+    ctx.lineWidth=2;
+    ctx.globalAlpha=0.5;
+    ctx.beginPath();
+    ctx.moveTo(x-5,y-sz*0.3);
+    ctx.lineTo(x+sz*1.2,y-sz*0.3);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function clearBasquiat(){
+  BSQT.init=false; BSQT.strokeCount=0; BSQT.lastX=-1; BSQT.lastY=-1;
+  const cv=document.getElementById('basquiatCanvas'); if(!cv||!cv.getContext)return;
+  const ctx=cv.getContext('2d');
+  ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
+  ctx.fillStyle=BSQT.colors.bg; ctx.fillRect(0,0,cv.width,cv.height);
+  paintInitialTexture(ctx,cv.width,cv.height);
+  BSQT.init=true;
+}
+
+function downloadBasquiat(){
+  const cv=document.getElementById('basquiatCanvas'); if(!cv)return;
+  const a=document.createElement('a');
+  a.download='gismonti_salvador_basquiat_'+currentMode+'_'+Math.round(JOURNEY.bpm)+'bpm_'+Date.now()+'.png';
+  a.href=cv.toDataURL('image/png');
+  a.click();
+}
+
+
+function testAllChannels(){
+  if(!midiOut){ alert('MIDIが接続されていません'); return; }
+  const ctx = getAudioCtx(); if(ctx.state==='suspended') ctx.resume();
+  // Send a note on each channel with 500ms gap
+  // Ch 1: root, Ch 2: root+4, Ch 3: root+7, Ch 4: root+12
+  const root = getArcRoot();
+  const notes = [root, root+4, root+7, root+12];
+  const chNames = ['Ch 1 (Drone)', 'Ch 2 (Pulse)', 'Ch 3 (Orn)', 'Ch 4'];
+  notes.forEach((note, i) => {
+    setTimeout(() => {
+      const statusOn  = 0x90 | i;
+      const statusOff = 0x80 | i;
+      console.log('Sending Ch'+(i+1)+': status='+statusOn.toString(16)+' note='+note+' vel=100');
+      midiOut.send([statusOn,  note, 100]);
+      setTimeout(() => midiOut.send([statusOff, note, 0]), 400);
+    }, i * 600);
+  });
+  alert('Ch 1→2→3→4 に順番にノートを送ります。\nコンソール(F12)でも確認できます。');
+}
+
+
+function init(){
+  populateModes();
+  populateDroneTypes();
+  initRhythmUI();
+  buildMacros();
+  populateChordTastes();
+  buildChordRow('pulse');
+  buildChordRow('orn');
+  document.getElementById('modeDisplay').textContent=getMode().name;
+  generateAll();
+  updateJourneyUI();
+  initMIDI();
+  initUndoTracking();
+  renderLoop();
+}
+init();
+</script>
+</body>
+</html>

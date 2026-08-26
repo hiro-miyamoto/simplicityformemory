@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CIRANDA — 連続時間の魂シーケンサー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070608; --s0:#0b0a0e; --s1:#100e14; --bd:#181620; --bd2:#241f2c;
+  --text:#cbc6d0; --dim:#54505c; --fog:#1e1b26;
+  --low:#7a9a88;    /* lower layer — sage (土台) */
+  --mel:#e0b870;    /* melody — gold (泳ぐ旋律) */
+  --inner:#90b4d4;  /* inner voice — silver-blue */
+  --bone:#dcd6cc; --paper:#050409; --hot:#ff6a4a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;min-height:100vh;overflow-x:hidden;}
+header{padding:.9rem 1.5rem .6rem;border-bottom:1px solid var(--bd);display:flex;align-items:flex-end;gap:1.4rem;background:var(--paper);}
+.hname{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:300;font-style:italic;letter-spacing:.05em;color:var(--bone);line-height:1;}
+.hsub{font-size:.58rem;color:var(--dim);letter-spacing:.32em;text-transform:uppercase;margin-top:.3rem;}
+.hr{margin-left:auto;display:flex;align-items:center;gap:.5rem;}
+.transport{padding:.45rem 1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:.5rem;background:var(--paper);flex-wrap:wrap;}
+select,input[type=number]{background:var(--s1);border:1px solid var(--bd);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:.16rem .28rem;}
+input[type=number]{width:48px;}
+.btn{padding:.26rem .66rem;border:1px solid var(--bd);background:transparent;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer;transition:all .1s;letter-spacing:.02em;}
+.btn:hover{border-color:var(--mel);color:var(--mel);}
+.btn.play{border-color:var(--mel);color:var(--mel);font-size:.78rem;padding:.28rem .9rem;}
+.midi-dot{width:7px;height:7px;border-radius:50%;background:var(--fog);}
+.midi-dot.on{background:var(--low);box-shadow:0 0 5px var(--low);}
+.sep{width:1px;height:16px;background:var(--bd);margin:0 .15rem;}
+.tl{font-size:.62rem;color:var(--dim);}
+.layout{display:flex;flex-direction:column;height:calc(100vh - 96px);overflow:hidden;}
+.mainCol{display:flex;flex-direction:column;overflow:hidden;flex:0 0 auto;}
+.tl-wrap{height:150px;overflow:hidden;padding:.3rem .8rem;border-bottom:1px solid var(--bd);}
+#timeline{display:block;width:100%;}
+.info{padding:.3rem 1rem;border-bottom:1px solid var(--bd);background:var(--s0);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.78rem;color:var(--text);line-height:1.35;height:2rem;overflow:hidden;}
+.info .k{color:var(--mel);font-style:normal;font-family:'JetBrains Mono',monospace;font-size:.66rem;}
+/* the board: all panels laid out in columns that fill the width, no scroll */
+.npboard{flex:0 0 auto;background:var(--s0);border-bottom:1px solid var(--bd);padding:.4rem .6rem;overflow-x:auto;}
+.npgrid{display:grid;gap:.18rem .3rem;align-items:center;}
+.npgrid .gh{font-size:.56rem;color:var(--mel);text-align:center;font-family:'Cormorant Garamond',serif;font-style:italic;}
+.npgrid .rn{font-size:.72rem;color:var(--mel);font-weight:500;text-align:right;padding-right:.3rem;font-family:'JetBrains Mono',monospace;}
+.npgrid .cell{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.npgrid .cell input[type=range]{width:100%;height:3px;accent-color:var(--mel);}
+.npgrid .cell .cv{font-size:.5rem;color:var(--dim);}
+.npglob{display:flex;gap:1rem;align-items:center;margin-bottom:.35rem;flex-wrap:wrap;}
+.npglob .ttl{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.95rem;color:var(--mel);}
+.npglob .gctl{display:flex;align-items:center;gap:.3rem;}
+.npglob .gctl label{font-size:.56rem;color:var(--dim);}
+.npglob .gctl input[type=range]{width:80px;height:3px;accent-color:var(--mel);}
+.monwrap{margin-left:auto;display:flex;flex-direction:column;gap:.1rem;min-width:240px;}
+.monttl{font-size:.5rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.midimon{font-family:'JetBrains Mono',monospace;font-size:.54rem;line-height:1.25;max-height:78px;overflow:hidden;background:var(--paper);border:1px solid var(--bd);padding:.2rem .3rem;}
+.midimon .monhead{display:flex;color:var(--dim);font-size:.48rem;border-bottom:1px solid var(--bd);margin-bottom:1px;}
+.midimon .monrow{display:flex;}
+.midimon .monrow span,.midimon .monhead span{display:inline-block;text-align:left;}
+.side{flex:1;overflow-y:auto;background:var(--paper);padding:.4rem;
+  column-count:5;column-gap:.4rem;}
+.side .panel{break-inside:avoid;margin-bottom:.4rem;display:inline-block;width:100%;}
+.panel{background:var(--s0);border:1px solid var(--bd);padding:.35rem .4rem;}
+.pt{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.82rem;margin-bottom:.25rem;}
+.pt.low{color:var(--low);} .pt.mel{color:var(--mel);} .pt.inner{color:var(--inner);}
+.pr{display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;}
+.pr label{font-size:.62rem;color:var(--dim);width:66px;flex-shrink:0;}
+.pr select{flex:1;font-size:.64rem;}
+.pr input[type=range]{flex:1;height:2px;}
+.prv{font-size:.62rem;width:34px;text-align:right;color:var(--mel);}
+.note{font-size:.6rem;color:var(--dim);line-height:1.6;font-style:italic;font-family:'Cormorant Garamond',serif;}
+.vbtn{padding:.1rem .42rem;border:1px solid var(--bd);background:transparent;color:var(--dim);font-size:.58rem;cursor:pointer;font-family:'JetBrains Mono',monospace;}
+.vbtn.on{border-color:var(--hot);color:var(--hot);}
+.prm{display:flex;align-items:center;gap:.2rem;margin-bottom:.1rem;padding:.04rem .1rem;border-radius:2px;}
+.prm.sel{background:rgba(224,184,112,.08);outline:1px solid rgba(224,184,112,.3);}
+.prm label{font-size:.5rem;color:var(--dim);width:62px;flex-shrink:0;cursor:pointer;line-height:1.1;}
+.prm input[type=range]{flex:1;height:2px;accent-color:var(--mel);}
+.prm .pv{font-size:.56rem;width:34px;text-align:right;color:var(--mel);}
+.stepper{display:flex;gap:.15rem;}
+.stepper button{width:15px;height:15px;border:1px solid var(--bd);background:var(--s1);color:var(--text);font-size:.6rem;line-height:1;cursor:pointer;padding:0;border-radius:2px;}
+.stepper button:hover{border-color:var(--mel);color:var(--mel);}
+.grp{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.82rem;color:var(--dim);margin:.4rem 0 .2rem;border-bottom:1px solid var(--bd);padding-bottom:.1rem;}
+.grp{font-size:.62rem!important;margin:.2rem 0 .1rem!important;}
+.pv{font-size:.5rem!important;width:26px!important;}
+.note{font-size:.5rem!important;line-height:1.3!important;}
+.stepper button{width:13px;height:13px;font-size:.55rem;}
+.prm input[type=range]{height:2px;}
+.side .panel .pt{font-size:.74rem;}
+.side .grp{color:var(--mel);opacity:.7;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="hname">Ciranda</div>
+    <div class="hsub">連続時間の魂シーケンサー · a continuous-time instrument</div>
+  </div>
+  <div class="hr">
+    <div class="midi-dot" id="midiDot"></div>
+    <span id="midiStat" style="font-size:.62rem;color:var(--dim);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+    <select id="midiOut" onchange="selectOut(this.value)" style="max-width:120px"></select>
+    <select id="midiIn" onchange="selectIn(this.value)" style="max-width:120px" title="MIDIクロック入力(Ableton)"></select>
+    <button class="btn" id="slaveBtn" onclick="toggleSlave()" style="font-size:.58rem" title="Abletonのクロックに同期">Slave ○</button>
+    <button class="btn" onclick="initMIDI()" style="font-size:.58rem">↻</button>
+  </div>
+</header>
+
+<div class="transport">
+  <button class="btn play" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+  <button class="btn" onclick="regen()">↻ 生成</button>
+  <button class="btn" onclick="exportMIDI()">⬇ MIDI</button>
+  <div class="sep"></div>
+  <label class="tl">BPM</label><input type="number" id="bpm" value="72" min="30" max="200">
+  <button class="btn" onclick="tapTempo()" style="font-size:.56rem">TAP</button>
+  <div class="sep"></div>
+  <label class="tl">Root</label>
+  <select id="root" onchange="redraw()">
+    <option value="0">C</option><option value="1">C#</option><option value="2">D</option>
+    <option value="3">Eb</option><option value="4">E</option><option value="5">F</option>
+    <option value="6">F#</option><option value="7">G</option><option value="8">Ab</option>
+    <option value="9">A</option><option value="10">Bb</option><option value="11">B</option>
+  </select>
+  <select id="scale" onchange="onScaleChange()"></select>
+  <div class="sep"></div>
+  <label class="tl">小節</label>
+  <select id="bars" onchange="regen()">
+    <option value="2">2</option><option value="4" selected>4</option><option value="8">8</option>
+  </select>
+  <div class="sep"></div>
+  <button class="btn" id="chordToggle" onclick="toggleChord()">和声 ●</button>
+  <select id="chordColor" onchange="setChordColor(this.value)" title="土台の和音の色"></select>
+  <button class="btn" id="arcToggle" onclick="toggleArc()">緊張 ○</button>
+  <button class="btn" id="borrowToggle" onclick="toggleBorrow()" title="拝借モード: 一つの磁場にいながら、一瞬別の世界へ踏み出して戻る">拝借 ○</button>
+  <select id="feelSel" onchange="setFeel(this.value)" title="グルーヴ(Feel): 時間の質"></select>
+</div>
+
+<div class="layout">
+  <div class="mainCol">
+    <div class="tl-wrap"><canvas id="timeline"></canvas></div>
+    <div class="info" id="info">下層は正確な格子で円環し、上層は拍を超えて泳ぐ。<span class="k">▶ Play</span> で、二つの層が同時に走る。</div>
+  </div>
+  <div class="npboard" id="npboard"></div>
+  <div class="side" id="side"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  CIRANDA — Stage 1
+//  Two layers:
+//    LOWER  — grid-locked ostinato (the exact, swallowing ground / 飲み込む磁場)
+//    UPPER  — continuous-time melody that floats free of the grid,
+//             holding both rhythm's poles (Triplet/Dotted, 64th↔whole)
+//             and gravity's poles (Tonic↔Dominant).
+//  Notes are EVENTS on a continuous beat-timeline {startBeat, durBeat, midi, vel}.
+//  A lookahead scheduler converts beats→ms and sends via MIDI timestamps
+//  (immune to background throttling — the fix proven in Jamal).
+// ════════════════════════════════════════════════════════════
+
+const NOTE=['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+const SCALES={
+  // ── Western church modes ──
+  ionian:[0,2,4,5,7,9,11], dorian:[0,2,3,5,7,9,10], phrygian:[0,1,3,5,7,8,10],
+  lydian:[0,2,4,6,7,9,11], mixolydian:[0,2,4,5,7,9,10], aeolian:[0,2,3,5,7,8,10],
+  locrian:[0,1,3,5,6,8,10],
+  // ── Melodic minor modes ──
+  mel_minor:[0,2,3,5,7,9,11], dorian_b2:[0,1,3,5,7,9,10], lydian_aug:[0,2,4,6,8,9,11],
+  lydian_dom:[0,2,4,6,7,9,10], mixo_b6:[0,2,4,5,7,8,10], locrian_n2:[0,2,3,5,6,8,10],
+  altered:[0,1,3,4,6,8,10],
+  // ── Harmonic minor modes ──
+  har_minor:[0,2,3,5,7,8,11], locrian_n6:[0,1,3,5,6,9,10], ionian_s5:[0,2,4,5,8,9,11],
+  dorian_s4:[0,2,3,6,7,9,10], phrygian_dom:[0,1,4,5,7,8,10], lydian_s2:[0,3,4,6,7,9,11],
+  ultralocrian:[0,1,3,4,6,8,9],
+  // ── Harmonic major modes ──
+  har_major:[0,2,4,5,7,8,11], dorian_b5:[0,2,3,5,6,9,10], phrygian_b4:[0,1,4,5,7,8,10],
+  lydian_b3:[0,2,3,6,7,9,11], mixo_b2:[0,1,4,5,7,9,10], lydian_aug_s2:[0,3,4,6,8,9,11],
+  // ── Double harmonic / Byzantine family ──
+  double_har:[0,1,4,5,7,8,11], byzantine:[0,1,4,5,7,8,11], hungarian_min:[0,2,3,6,7,8,11],
+  hungarian_maj:[0,3,4,6,7,9,10], oriental:[0,1,4,5,6,9,10], gypsy:[0,2,3,6,7,8,11],
+  // ── Symmetric ──
+  wholetone:[0,2,4,6,8,10], dim_wh:[0,2,3,5,6,8,9,11], dim_hw:[0,1,3,4,6,7,9,10],
+  augmented:[0,3,4,7,8,11], tritone:[0,1,4,6,7,10],
+  // ── Pentatonic (world) ──
+  maj_pent:[0,2,4,7,9], min_pent:[0,3,5,7,10], blues:[0,3,5,6,7,10],
+  egyptian:[0,2,5,7,10], man_gong:[0,3,5,8,10], ritusen:[0,2,5,7,9],
+  // ── Japanese ──
+  in_sen:[0,1,5,7,8], hirajoshi:[0,2,3,7,8], iwato:[0,1,5,6,10],
+  kumoi:[0,2,3,7,9], yo:[0,2,5,7,9], insen2:[0,1,5,7,10], akebono:[0,2,3,7,9],
+  // ── Indian raags (आरोह) ──
+  bhairav:[0,1,4,5,7,8,11], yaman:[0,2,4,6,7,9,11], kafi:[0,2,3,5,7,9,10],
+  bhairavi:[0,1,3,5,7,8,10], todi:[0,1,3,6,7,8,11], marwa:[0,1,4,6,7,9,11],
+  purvi:[0,1,4,6,7,8,11], des:[0,2,4,5,7,9,10], malkauns:[0,3,5,8,10],
+  bhoopali:[0,2,4,7,9], darbari:[0,2,3,5,7,8,10], charukeshi:[0,2,4,5,7,8,10],
+  kirwani:[0,2,3,5,7,8,11], ahirbhairav:[0,1,4,5,7,9,10], madhuvanti:[0,3,4,6,7,9,11],
+  hamsadhwani:[0,2,4,7,11], shree:[0,1,4,6,7,8,11], pilu:[0,2,3,4,5,7,9,10,11],
+  // ── Arabic / Middle-Eastern maqamat (approx, 12-TET) ──
+  hijaz:[0,1,4,5,7,8,10], nahawand:[0,2,3,5,7,8,10], kurd:[0,1,3,5,7,8,10],
+  ajam:[0,2,4,5,7,9,11], saba:[0,2,3,4,7,8,10], bayati:[0,2,3,5,7,8,10],
+  hijazkar:[0,1,4,5,7,8,11], suzidil:[0,1,4,5,7,8,11],
+  // ── Greek / Eastern European ──
+  phrygian_greek:[0,1,3,5,7,8,10], chromatic_dorian:[0,1,4,5,7,8,11],
+  enigmatic:[0,1,4,6,8,10,11], neapolitan_min:[0,1,3,5,7,8,11], neapolitan_maj:[0,1,3,5,7,9,11],
+  // ── Synthetic / exotic ──
+  prometheus:[0,2,4,6,9,10], scriabin:[0,1,4,7,9], blues_maj:[0,2,3,4,7,9],
+  blues_nine:[0,2,3,4,5,6,7,9,10,11], bebop_dom:[0,2,4,5,7,9,10,11], bebop_maj:[0,2,4,5,7,8,9,11],
+  bebop_dorian:[0,2,3,4,5,7,9,10], six_tone_sym:[0,1,4,5,8,9], leading_whole:[0,2,4,6,8,10,11],
+  // ── chromatic ──
+  chromatic:[0,1,2,3,4,5,6,7,8,9,10,11],
+};
+function getRoot(){return parseInt(document.getElementById('root').value)||0;}
+function getBPM(){return parseInt(document.getElementById('bpm').value)||72;}
+function getScale(){return SCALES[document.getElementById('scale').value]||SCALES.dorian;}
+function onScaleChange(){ npReset(getScale()); regen(); }
+function getBars(){return parseInt(document.getElementById('bars').value)||4;}
+
+// scale helpers
+function degIndex(off,degs){const pc=((off%12)+12)%12;let bi=0,bd=99;degs.forEach(function(d,i){const dist=Math.abs(d-pc);if(dist<bd){bd=dist;bi=i;}});return bi;}
+function scaleStep(off,n,degs){let idx=degIndex(off,degs)+n;const len=degs.length;const baseOct=12*Math.floor(off/12);const oct=Math.floor(idx/len);idx=((idx%len)+len)%len;return degs[idx]+oct*12+baseOct;}
+// gravity: 0 tonic(stable) .. 1 dominant/leading(tense)
+function gravityOf(off){const pc=((off%12)+12)%12;const t={0:0.0,7:0.2,4:0.3,3:0.3,5:0.45,9:0.5,8:0.55,2:0.55,10:0.6,11:0.95,6:0.92,1:0.85};return t[pc]!=null?t[pc]:0.5;}
+
+// ════════════════════════════════════════════════════════════
+//  NOTE PERSONALITY ENGINE — the heart of melodic character.
+//  Each scale degree carries: weight (how often chosen), role
+//  (center/peak/avoid), direction bias (ascending vs descending use),
+//  and octave bias. Sculpting these gives a scale its 指紋 (fingerprint).
+//  Plus a pakad: a characteristic motif inserted now and then.
+// ════════════════════════════════════════════════════════════
+const NP = {
+  // per-degree-INDEX attributes (index into the current scale's degree array)
+  weight:{},     // idx -> 0..2 (1 = neutral; 0 = avoid; >1 = emphasize)
+  center:{},     // idx -> 0..1 (how much the line returns to / rests on this degree)
+  ascAvoid:{},   // idx -> 0..1 (avoid this degree while ASCENDING) — jati
+  descAvoid:{},  // idx -> 0..1 (avoid while DESCENDING)
+  octaveBias:{}, // idx -> -1..1 (negative: prefer low octave, positive: high)
+  // global controls
+  leap:0.25,         // 0 = stepwise (順次/歌), 1 = leapy (跳躍/語)
+  pakadOn:0,         // insert the characteristic motif
+  pakad:[],          // array of scale-step degrees forming the motif (relative)
+  pakadFreq:0.25,    // how often the pakad appears
+  restWeight:1.0,    // multiplier on how strongly center notes hold (nyas)
+};
+function npReset(degs){
+  // initialize neutral personalities sized to the current scale
+  NP.weight={};NP.center={};NP.ascAvoid={};NP.descAvoid={};NP.octaveBias={};
+  degs.forEach(function(d,i){
+    NP.weight[i]=1; NP.center[i]=(i===0?0.7:(i===4?0.3:0)); // tonic is home, 5th secondary
+    NP.ascAvoid[i]=0; NP.descAvoid[i]=0; NP.octaveBias[i]=0;
+  });
+  // a gentle default pakad: a little turn around the tonic
+  NP.pakad=[0,1,-1,0];
+}
+// choose the next degree index given current index, direction, and personalities
+function npNextIdx(curIdx, dir, degs){
+  const len=degs.length;
+  // candidate moves, weighted by personality
+  const cands=[];
+  for(let step=-4; step<=4; step++){
+    if(step===0) continue;
+    let idx=((curIdx+step)%len+len)%len;
+    let w=(NP.weight[idx]!=null?NP.weight[idx]:1);
+    if(w<=0.001) continue;                       // avoided note
+    // direction-based avoidance (jati)
+    if(dir>0 && NP.ascAvoid[idx]>rnd()) continue;
+    if(dir<0 && NP.descAvoid[idx]>rnd()) continue;
+    // distance shaping: leap controls preference for small vs large steps
+    const dist=Math.abs(step);
+    const stepPref = (1-NP.leap) * (dist===1?1.6:dist===2?0.8:0.3)
+                   + NP.leap * (dist>=3?1.4:dist===2?0.9:0.5);
+    // direction preference
+    const dirPref = (dir>0 && step>0)||(dir<0 && step<0) ? 1.3 : 0.7;
+    // center pull: bias toward high-center degrees
+    const centerPref = 1 + (NP.center[idx]||0)*1.2*NP.restWeight;
+    cands.push({idx:idx, step:step, w:w*stepPref*dirPref*centerPref});
+  }
+  if(!cands.length) return curIdx;
+  let sum=cands.reduce(function(a,c){return a+c.w;},0);
+  let r=rnd()*sum;
+  for(let i=0;i<cands.length;i++){ r-=cands[i].w; if(r<=0) return cands[i].idx; }
+  return cands[cands.length-1].idx;
+}
+// apply octave bias for a degree: returns a semitone octave shift (-12,0,+12)
+function npOctave(idx){
+  const b=NP.octaveBias[idx]||0;
+  if(b>0.5 && rnd()<b) return 12;
+  if(b<-0.5 && rnd()<-b) return -12;
+  return 0;
+}
+
+// ── layer state ──
+// each voice: {role, ch, mute, notes:[{startBeat,durBeat,off,vel,grav}]}
+let LOWER=null, INNER=null, UPPER=null;
+let TOTAL_BEATS=0;
+
+// ════════════════════════════════════════════════════════════
+//  LOWER LAYER — grid-locked circular ostinato (揺れない土台)
+//  Legato, sustained → a swallowing gravity field. Perfectly on the grid.
+// ════════════════════════════════════════════════════════════
+function genLower(){
+  const degs=getScale(); const bars=getBarsEff(); const beatsPerBar=4;
+  const total=bars*beatsPerBar;
+  const notes=[];
+  // circular root pattern (always returns to tonic — 円環)
+  const patterns=[
+    [0,0,-3,0],[0,-2,-4,0],[0,3,-3,0],[0,0,4,-3],[0,-1,-3,0],
+    [0,2,-2,0],[0,-3,0,-3],[0,4,0,-2],[0,0,-2,-4],[0,-4,-2,0],
+  ];
+  const pat=patterns[Math.floor(rnd()*patterns.length)];
+
+  // ── harmonic progressions (scale-degree roots per bar) — 緊張と解放 ──
+  // 0 = static (円環only). others give the chords a sense of departure & return.
+  const PROGS=[
+    null,                       // 0 static
+    [0,3,4,0],                  // I  IV V  I    (classic pull & resolve)
+    [0,5,3,4],                  // I  vi IV V    (the "circle" feel)
+    [0,-3,1,4],                 // I  →  ii V    (descending then dominant)
+    [0,4,5,3],                  // I  V  vi IV   (anthemic)
+    [0,1,4,0],                  // I  ii V  I    (gentle)
+    [0,3,0,4],                  // I  IV I  V    (rocking)
+  ];
+  const prog = PROGS[Math.max(0,Math.min(PROGS.length-1,Math.round(LOW.progression)))];
+
+  // build a chord (low) from a root: voicing (spacing) × color (quality).
+  function chordFrom(rootOff){
+    if(LOW.mode===0) return [rootOff];     // single-note mode
+    const n=Math.max(1,LOW.chordSize);
+    // chord-tone degrees by COLOR (scale-steps from root within the current scale)
+    let degSteps;
+    // chord color = which scale-degrees stack on the root (the scale colors maj/min)
+    switch(LOW.color){
+      case 1:  degSteps=[0,2,4,6]; break;          // 7th (1 3 5 7)
+      case 2:  degSteps=[0,2,4,6,8]; break;        // 9th (1 3 5 7 9)
+      case 3:  degSteps=[0,2,4,6,8,10]; break;     // 11th (1 3 5 7 9 11)
+      case 4:  degSteps=[0,2,4,6,8,10,12]; break;  // 13th (full stack)
+      case 5:  degSteps=[0,3,4]; break;            // sus4 (1 4 5)
+      case 6:  degSteps=[0,1,4]; break;            // sus2 (1 2 5)
+      case 7:  degSteps=[0,2,4,5]; break;          // 6 (1 3 5 6)
+      case 8:  degSteps=[0,2,4,5,8]; break;        // 6/9 (1 3 5 6 9)
+      case 9:  degSteps=[0,2,4,8]; break;          // add9 (1 3 5 9)
+      case 10: degSteps=[0,3,6]; break;            // quartal (stacked 4ths-ish)
+      case 11: degSteps=[0,4,8]; break;            // quintal/wide (1 5 9)
+      case 12: degSteps=[0,1,4,6]; break;          // cluster-ish (1 2 5 7)
+      case 13: degSteps=[0,2,6]; break;            // no-5 (1 3 7) shell
+      case 14: degSteps=[0,4,6]; break;            // sus-ish (1 5 7)
+      case 15: degSteps=[0,2,4,6,9]; break;        // maj7#11-ish color
+      case 16: degSteps=[0,2,3,6]; break;          // min/maj cluster
+      case 17: degSteps=[0,2,4,7]; break;          // add11
+      case 18: degSteps=[0,1,2,4]; break;          // tight cluster (浮遊)
+      default: degSteps=[0,2,4]; break;            // triad (1 3 5)
+    }
+    degSteps=degSteps.slice(0,Math.max(2,n+1));
+    let tones=degSteps.map(function(d){ return scaleStep(rootOff,d,degs); });
+    // apply VOICING (spacing)
+    let out;
+    if(LOW.voicing===3){                      // power: root + 5th (+octave)
+      out=[rootOff, scaleStep(rootOff,4,degs)]; if(n>=3)out.push(rootOff+12);
+    } else if(LOW.voicing===2){               // quartal spacing
+      out=[rootOff]; let cur=rootOff;
+      for(let k=1;k<Math.max(3,n);k++){ cur=scaleStep(cur,3,degs); out.push(cur); }
+    } else if(LOW.voicing===1){               // stacked low (close)
+      out=tones.slice();
+    } else {                                   // open/spread: lift alternate tones an octave
+      out=tones.map(function(x,i){ return i%2===1 ? x+12 : x; });
+      if(LOW.spread>=18 && out.length>=2) out[out.length-1]+=12;  // extra openness
+    }
+    // optional tension tone on top (color / 浮遊)
+    if((LOW.tensionTop>0 || CURTENS>0) && rnd()< (LOW.tensionTop + CURTENS*TENS.lowTension*0.4)){
+      const top=out[out.length-1];
+      out.push(scaleStep(top, (rnd()<0.5?2:1), degs) + 12);  // a 9th/tension above
+    }
+    return out;
+  }
+
+  // event positions per bar: spaced by LOW.density (fewer = more 飲み込む space)
+  for(let b=0;b<bars;b++){
+    // root = circular anchor + harmonic progression + optional variation
+    let patStep = pat[b%pat.length];
+    if(prog){
+      // the progression leads; the circular pattern adds gentle inner motion
+      patStep = prog[b%prog.length] + Math.round(pat[b%pat.length]*0.4);
+    }
+    if(prog && rnd()<LOW.progRand){
+      patStep += [-1,1,2,-2][Math.floor(rnd()*4)];   // vary the progression
+    }
+    if(rnd() < LOW.patternRand){
+      patStep += [-2,-1,1,2,3,-3][Math.floor(rnd()*6)];   // wander off the circle
+    }
+    const baseOff=scaleStep(-12, patStep + CURROOTSHIFT, degs);
+    const evPerBar=Math.max(1,Math.round(LOW.density));
+    const slot=beatsPerBar/evPerBar;
+    for(let e=0;e<evPerBar;e++){
+      // skip some events to leave space (the space-after feeling), keep beat 1
+      if(e>0 && rnd()< (LOW.spaceAfter/4)) continue;
+      const startBeat=b*4 + e*slot;
+      // length: sustain → reach toward (and past) the space; short → a stab
+      const baseLen = LOW.sustain ? (slot + LOW.spaceAfter*LOW.sustainAmt) : Math.min(0.5, slot*0.4*(0.5+LOW.sustainAmt));
+      const rootMove = (e===0)?0:[0,2,-2,1][e%4];
+      const rOff = scaleStep(baseOff, rootMove, degs);
+      const chord = chordFrom(rOff);
+      const vel = Math.max(20,Math.min(110, Math.round(LOW.velBase + (rnd()-0.5)*LOW.velRand + (e===0?8:0))));
+      chord.forEach(function(o,ci){
+        notes.push({startBeat:startBeat, durBeat:baseLen, off:o,
+          vel:Math.max(20,vel-ci*4), grav:gravityOf(o), role:'lower'});
+      });
+    }
+  }
+  return {role:'lower',ch:chOf('lower'),mute:false,notes:notes,total:total};
+}
+
+// ════════════════════════════════════════════════════════════
+//  INNER LAYER — grid-locked harmony pulses (the warm middle)
+// ════════════════════════════════════════════════════════════
+function genInner(){
+  const degs=getScale(); const bars=getBarsEff(); const total=bars*4;
+  const notes=[];
+  // inner roots can follow the lower layer's roots (so low+mid form one field)
+  const lowRootByBar=[];
+  if(INN.followLow && LOWER && LOWER.notes.length){
+    for(let b=0;b<bars;b++){
+      // find the lowest lower-note starting in this bar → its root
+      let root=0, found=false, lowest=999;
+      LOWER.notes.forEach(function(n){
+        if(n.startBeat>=b*4 && n.startBeat<b*4+4 && n.off<lowest){ lowest=n.off; root=n.off; found=true; }
+      });
+      lowRootByBar.push(found? (root+24) : scaleStep(0,(b%2?2:0),degs)); // lift bass root up ~2 octaves
+    }
+  }
+  // density 1..4 → events per bar, monotonic. higher density = more onsets.
+  // each density level draws from a pool of beat positions; we take the first
+  // (density) positions from a musical ordering so 1<2<3<4 strictly increases.
+  const densOrder=[1,3,2,0,0.5,2.5,1.5,3.5];   // priority order of onset positions
+  const toneChoices=[2,4,2,4,6,1];
+  for(let b=0;b<bars;b++){
+    const nEv=Math.max(1,Math.min(8,Math.round(INN.density)));
+    // pick the first nEv positions, then sort them in time for natural placement
+    const evList = densOrder.slice(0,nEv).slice().sort(function(a,c){return a-c;});
+    evList.forEach(function(beat){
+      const baseDeg = INN.followLow && lowRootByBar.length ? null : (toneChoices[Math.floor(rnd()*toneChoices.length)]+(b%2));
+      let rootOff;
+      if(baseDeg===null){ rootOff = lowRootByBar[b%lowRootByBar.length]; }
+      else { rootOff = scaleStep(12, baseDeg, degs); }   // mid register
+      // build inner tones: chord (stacked thirds) or single
+      let offs=[rootOff];
+      if(INN.mode===1){
+        let cur=rootOff;
+        for(let k=1;k<Math.max(1,INN.chordSize);k++){ cur=scaleStep(cur,2,degs); offs.push(cur); }
+      }
+      const dur=INN.durBase*(0.7+rnd()*0.6);
+      const v=Math.max(20,Math.min(105,Math.round(INN.vel+(rnd()-0.5)*INN.velRand + CURTENS*TENS.innTension*12)));
+      offs.forEach(function(o,ci){
+        notes.push({startBeat:b*4+beat, durBeat:dur, off:o, vel:Math.max(20,v-ci*5), grav:gravityOf(o)});
+      });
+    });
+  }
+  return {role:'inner',ch:chOf('inner'),mute:false,notes:notes,total:total};
+}
+
+// ════════════════════════════════════════════════════════════
+//  UPPER LAYER — CONTINUOUS-TIME melody that floats free of the grid.
+//  Holds rhythm's poles (triplet/dotted, 64th↔whole) and gravity's
+//  poles (tonic↔dominant). This is the heart of CIRANDA.
+// ════════════════════════════════════════════════════════════
+// ── LOWER (土台) parameters: the swallowing field ──
+const LOW = {
+  mode:1,              // 0 = single-note (輪郭), 1 = chord (和音/飲み込む)
+  chordSize:3,         // notes per chord (when chord mode)
+  voicing:0,           // 0=open(spread), 1=stacked low, 2=quartal, 3=power(root+5)
+  density:2,           // events per bar (low = more space)
+  spaceAfter:1.2,      // space (beats) left after each event — the 飲み込む間
+  sustain:1,           // 1 = long/legato (pad), 0 = short (dub stab)
+  spread:12,           // chord spread in semitones (openness of the voicing)
+  velBase:64, velRand:14,
+  patternRand:0.0,     // 0 = pattern stays put (安定), 1 = roots wander freely
+  sustainAmt:0.8,      // continuous: how far a sustained note reaches past its slot
+  color:0,             // chord color: 0=triad,1=maj7,2=min/dom7,3=9th,4=sus,5=add9/6
+  progression:0,       // 0=static(円環のみ),1..=harmonic progressions (緊張と解放)
+  progRand:0.0,        // how much the progression is varied each bar
+  tensionTop:0.0,      // 0..1: add a tension tone on top (color/浮遊)
+};
+// ── TENSION ARC parameters (緊張の蓄積と解放) ──
+const TENS = {
+  on:0,                // 0 = single loop (今まで), 1 = build a tension arc
+  sections:6,          // number of sections in the arc
+  sectionBars:0,       // 0 = use global bars; else bars per section
+  startTension:0.1,    // tension at the first section
+  climb:0.16,          // how much tension rises each section
+  partialResolve:0.3,  // chance/depth of a partial release mid-arc
+  threshold:0.85,      // tension level that triggers the full resolution
+  afterResolve:0,      // 0 = return to start, 1 = change root (within scale)
+  discover:0,          // 0 = coherent(整合), 1 = discovery (層が緊張を無視してぶつかる)
+  discoverAmt:0.5,     // how far each layer's tension drifts from the others (0..1)
+  phaseDrift:0.0,      // layers start their arcs at different points (位相のずれ)
+  // how strongly tension bends each layer:
+  melTension:1.0,      // upper → tense tones, crowded space
+  innTension:1.0,      // inner → more tension tones / density
+  lowTension:1.0,      // lower → tenser harmony / avoids resolving
+  spaceTension:0.6,    // tension tightens the 引力の懐 (less space)
+};
+let CURTENS=0;         // current section's tension, read by the gen functions
+// ── seeded RNG: lock the seed to hear ONLY the parameter's effect ──
+let SEED_LOCK=false, SEED=Math.floor(Math.random()*1e9), _rngState=SEED;
+function reseed(s){ SEED=(s>>>0)||1; }
+function rngReset(){ _rngState=SEED>>>0; }
+function rnd(){ // mulberry32 — deterministic when seeded
+  _rngState|=0; _rngState=_rngState+0x6D2B79F5|0;
+  let t=Math.imul(_rngState^_rngState>>>15,1|_rngState);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296;
+}
+// before each generation: if seed unlocked, roll a fresh seed (current behaviour);
+// if locked, reuse the same seed so identical params → identical music.
+function beforeGen(){ if(!SEED_LOCK){ SEED=Math.floor(Math.random()*1e9); } rngReset(); }
+const LOOPWIN={lower:null,inner:null,upper:null};  // per-voice section loop {start,len} in beats
+// ── per-voice MIDI channel config (1-16, user-editable) ──
+const CH={lower:2, inner:3, upper:1};   // stored 1-based; sent as (ch-1)
+function chOf(role){ return ((CH[role]||1)-1)&0x0f; }
+const OCT={lower:0, inner:0, upper:0};  // per-voice base octave shift (in octaves)
+function octOf(role){ return (OCT[role]||0)*12; }
+let CURROOTSHIFT=0;    // scale-step root shift (for afterResolve = change root)
+
+// ════════════════════════════════════════════════════════════
+//  BORROW (拝借 / stepping-out) — stay in ONE home field, but step out
+//  for a moment into a borrowed field, then return. This is the craft the
+//  history points to: not simultaneous polytonality, but temporary departure
+//  within the constraints of time and flow.
+// ════════════════════════════════════════════════════════════
+const BORROW={
+  on:0,
+  type:0,          // 0 passing, 1 pivot, 2 collision(Stravinsky), 3 stepping-out(jazz), 4 modal-interchange
+  target:0,        // 0 = AUTO, else worldview index (BORROW_WORLDS)
+  freq:0.3,        // how often a borrow window opens
+  len:1.0,         // length of a borrow window in beats
+  layers:0,        // 0 = melody only, 1 = all layers
+};
+// worldviews = a borrowed field expressed as a CHARACTER (Jamal-style colour decision)
+// each gives a scale (relative intervals) + a root offset feel.
+const BORROW_WORLDS=[
+  {name:'AUTO（自動）', scale:null, rootShift:null},
+  {name:'min7 — 冷たい浮遊', scale:[0,2,3,5,7,9,10], rootShift:0},
+  {name:'dom7 — テンション', scale:[0,2,4,5,7,9,10], rootShift:7},
+  {name:'dom7alt — 最大緊張', scale:[0,1,3,4,6,8,10], rootShift:7},
+  {name:'dom7#9 — Hendrix', scale:[0,3,4,7,9,10], rootShift:7},
+  {name:'Lydian — 宙吊り', scale:[0,2,4,6,7,9,11], rootShift:5},
+  {name:'maj7#11 — 浮く', scale:[0,2,4,6,7,9,11], rootShift:0},
+  {name:'Phrygian — スペイン暗', scale:[0,1,3,5,7,8,10], rootShift:4},
+  {name:'HarmMinor — 不穏', scale:[0,2,3,5,7,8,11], rootShift:0},
+  {name:'WholeTone — 重力喪失', scale:[0,2,4,6,8,10], rootShift:0},
+  {name:'Altered — 翳り', scale:[0,1,3,4,6,8,10], rootShift:2},
+  {name:'Octatonic — 衝突', scale:[0,1,3,4,6,7,9,10], rootShift:6},
+];
+// ── FEEL (groove) — Jamal's timing axis. shifts notes ahead / behind the beat. ──
+const FEEL={ type:0, swing:0 };   // type index into FEELS; swing 0..1 extra
+const FEELS=[
+  {name:'Straight — ジャスト', push:0, swingAmt:0, laid:0},
+  {name:'Dolphin — 静かな深み', push:-0.012, swingAmt:0.08, laid:0.01},
+  {name:'I Love Music — 前のめり', push:0.03, swingAmt:0.05, laid:0},
+  {name:'Wave — 後ろに沈む', push:-0.04, swingAmt:0.10, laid:0.03},
+  {name:'Shuffle — 跳ねる', push:0, swingAmt:0.33, laid:0},
+  {name:'Laid Back — 深く後ろ', push:-0.06, swingAmt:0.06, laid:0.05},
+];
+// returns a timing offset in BEATS for a note at global beat gBeat
+function feelOffset(gBeat){
+  const f=FEELS[FEEL.type]||FEELS[0];
+  let off = f.push - f.laid;             // global push/lay
+  // swing: delay the "and" (off-beat 8ths)
+  const frac = gBeat - Math.floor(gBeat);
+  const sw = f.swingAmt + FEEL.swing*0.3;
+  if(Math.abs(frac-0.5)<0.12){ off += sw*0.16; }   // near the off-beat → push late
+  return off;
+}
+
+// precomputed borrow windows for the current generation (so a window is stable
+// across layers within one generate). Rebuilt at the start of each generate.
+let BORROW_WINDOWS=[];
+function planBorrowWindows(totalBeats){
+  BORROW_WINDOWS=[];
+  if(!BORROW.on) return;
+  let t=1;  // never borrow on the very first beat (establish home first)
+  while(t<totalBeats-BORROW.len){
+    if(rnd()<BORROW.freq){
+      BORROW_WINDOWS.push({start:t, end:t+BORROW.len});
+      t+=BORROW.len+0.5+rnd()*1.5;   // gap after returning home
+    } else {
+      t+=0.5+rnd();
+    }
+  }
+}
+function borrowAt(beat){
+  for(let i=0;i<BORROW_WINDOWS.length;i++){ if(beat>=BORROW_WINDOWS[i].start && beat<BORROW_WINDOWS[i].end) return true; }
+  return false;
+}
+// pick the borrowed field for the CURRENT type+target. returns {degs, rootShift}.
+function borrowedField(homeDegs){
+  // worldview chosen explicitly
+  if(BORROW.target>0 && BORROW_WORLDS[BORROW.target] && BORROW_WORLDS[BORROW.target].scale){
+    const w=BORROW_WORLDS[BORROW.target];
+    return {degs:w.scale, rootShift:w.rootShift||0};
+  }
+  // AUTO: choose by borrow TYPE, history-informed
+  switch(BORROW.type){
+    case 0: // passing/chromatic — a field a semitone away (smooth slip)
+      return {degs:homeDegs, rootShift:1};
+    case 1: // pivot — a field a fifth away (max shared tones)
+      return {degs:homeDegs, rootShift:7};
+    case 2: // collision (Stravinsky) — a tritone away (max clash)
+      return {degs:homeDegs, rootShift:6};
+    case 3: // stepping-out (jazz) — a different MODE on a near root
+      return {degs:[0,1,3,4,6,8,10], rootShift:2};  // altered colour outside
+    case 4: // modal interchange — parallel field (same root, borrowed colour)
+      return {degs:[0,2,3,5,7,8,10], rootShift:0};  // aeolian borrow
+    default: return {degs:homeDegs, rootShift:0};
+  }
+}
+
+// ── INNER (内声) parameters ──
+const INN = {
+  mode:0,              // 0=single tone pulse, 1=chord (harmonized with the field)
+  chordSize:2,         // tones when chord mode
+  density:2,           // events per bar
+  followLow:1,         // 1 = harmonize on the lower's roots (層を成す)
+  vel:50, velRand:14,
+  durBase:0.8,
+};
+
+// ── UPPER breath parameters (all the knobs, exposed) ──
+const UP = {
+  apexHighBase:22, apexHighRand:4,      // how high apexes reach
+  riseMin:2, riseRand:4,                // notes per rise
+  fallMin:1, fallRand:4,                // notes per fall
+  intensityMin:0.4, intensityRand:0.6,  // breath strength range
+  riseSpaceRand:0.06,                   // extra space between rise notes (詰まり)
+  hollowMin:0.8, hollowRand:2.6,        // 引力の懐: space after apex
+  hollowIntensity:0.6,                  // how much intensity grows the hollow
+  fallSpaceEase:0.5, fallSpaceRand:0.1, // how fall notes drift apart
+  apexVelBase:70, apexVelInt:40,        // apex velocity
+  tenderProb:0.3,                        // chance an apex is tender(繊細) not strong
+  riseVelBase:48, riseVelClimb:22,      // rise velocity shape
+  fallVelBase:58, fallVelEase:24,       // fall velocity shape
+  settleProb:0.7,                        // chance of a settling resolution
+  breathGapMin:0.4, breathGapRand:1.6,  // silence between breaths (息継ぎ)
+  apexTense:1,                           // 1=apex pulled to tense tone, 0=stays
+  centerPull:0.5,    // 0..1 — how strongly each breath returns toward the register center
+  registerCenter:14, // the home register the melody orbits (semitones above root)
+  range:9,           // how far above/below center the line roams
+  fallBias:1.1,      // >1 makes falls slightly outweigh rises (counters upward drift)
+};
+function genUpper(){
+  const homeDegs=getScale(); const bars=getBarsEff(); const total=bars*4;
+  const notes=[];
+  if(Object.keys(NP.weight).length!==homeDegs.length) npReset(homeDegs);
+  // plan stepping-out windows for this generation (melody borrows)
+  planBorrowWindows(total);
+  const bf = borrowedField(homeDegs);
+  // borrowed degrees, transposed by the field's rootShift, octave-folded & sorted
+  const bfDegs = bf.degs.map(function(d){ return ((d+bf.rootShift)%12+12)%12; }).sort(function(a,b){return a-b;});
+  // helper: the scale degrees active at beat t (home, or the borrowed field)
+  function degsAt(t){ return (BORROW.on && borrowAt(t)) ? bfDegs : homeDegs; }
+  let degs=homeDegs;
+
+  // ── CONTOUR WAVES (呼吸の単位) ──
+  // The phrase is built from a sequence of "breath gestures". Each gesture is a
+  // wave: a RISE (notes crowd together, climbing) → an APEX (one note placed,
+  // then SPACE — the 引力の懐, the held silence that carries the note) → a FALL
+  // (notes ease apart, descending) → a SETTLE (space before the next breath).
+  //
+  // What carries the breathing is NOT note length — it's the SPACE AFTER each
+  // note (the gap to the next), which Ableton's reverb tail fills. Apex notes
+  // are placed sharply, then given long space.
+
+  // build a random but musical sequence of gestures filling `total` beats
+  const apexHigh = UP.apexHighBase + Math.floor(rnd()*UP.apexHighRand);   // where apexes reach
+  let t = 0;
+  const melBase = scaleStep(0, CURROOTSHIFT, degs) + 12;  // melodic home register (root-shift aware)
+  let off = scaleStep(melBase, Math.round(UP.registerCenter/2), degs);  // begin near center
+  let firstNote = true;
+
+  // micro note length: short & expressive — length is secondary. ~16th..8th,
+  // with occasional triplet/dotted flavour. The SPACE after is what matters.
+  function microLen(kind){
+    if(kind==='apex') return [0.5,0.75,1.0][Math.floor(rnd()*3)];   // apex can ring a touch
+    const pool=[0.125,0.1667,0.25,0.25,0.333,0.5];
+    return pool[Math.floor(rnd()*pool.length)];
+  }
+
+  while(t < total-0.02){
+    // ── one breath gesture ──
+    // CENTER PULL: nudge the starting pitch back toward the register center each
+    // breath, so the line orbits a home register instead of drifting one way.
+    const center = melBase + UP.registerCenter;
+    if(rnd() < UP.centerPull){
+      const away = off - center;
+      if(Math.abs(away) > 1){
+        const steps = Math.round(-away/3 * (0.5+rnd()*0.7) / 2);  // move a fraction back
+        if(steps!==0) off = scaleStep(off, steps, degs);
+      }
+    }
+    // PAKAD: occasionally state the characteristic motif (the fingerprint phrase)
+    if(NP.pakadOn && NP.pakad.length && rnd()<NP.pakadFreq && t<total-2){
+      let pIdx=degIndex(off,degs); const bo=12*Math.floor(off/12);
+      NP.pakad.forEach(function(stp){
+        pIdx=((pIdx+stp)%degs.length+degs.length)%degs.length;
+        const pOff=degs[pIdx]+bo;
+        const len=microLen('rise');
+        notes.push({startBeat:t, durBeat:len, off:pOff, vel:clampV(56+intensity*24), grav:gravityOf(pOff), role:'rise'});
+        t+=len+0.02;
+      });
+      off=degs[pIdx]+bo;
+    }
+    degs = degsAt(t);   // borrow-aware: inside a window we step into the borrowed field
+    const riseN = UP.riseMin + Math.floor(rnd()*UP.riseRand);
+    const fallN = Math.round((UP.fallMin + Math.floor(rnd()*UP.fallRand)) * UP.fallBias);
+    const intensity = UP.intensityMin + rnd()*UP.intensityRand;
+    // how high this particular breath reaches (relative to center + range)
+    const breathCeil = center + UP.range;
+    const breathFloor = center - UP.range;
+
+    // RISE — notes crowd together (small space), climbing, getting brighter
+    for(let i=0;i<riseN && t<total-0.02;i++){
+      degs = degsAt(t);   // borrow can open mid-gesture
+      // personality-driven ascent: each degree's weight/role/jati shapes the choice
+      const curIdx=degIndex(off,degs);
+      const baseOct=12*Math.floor(off/12);
+      const nIdx=npNextIdx(curIdx, +1, degs);
+      let cand=degs[nIdx]+baseOct + (nIdx<curIdx?12:0);  // keep ascending feel
+      cand += npOctave(nIdx);
+      off = cand;
+      if(off>breathCeil) off=scaleStep(off,-2,degs);
+      const len = microLen('rise');
+      const climb = i/Math.max(1,riseN);               // 0→1 across the rise
+      const vel = Math.round(UP.riseVelBase + intensity*30 + climb*UP.riseVelClimb);
+      notes.push({startBeat:t, durBeat:len, off:off, vel:clampV(vel), grav:gravityOf(off), role:'rise'});
+      // SPACE after a rising note: small — they crowd, they hurry (息を吸う)
+      const space = len + (rnd()*UP.riseSpaceRand);
+      t += space;
+    }
+
+    // APEX — one note, placed sharply at/near the top, often on a tense tone
+    // (Dominant/leading — TもDも), THEN a long SPACE: the 引力の懐.
+    if(t<total-0.02){
+      degs = degsAt(t);
+      // nudge toward a tense scale tone for the apex (the pull)
+      let apexOff = off;
+      const tenseChoices=[scaleStep(off,1,degs),scaleStep(off,0,degs),scaleStep(off,2,degs)];
+      apexOff = (UP.apexTense || rnd()<CURTENS*TENS.melTension) ? tenseChoices[Math.floor(rnd()*tenseChoices.length)] : off;
+      if(apexOff>breathCeil+2) apexOff=scaleStep(apexOff,-3,degs);
+      off=apexOff;
+      const len = microLen('apex');
+      const vel = Math.round(UP.apexVelBase + intensity*UP.apexVelInt + CURTENS*TENS.melTension*18);       // the peak — strong, or...
+      const tender = rnd()<UP.tenderProb;                // ...sometimes tender (繊細)
+      notes.push({startBeat:t, durBeat:len, off:off, vel:tender?clampV(44+intensity*20):clampV(vel), grav:gravityOf(off), role:'apex'});
+      // ── 引力の懐: the SPACE after the apex. long, variable. reverb lives here.
+      // contrast: the more crowded the rise was, the more space the apex earns.
+      const hollow = (UP.hollowMin + rnd()*UP.hollowRand) * (0.7 + intensity*UP.hollowIntensity) * (1 - CURTENS*TENS.spaceTension*0.7);
+      t += len + hollow;
+    }
+
+    // FALL — notes ease apart (growing space), descending, softening (息を吐く)
+    for(let i=0;i<fallN && t<total-0.02;i++){
+      degs = degsAt(t);
+      const curIdx=degIndex(off,degs);
+      const baseOct=12*Math.floor(off/12);
+      const nIdx=npNextIdx(curIdx, -1, degs);
+      let cand=degs[nIdx]+baseOct - (nIdx>curIdx?12:0);  // keep descending feel
+      cand += npOctave(nIdx);
+      off = cand;
+      if(off<breathFloor) off=scaleStep(off,3,degs);
+      const len = microLen('fall');
+      const ease = i/Math.max(1,fallN);                // 0→1 across the fall
+      const vel = Math.round(UP.fallVelBase - ease*UP.fallVelEase - (1-intensity)*10);
+      notes.push({startBeat:t, durBeat:len, off:off, vel:clampV(vel), grav:gravityOf(off), role:'fall'});
+      // SPACE grows as we fall — notes drift apart, breathing out
+      const space = len + ease*(0.3+rnd()*UP.fallSpaceEase) + rnd()*UP.fallSpaceRand;
+      t += space;
+    }
+
+    // SETTLE — a breath of space before the next gesture (息継ぎ)
+    // sometimes resolve to a stable tone first, placed then left in space
+    if(t<total-0.02 && rnd()<UP.settleProb){
+      // resolve toward the strongest CENTER note (nyas) — the home of this 指紋
+      let bestIdx=0,bestC=-1;
+      degs.forEach(function(d,i){ const c=(NP.center[i]||0); if(c>bestC){bestC=c;bestIdx=i;} });
+      const baseOct=12*Math.floor(off/12);
+      off = degs[bestIdx]+baseOct;
+      if(off>breathCeil) off-=12; if(off<breathFloor) off+=12;
+      const len=microLen('fall');
+      notes.push({startBeat:t, durBeat:len, off:off, vel:clampV(40+intensity*16), grav:gravityOf(off), role:'settle'});
+      t += len;
+    }
+    // the inter-breath silence — the lungs empty before filling again
+    t += UP.breathGapMin + rnd()*UP.breathGapRand;
+    firstNote=false;
+  }
+
+  return {role:'upper',ch:chOf('upper'),mute:false,notes:notes,total:total};
+}
+function clampV(v){ return Math.max(20,Math.min(118,Math.round(v))); }
+
+// ════════════════════════════════════════════════════════════
+//  HISTORY (undo/redo) + JSON save/load
+//  A snapshot = the UP params + the three generated layers + transport.
+// ════════════════════════════════════════════════════════════
+let hist=[], histIdx=-1, HIST_MAX=60;
+function snapshot(){
+  return JSON.stringify({
+    up:UP, low:LOW, inn:INN, tens:TENS, np:NP, ch:CH, oct:OCT, seed:SEED, seedLock:SEED_LOCK, borrow:BORROW, feel:FEEL,
+    lower:LOWER, inner:INNER, upper:UPPER, total:TOTAL_BEATS,
+    root:document.getElementById('root').value,
+    scale:document.getElementById('scale').value,
+    bpm:document.getElementById('bpm').value,
+    bars:document.getElementById('bars').value,
+  });
+}
+function pushHistory(){
+  // drop any redo branch
+  hist=hist.slice(0,histIdx+1);
+  hist.push(snapshot());
+  if(hist.length>HIST_MAX) hist.shift();
+  histIdx=hist.length-1;
+}
+function restore(snap){
+  const o=JSON.parse(snap);
+  Object.assign(UP,o.up); if(o.low)Object.assign(LOW,o.low); if(o.inn)Object.assign(INN,o.inn); if(o.tens)Object.assign(TENS,o.tens); if(o.np)Object.assign(NP,o.np); if(o.ch)Object.assign(CH,o.ch); if(o.oct)Object.assign(OCT,o.oct); if(o.seed!=null)SEED=o.seed; if(o.seedLock!=null)SEED_LOCK=o.seedLock; if(o.borrow)Object.assign(BORROW,o.borrow); if(o.feel)Object.assign(FEEL,o.feel);
+  LOWER=o.lower; INNER=o.inner; UPPER=o.upper; TOTAL_BEATS=o.total;
+  if(o.root!=null)document.getElementById('root').value=o.root;
+  if(o.scale!=null)document.getElementById('scale').value=o.scale;
+  if(o.bpm!=null)document.getElementById('bpm').value=o.bpm;
+  if(o.bars!=null)document.getElementById('bars').value=o.bars;
+  buildSide(); redraw();
+}
+function undo(){ if(histIdx>0){ histIdx--; restore(hist[histIdx]); } }
+function redo(){ if(histIdx<hist.length-1){ histIdx++; restore(hist[histIdx]); } }
+
+function saveJSON(){
+  const blob=new Blob([JSON.stringify(JSON.parse(snapshot()),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download='ciranda_'+Date.now()+'.json'; a.click(); URL.revokeObjectURL(url);
+  setInfo('JSON を保存した。呼吸のパラメータと全層を丸ごと。');
+}
+function loadJSON(ev){
+  const f=ev.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=function(e){ try{ restore(e.target.result); pushHistory(); setInfo('JSON を読み込んだ。'); }catch(err){ setInfo('読込エラー: '+String(err).slice(0,60)); } };
+  r.readAsText(f); ev.target.value='';
+}
+
+// regenerate but keep a clean history entry (used by sliders/steppers)
+function regenKeepHistory(only){
+  beforeGen();
+  if(TENS.on){
+    // ARC MODE: regenerate only the affected layer(s) across the arc, keeping the
+    // tension structure and the OTHER layers intact — so one slider doesn't wipe
+    // the whole piece. (If 'only' is unknown, fall back to a full arc build.)
+    if(only==='lower'){ regenLayerArc('lower'); regenLayerArc('inner'); }
+    else if(only==='inner'){ regenLayerArc('inner'); }
+    else if(only==='upper'){ regenLayerArc('upper'); }
+    else { generateAll(); }
+  }
+  else if(only==='lower'){ LOWER=genLower(); INNER=genInner(); TOTAL_BEATS=getBars()*4; }
+  else if(only==='inner'){ INNER=genInner(); TOTAL_BEATS=getBars()*4; }
+  else if(only==='upper'){ UPPER=genUpper(); TOTAL_BEATS=getBars()*4; }
+  else { LOWER=genLower(); INNER=genInner(); UPPER=genUpper(); TOTAL_BEATS=getBars()*4; }
+  redraw();
+  pushHistory();
+  const u=document.getElementById('undoBtn'); if(u)u.disabled=(histIdx<=0);
+  const r=document.getElementById('redoBtn'); if(r)r.disabled=(histIdx>=hist.length-1);
+}
+
+// ════════════════════════════════════════════════════════════
+//  TENSION ARC — generate a whole piece as sections of rising tension
+//  that accumulate, partially release, cross a threshold, fully resolve,
+//  then return (or change root). The arc is generated as ONE long flow.
+// ════════════════════════════════════════════════════════════
+function genSection(tension, barOffset, sectionBars){
+  // temporarily set the globals the gen functions read, and the bar count
+  const savedTens=CURTENS;
+  CURTENS=Math.max(0,Math.min(1,tension));
+  // generate the three layers for THIS section (using sectionBars)
+  const L=genLowerN(sectionBars), I=genInnerN(sectionBars,L), U=genUpperN(sectionBars);
+  CURTENS=savedTens;
+  // offset all note times by barOffset*4 beats
+  const shift=barOffset*4;
+  [L,I,U].forEach(function(layer){ layer.notes.forEach(function(n){ n.startBeat+=shift; }); });
+  return {L:L,I:I,U:U};
+}
+// tension for section i of an arc with `secs` sections (coherent baseline)
+function sectionTension(i,secs){
+  const isLast=(i===secs-1);
+  if(isLast) return 0.05;                                  // full resolution
+  let t=TENS.startTension + i*TENS.climb;
+  if(t>TENS.threshold) t=TENS.threshold;
+  if(i>0 && rnd()<TENS.partialResolve) t*=0.55;
+  return Math.min(0.98,t);
+}
+function buildArc(){
+  const secs=Math.max(1,Math.round(TENS.sections));
+  const sb=TENS.sectionBars>0?Math.round(TENS.sectionBars):getBars();
+  let barCursor=0;
+  const lowAll=[],innAll=[],upAll=[];
+  CURROOTSHIFT=0;
+  const disc = TENS.discover===1;
+  // in discovery mode, each layer drifts its tension and phase independently —
+  // the layers stop agreeing, and collide. coherence is traded for surprise.
+  const lowPhase = disc? Math.round(TENS.phaseDrift*secs*0.5) : 0;
+  const innPhase = disc? Math.round(TENS.phaseDrift*secs*0.33) : 0;
+  function driftT(base){ if(!disc) return base; return Math.max(0.02,Math.min(0.98, base + (rnd()-0.5)*TENS.discoverAmt*1.2)); }
+  for(let i=0;i<secs;i++){
+    const baseT=sectionTension(i,secs);
+    // each layer's tension: coherent uses baseT; discovery drifts + phase-shifts
+    const tLow = disc? sectionTension((i+lowPhase)%secs,secs) : baseT;
+    const tInn = disc? driftT(sectionTension((i+innPhase)%secs,secs)) : baseT;
+    const tUp  = disc? driftT(baseT) : baseT;
+    // generate each layer at ITS OWN tension
+    let svT=CURTENS;
+    CURTENS=tLow; const Lr=genLowerN(sb);
+    CURTENS=tInn; const Ir=genInnerN(sb, Lr);
+    CURTENS=tUp;  const Ur=genUpperN(sb);
+    CURTENS=svT;
+    const shift=barCursor*4;
+    [Lr,Ir,Ur].forEach(function(layer){ layer.notes.forEach(function(n){ n.startBeat+=shift; }); });
+    lowAll.push.apply(lowAll,Lr.notes);
+    innAll.push.apply(innAll,Ir.notes);
+    upAll.push.apply(upAll,Ur.notes);
+    barCursor+=sb;
+  }
+  // if afterResolve = change root, shift the root for the NEXT generation
+  LOWER={role:'lower',ch:chOf('lower'),mute:LOWER?LOWER.mute:false,notes:lowAll,total:barCursor*4};
+  INNER={role:'inner',ch:chOf('inner'),mute:INNER?INNER.mute:false,notes:innAll,total:barCursor*4};
+  UPPER={role:'upper',ch:chOf('upper'),mute:UPPER?UPPER.mute:false,notes:upAll,total:barCursor*4};
+  TOTAL_BEATS=barCursor*4;
+  if(TENS.afterResolve===1){
+    // pick a new root within the scale for next time (II, IV, V, VI degrees)
+    CURROOTSHIFT=[2,3,4,5][Math.floor(rnd()*4)];
+  } else {
+    CURROOTSHIFT=0;
+  }
+}
+// bar-parameterized versions of the generators (so a section can have its own length)
+let _GENBARS=null;
+function getBarsEff(){ return _GENBARS!=null?_GENBARS:getBars(); }
+function genLowerN(n){ _GENBARS=n; const r=genLower(); _GENBARS=null; return r; }
+function genInnerN(n,lowOverride){ _GENBARS=n; const sv=LOWER; if(lowOverride)LOWER=lowOverride; const r=genInner(); if(lowOverride)LOWER=sv; _GENBARS=null; return r; }
+function genUpperN(n){ _GENBARS=n; const r=genUpper(); _GENBARS=null; return r; }
+
+// unified generate: arc if TENS.on, else single loop
+function generateAll(){
+  beforeGen();
+  if(TENS.on){ buildArc(); }
+  else { LOWER=genLower(); INNER=genInner(); UPPER=genUpper(); TOTAL_BEATS=getBars()*4; }
+}
+
+function getTotalBeatsEff(){ return TENS.on ? Math.max(1,Math.round(TENS.sections))*((TENS.sectionBars>0?Math.round(TENS.sectionBars):getBars()))*4 : getBars()*4; }
+function regen(){
+  // structural rebuild: stale per-voice loop windows must not survive a change
+  // in length/structure, or the scheduler loops over beats that no longer exist.
+  if(LOOPWIN.lower&&LOOPWIN.lower.start+LOOPWIN.lower.len>getTotalBeatsEff()) LOOPWIN.lower=null;
+  if(LOOPWIN.inner&&LOOPWIN.inner.start+LOOPWIN.inner.len>getTotalBeatsEff()) LOOPWIN.inner=null;
+  if(LOOPWIN.upper&&LOOPWIN.upper.start+LOOPWIN.upper.len>getTotalBeatsEff()) LOOPWIN.upper=null;
+  generateAll();
+  buildSide(); redraw();
+  pushHistory();
+  if(TENS.on){
+    const disc = TENS.discover===1 ? '<span class="k">発見モード</span>：層が緊張を無視してぶつかる。' : '';
+    setInfo('<span class="k">緊張の弧</span>を生成。'+Math.round(TENS.sections)+'セクションが緊張を溜め→閾値→解放し、'+(TENS.afterResolve===1?'<span class="k">新しいルート</span>へ移る':'最初へ戻る')+'。'+disc+'録音しながら即興して。');
+  } else {
+    setInfo('上層を「呼吸の波」で生成した。登り(詰まる)→頂点◇(その後に <span class="k">引力の懐</span>=空間)→下り→息継ぎ。<span class="k">音の長さでなく、音の後の空間</span>が呼吸を描く。');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  VISUALIZATION — continuous timeline (NOT a grid)
+// ════════════════════════════════════════════════════════════
+let playBeat=-1;
+function redraw(){ draw(playBeat); }
+function setInfo(h){ document.getElementById('info').innerHTML=h; }
+function draw(curBeat){
+  const cv=document.getElementById('timeline'); if(!cv) return;
+  const wrap=cv.parentElement;
+  const W=Math.max(600,wrap.clientWidth-24), H=Math.max(150,wrap.clientHeight-8);
+  cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d'); ctx.clearRect(0,0,W,H);
+  const padL=36,padR=14,padT=14,padB=22;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const layers=[LOWER,INNER,UPPER].filter(Boolean);
+  if(!layers.length) return;
+  let lo=99,hi=-99;
+  layers.forEach(function(L){ if(L.mute)return; L.notes.forEach(function(n){ lo=Math.min(lo,n.off);hi=Math.max(hi,n.off); }); });
+  lo-=2;hi+=2; const span=Math.max(1,hi-lo);
+  function ny(off){return padT+(1-(off-lo)/span)*plotH;}
+  function nx(beat){return padL+(beat/Math.max(1,TOTAL_BEATS))*plotW;}
+  // faint beat gridlines (so you can SEE the upper layer floating off them)
+  for(let b=0;b<=TOTAL_BEATS;b++){
+    const x=nx(b); const isBar=(b%4===0);
+    ctx.strokeStyle=isBar?'rgba(255,255,255,.10)':'rgba(255,255,255,.035)';
+    ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,H-padB);ctx.stroke();
+  }
+  // octave lines
+  for(let o=Math.floor(lo/12)*12;o<=hi;o+=12){const y=ny(o);ctx.strokeStyle='rgba(255,255,255,.04)';ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.14)';ctx.font='8px JetBrains Mono';ctx.fillText((o>=0?'+':'')+o,4,y+3);}
+  // ── LOOP WINDOWS: shade the section each voice is looping ──
+  const colMap={lower:'#7a9a88',inner:'#90b4d4',upper:'#e0b870'};
+  ['lower','inner','upper'].forEach(function(role,ri){
+    const win=LOOPWIN[role];
+    if(!win||win.len<=0) return;
+    const col=colMap[role];
+    const x0=nx(win.start), x1=nx(win.start+win.len);
+    // translucent band across full height, tinted in the voice colour
+    ctx.fillStyle=col+'14'; ctx.fillRect(x0,padT,x1-x0,plotH);
+    // bracket edges
+    ctx.strokeStyle=col+'cc'; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x0,padT);ctx.lineTo(x0,H-padB);ctx.moveTo(x1,padT);ctx.lineTo(x1,H-padB);ctx.stroke();
+    // a thin coloured strip at a per-voice vertical offset (so overlapping loops are distinct)
+    const stripY=padT+4+ri*5;
+    ctx.fillStyle=col; ctx.fillRect(x0,stripY,x1-x0,3);
+    // ⟳ marker + where the loop currently is inside its window
+    ctx.fillStyle=col; ctx.font='9px JetBrains Mono'; ctx.fillText('⟳',x0+3,stripY-2);
+    if(curBeat>=0){
+      const inWin=((curBeat%win.len));
+      const lx=nx(win.start+inWin);
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(lx,stripY-2);ctx.lineTo(lx,stripY+5);ctx.stroke();
+    }
+  });
+  // draw each layer as horizontal bars (length = duration) — shows the "swim"
+  layers.forEach(function(L){
+    if(L.mute) return;
+    const col=colMap[L.role];
+    L.notes.forEach(function(n){
+      const x=nx(n.startBeat), y=ny(n.off);
+      const w=Math.max(2, nx(n.startBeat+n.durBeat)-x);
+      const h=L.role==='upper'?5:7;
+      const activeNow=(curBeat>=0 && curBeat>=n.startBeat && curBeat<n.startBeat+n.durBeat);
+      // APEX notes (the 引力の懐): draw a reverb-tail into the space after them
+      if(L.role==='upper' && n.role==='apex'){
+        // the hollow = space to next note; we approximate with a fading tail
+        const tailW=Math.min(plotW*0.18, 40);
+        const grad=ctx.createLinearGradient(x,0,x+tailW,0);
+        grad.addColorStop(0,col+'88'); grad.addColorStop(1,col+'00');
+        ctx.fillStyle=grad; ctx.fillRect(x+w,y-1.5,tailW,3);
+        // the note itself — a bright placed point
+        ctx.fillStyle=activeNow?'#fff':col; ctx.beginPath(); ctx.arc(x,y,3.2,0,7); ctx.fill();
+        ctx.fillStyle='#ffd070'; ctx.font='8px JetBrains Mono'; ctx.fillText('◇',x-2,y-5);
+      } else if(L.role==='upper' && n.grav>=0.9){
+        ctx.strokeStyle=col;ctx.lineWidth=activeNow?2:1.2;ctx.strokeRect(x,y-h/2,Math.max(2,w),h);
+        ctx.fillStyle='#ff6a4a';ctx.font='8px JetBrains Mono';ctx.fillText('⚡',x,y-h);
+      } else {
+        ctx.fillStyle=col;ctx.globalAlpha=activeNow?1:(0.4+n.vel/127*0.5);
+        ctx.fillRect(x,y-h/2,Math.max(2,w),h);ctx.globalAlpha=1;
+      }
+      if(activeNow){ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.strokeRect(x-1,y-h/2-1,w+2,h+2);}
+    });
+  });
+  // playhead
+  if(curBeat>=0){const x=nx(curBeat%TOTAL_BEATS);ctx.strokeStyle='rgba(224,184,112,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,H-padB);ctx.stroke();}
+  // legend
+  let lx=padL;
+  [['lower','土台 (格子)'],['inner','内声'],['upper','泳ぐ旋律 (連続時間)']].forEach(function(p){
+    ctx.fillStyle=colMap[p[0]];ctx.fillRect(lx,H-10,8,8);
+    ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='9px JetBrains Mono';ctx.fillText(p[1],lx+12,H-3);
+    lx+=ctx.measureText(p[1]).width+34;
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  SIDE PANELS
+// ════════════════════════════════════════════════════════════
+// ── breath parameter definitions: [key, label, min, max, step] ──
+const UP_PARAMS = [
+  ['__grp','── 音域のバランス (偏り対策) ──'],
+  ['centerPull','中心へ戻す力',0,1,0.05],
+  ['registerCenter','中心の高さ',0,28,1],
+  ['range','動く幅',3,18,1],
+  ['fallBias','下降の重み',0.6,2,0.05],
+  ['__grp','── 呼吸の単位 ──'],
+  ['riseMin','登り 最小音数',1,8,1],
+  ['riseRand','登り ランダム幅',0,8,1],
+  ['fallMin','下り 最小音数',1,8,1],
+  ['fallRand','下り ランダム幅',0,8,1],
+  ['breathGapMin','息継ぎ 最小',0,4,0.1],
+  ['breathGapRand','息継ぎ ランダム',0,4,0.1],
+  ['settleProb','解決の確率',0,1,0.05],
+  ['__grp','── 引力の懐 (頂点の空間) ──'],
+  ['hollowMin','懐 最小',0,4,0.1],
+  ['hollowRand','懐 ランダム幅',0,6,0.1],
+  ['hollowIntensity','懐×強度',0,2,0.05],
+  ['apexTense','頂点を緊張へ(0/1)',0,1,1],
+  ['apexHighBase','頂点の高さ',12,30,1],
+  ['apexHighRand','頂点 高さ幅',0,10,1],
+  ['__grp','── 詰まり / 緩み ──'],
+  ['riseSpaceRand','登り 隙間',0,0.3,0.01],
+  ['fallSpaceEase','下り 広がり',0,1.5,0.05],
+  ['fallSpaceRand','下り 揺れ',0,0.4,0.01],
+  ['__grp','── 強度 / ベロシティ ──'],
+  ['intensityMin','強度 最小',0,1,0.05],
+  ['intensityRand','強度 幅',0,1,0.05],
+  ['apexVelBase','頂点 vel基準',30,110,1],
+  ['apexVelInt','頂点 vel×強度',0,60,1],
+  ['tenderProb','頂点 繊細の確率',0,1,0.05],
+  ['riseVelBase','登り vel基準',20,100,1],
+  ['riseVelClimb','登り vel上昇',0,50,1],
+  ['fallVelBase','下り vel基準',20,100,1],
+  ['fallVelEase','下り vel減衰',0,50,1],
+];
+let SELECTED_PARAM=null;
+const LOW_PARAMS = [
+  ['__grp','── 土台: モード ──'],
+  ['sustain','持続(1)/短音(0)',0,1,1],
+  ['__grp','── 土台: 和音 ──'],
+  ['chordSize','和音の音数',1,5,1],
+  ['voicing','声配置 0開/1密/2四度/3パワー',0,3,1],
+  ['spread','広がり',0,24,1],
+  ['__grp','── 土台: 時間的空間 ──'],
+  ['density','密度(音/小節)',1,4,1],
+  ['spaceAfter','飲み込む間',0,3,0.1],
+  ['sustainAmt','持続の長さ',0,2,0.05],
+  ['__grp','── 土台: 円環の安定/揺らぎ ──'],
+  ['patternRand','円環ランダム化',0,1,0.05],
+  ['__grp','── 土台: 和声 (緊張と解放) ──'],
+  ['progression','進行 0静止/1-6',0,6,1],
+  ['progRand','進行の変化',0,1,0.05],
+  ['tensionTop','上のテンション',0,1,0.05],
+  ['__grp','── 土台: ベロシティ ──'],
+  ['velBase','vel基準',20,110,1],
+  ['velRand','vel揺れ',0,40,1],
+];
+const INN_PARAMS = [
+  ['__grp','── 内声 ──'],
+  ['mode','和音(1)/単音(0)',0,1,1],
+  ['followLow','土台に和声を合わせる',0,1,1],
+  ['chordSize','和音の音数',1,4,1],
+  ['density','密度(音/小節)',1,4,1],
+  ['vel','vel基準',20,100,1],
+  ['velRand','vel揺れ',0,40,1],
+  ['durBase','音の長さ',0.2,2,0.05],
+];
+const TENS_PARAMS = [
+  ['__grp','── 緊張の弧 (on で曲全体) ──'],
+  ['sections','セクション数',1,12,1],
+  ['sectionBars','各長さ(0=全体)',0,8,1],
+  ['__grp','── 溜め方 / 解放 ──'],
+  ['startTension','開始の緊張',0,1,0.05],
+  ['climb','上昇/section',0,0.4,0.01],
+  ['partialResolve','一部解放の頻度',0,1,0.05],
+  ['threshold','解放の閾値',0.3,1,0.05],
+  ['afterResolve','解放後 0戻る/1ルート変更',0,1,1],
+  ['__grp','── 芸術発見 (整合性を捨てる) ──'],
+  ['discover','発見モード 0整合/1ぶつかり',0,1,1],
+  ['discoverAmt','緊張のズレ幅',0,1,0.05],
+  ['phaseDrift','位相のずれ',0,1,0.05],
+  ['__grp','── 緊張が各層を曲げる強さ ──'],
+  ['melTension','→旋律',0,2,0.05],
+  ['innTension','→内声',0,2,0.05],
+  ['lowTension','→土台和声',0,2,0.05],
+  ['spaceTension','→空間の詰まり',0,1,0.05],
+];
+// resolve which object a param key belongs to
+function bareKey(key){ return key.indexOf('i:')===0 ? key.slice(2) : key; }
+function paramObj(key){ if(key.indexOf('i:')===0)return INN; const k=key; if(k in LOW)return LOW; if(k in TENS)return TENS; return UP; }
+
+function buildSide(){
+  const s=document.getElementById('side');
+  function panel(L,title,cls,desc){
+    if(!L) return '';
+    const looping = LOOPWIN[L.role] ? ' on' : '';
+    let chSel='<select onchange="setVoiceCh(\''+L.role+'\',this.value)" style="font-size:.5rem;padding:0 .1rem;background:var(--s1);color:var(--text);border:1px solid var(--bd)">';
+    for(let c=1;c<=16;c++){ chSel+='<option value="'+c+'"'+(CH[L.role]===c?' selected':'')+'>ch'+c+'</option>'; }
+    chSel+='</select>';
+    let octSel='<select onchange="setVoiceOct(\''+L.role+'\',this.value)" title="基準オクターブ" style="font-size:.5rem;padding:0 .1rem;background:var(--s1);color:var(--text);border:1px solid var(--bd)">';
+    for(let o=-3;o<=3;o++){ octSel+='<option value="'+o+'"'+((OCT[L.role]||0)===o?' selected':'')+'>'+(o>=0?'+':'')+o+'oct</option>'; }
+    octSel+='</select>';
+    return '<div class="panel"><div class="pt '+cls+'">'+title+' '+chSel+' '+octSel+' '
+      +'<button class="vbtn'+(L.mute?' on':'')+'" onclick="toggleMute(\''+L.role+'\')">M</button> '
+      +'<button class="vbtn" onclick="regenLayer(\''+L.role+'\')" style="border-color:var(--bd2)">↻</button> '
+      +'<button class="vbtn'+looping+'" onclick="toggleVoiceLoop(\''+L.role+'\')" title="このセクションをループ">◉</button></div>'
+      +'<div class="note">'+desc+'</div></div>';
+  }
+  // history + save bar
+  let html='<div class="panel"><div class="pt mel">CIRANDA</div>'
+    +'<div style="display:flex;gap:.3rem;flex-wrap:wrap">'
+    +'<button class="btn" onclick="undo()" id="undoBtn" style="font-size:.58rem">↶ 戻る</button>'
+    +'<button class="btn" onclick="redo()" id="redoBtn" style="font-size:.58rem">↷ Redo</button>'
+    +'<button class="btn" onclick="saveJSON()" style="font-size:.58rem">⬇ JSON</button>'
+    +'<button class="btn" onclick="document.getElementById(\'loadFile\').click()" style="font-size:.58rem">⬆ 読込</button>'
+    +'<input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadJSON(event)">'
+    +'</div>'
+    +'<div style="display:flex;gap:.3rem;align-items:center;margin-top:.4rem;flex-wrap:wrap">'
+    +'<button class="btn'+(SEED_LOCK?' hi':'')+'" onclick="toggleSeedLock()" style="font-size:.58rem" title="種を固定すると、同じパラメータは同じ結果になる(パラメータの効果だけが純粋に見える)">🔒 種 '+(SEED_LOCK?'固定':'自由')+'</button>'
+    +'<span style="font-size:.54rem;color:var(--dim)">seed '+SEED+'</span>'
+    +'<button class="btn" onclick="newSeed()" style="font-size:.58rem" title="新しい種で、別のバリエーションを生成">🎲 新しい種</button>'
+    +'</div>'
+    +'<div class="note" style="margin-top:.3rem">種=自由: いじるたび新しい結果(即興)。種=固定: 同じ設定なら同じ音。パラメータの効果だけを聴ける。</div>'
+    +'</div>';
+
+  html+=panel(UPPER,'泳ぐ旋律','mel','◇=頂点(引力の懐)。各音の<b>後の空間</b>が呼吸を描く。')
+       +panel(INNER,'内声','inner','格子上の、暖かい和声の脈。')
+       +panel(LOWER,'土台','low','正確な格子。円環し、飲み込む下の磁場。');
+
+  // TENSION ARC panel (top — it governs the whole piece)
+  html+='<div class="panel"><div class="pt mel">緊張の弧</div>'
+    +'<div class="note" style="margin-bottom:.4rem">緊張を溜め→閾値→解放→戻る/転調</div>';
+  TENS_PARAMS.forEach(function(p){
+    if(p[0]==='__grp'){ html+='<div class="grp">'+p[1]+'</div>'; return; }
+    const key=p[0],label=p[1],min=p[2],max=p[3],step=p[4];
+    const val=TENS[key];
+    const sel=(SELECTED_PARAM===key)?' sel':'';
+    html+='<div class="prm'+sel+'" id="prm_'+key+'">'
+      +'<label onclick="selectParam(\''+key+'\')">'+label+'</label>'
+      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" '
+        +'onfocus="selectParam(\''+key+'\')" oninput="setParam(\''+key+'\',this.value)">'
+      +'<span class="pv" id="pv_'+key+'">'+fmt(val)+'</span>'
+      +'<div class="stepper"><button onclick="stepParam(\''+key+'\',-1)">−</button>'
+      +'<button onclick="stepParam(\''+key+'\',1)">+</button></div>'
+      +'</div>';
+  });
+  html+='</div>';
+
+  // LOWER (土台) parameter panel
+  html+='<div class="panel"><div class="pt low">土台のパラメータ</div>'
+    +'<div class="note" style="margin-bottom:.4rem">飲み込む磁場（色はトランスポート上で選択）</div>';
+  LOW_PARAMS.forEach(function(p){
+    if(p[0]==='__grp'){ html+='<div class="grp">'+p[1]+'</div>'; return; }
+    const key=p[0],label=p[1],min=p[2],max=p[3],step=p[4];
+    const val=LOW[key];
+    const sel=(SELECTED_PARAM===key)?' sel':'';
+    html+='<div class="prm'+sel+'" id="prm_'+key+'">'
+      +'<label onclick="selectParam(\''+key+'\')">'+label+'</label>'
+      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" '
+        +'onfocus="selectParam(\''+key+'\')" oninput="setParam(\''+key+'\',this.value)">'
+      +'<span class="pv" id="pv_'+key+'">'+fmt(val)+'</span>'
+      +'<div class="stepper"><button onclick="stepParam(\''+key+'\',-1)">−</button>'
+      +'<button onclick="stepParam(\''+key+'\',1)">+</button></div>'
+      +'</div>';
+  });
+  html+='</div>';
+
+  // BORROW panel (only when on)
+  html+=buildBorrowPanel();
+
+  // INNER parameter panel
+  html+='<div class="panel"><div class="pt inner">内声のパラメータ</div>'
+    +'<div class="note" style="margin-bottom:.4rem">低-中の層。磁場を厚くする</div>';
+  INN_PARAMS.forEach(function(p){
+    if(p[0]==='__grp'){ html+='<div class="grp">'+p[1]+'</div>'; return; }
+    const bare=p[0],label=p[1],min=p[2],max=p[3],step=p[4];
+    const key='i:'+bare;   // namespaced so inner keys don't collide with LOW
+    const val=INN[bare];
+    const sel=(SELECTED_PARAM===key)?' sel':'';
+    html+='<div class="prm'+sel+'" id="prm_'+key+'">'
+      +'<label onclick="selectParam(\''+key+'\')">'+label+'</label>'
+      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" '
+        +'onfocus="selectParam(\''+key+'\')" oninput="setParam(\''+key+'\',this.value)">'
+      +'<span class="pv" id="pv_'+key+'">'+fmt(val)+'</span>'
+      +'<div class="stepper"><button onclick="stepParam(\''+key+'\',-1)">−</button>'
+      +'<button onclick="stepParam(\''+key+'\',1)">+</button></div>'
+      +'</div>';
+  });
+  html+='</div>';
+
+  // breath parameter panel
+  html+='<div class="panel"><div class="pt mel">呼吸のパラメータ</div>'
+
+    +'<div class="note" style="margin-bottom:.4rem">選択して − + で精密調整</div>';
+  UP_PARAMS.forEach(function(p){
+    if(p[0]==='__grp'){ html+='<div class="grp">'+p[1]+'</div>'; return; }
+    const key=p[0],label=p[1],min=p[2],max=p[3],step=p[4];
+    const val=UP[key];
+    const sel=(SELECTED_PARAM===key)?' sel':'';
+    html+='<div class="prm'+sel+'" id="prm_'+key+'">'
+      +'<label onclick="selectParam(\''+key+'\')">'+label+'</label>'
+      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" '
+        +'onfocus="selectParam(\''+key+'\')" oninput="setParam(\''+key+'\',this.value)">'
+      +'<span class="pv" id="pv_'+key+'">'+fmt(val)+'</span>'
+      +'<div class="stepper"><button onclick="stepParam(\''+key+'\',-1)">−</button>'
+      +'<button onclick="stepParam(\''+key+'\',1)">+</button></div>'
+      +'</div>';
+  });
+  html+='</div>';
+
+  s.innerHTML=html;
+  if(typeof buildNPBoard==='function')buildNPBoard();
+  if(typeof updateToggleBtns==='function')updateToggleBtns();
+  const cc=document.getElementById('chordColor'); if(cc)cc.value=LOW.color;
+  const u=document.getElementById('undoBtn'); if(u) u.disabled=(histIdx<=0);
+  const r=document.getElementById('redoBtn'); if(r) r.disabled=(histIdx>=hist.length-1);
+}
+function fmt(v){ return (Math.round(v*1000)/1000).toString(); }
+function paramDef(key){ const bare=bareKey(key); const pool=(key.indexOf('i:')===0)?INN_PARAMS:UP_PARAMS.concat(LOW_PARAMS).concat(TENS_PARAMS); return pool.find(function(p){return p[0]===bare;}); }
+function selectParam(key){ SELECTED_PARAM=key; document.querySelectorAll('.prm').forEach(function(e){e.classList.remove('sel');}); const el=document.getElementById('prm_'+key); if(el)el.classList.add('sel'); }
+function setParam(key,val){
+  const obj=paramObj(key); const bare=bareKey(key);
+  obj[bare]=parseFloat(val);
+  const pv=document.getElementById('pv_'+key); if(pv)pv.textContent=fmt(obj[bare]);
+  selectParam(key);
+  if(bare==='color'){ const cc=document.getElementById('chordColor'); if(cc)cc.value=LOW.color; }
+  if(bare==='mode'||bare==='on'){ updateToggleBtns(); }
+  regenKeepHistory(obj===LOW?'lower':(obj===INN?'inner':'upper'));
+}
+function stepParam(key,dir){
+  const def=paramDef(key); if(!def)return;
+  const obj=paramObj(key); const bare=bareKey(key);
+  const step=def[4], min=def[2], max=def[3];
+  obj[bare]=Math.max(min,Math.min(max, Math.round((obj[bare]+dir*step)*1000)/1000));
+  const sl=document.querySelector('#prm_'+CSS.escape(key)+' input[type=range]'); if(sl)sl.value=obj[bare];
+  const pv=document.getElementById('pv_'+key); if(pv)pv.textContent=fmt(obj[bare]);
+  selectParam(key);
+  regenKeepHistory(obj===LOW?'lower':(obj===INN?'inner':'upper'));
+}
+// Loop this voice's CURRENT section (the one under the playhead) while others continue.
+function toggleVoiceLoop(role){
+  if(LOOPWIN[role]){ LOOPWIN[role]=null; setInfo({lower:'土台',inner:'内声',upper:'泳ぐ旋律'}[role]+' のループを解除。'); buildSide(); return; }
+  // determine the section length and which section the playhead is in
+  const sb=(TENS.on && TENS.sectionBars>0)?Math.round(TENS.sectionBars):getBars();
+  const secLen=sb*4;
+  let nowBeat=0;
+  if(playing){ nowBeat=(performance.now()-startWall)/(60000/getBPM()); }
+  const secIndex=Math.floor((nowBeat%Math.max(1,TOTAL_BEATS))/secLen);
+  LOOPWIN[role]={start:secIndex*secLen, len:secLen};
+  setInfo({lower:'土台',inner:'内声',upper:'泳ぐ旋律'}[role]+' の第'+(secIndex+1)+'セクションをループ中。他の声部は続行。発見の即興を。');
+  buildSide();
+}
+function toggleSeedLock(){ SEED_LOCK=!SEED_LOCK; buildSide(); setInfo(SEED_LOCK?'種を固定した。同じパラメータなら同じ音になる。パラメータの効果だけが純粋に聴ける。':'種を自由にした。いじるたび新しい結果が出る(即興モード)。'); }
+function newSeed(){ SEED=Math.floor(Math.random()*1e9); rngReset(); regenKeepHistory(); buildSide(); setInfo('新しい種 '+SEED+' で生成した。'); }
+function setVoiceOct(role,val){
+  OCT[role]=parseInt(val)||0;
+  setInfo({lower:'土台',inner:'内声',upper:'泳ぐ旋律'}[role]+' の基準オクターブを '+(OCT[role]>=0?'+':'')+OCT[role]+' に。');
+}
+function setVoiceCh(role,val){
+  CH[role]=parseInt(val)||1;
+  // update the live layer object's ch too
+  const L={lower:LOWER,inner:INNER,upper:UPPER}[role]; if(L)L.ch=chOf(role);
+  setInfo({lower:'土台',inner:'内声',upper:'泳ぐ旋律'}[role]+' を ch'+CH[role]+' に。Ableton で対応トラックに振り分けて。');
+}
+function toggleMute(role){
+  const L={lower:LOWER,inner:INNER,upper:UPPER}[role]; if(L)L.mute=!L.mute;
+  buildSide(); redraw();
+}
+// regenerate just ONE layer, keeping the others intact
+// regenerate ONE layer across the whole arc, keeping tension structure & other layers.
+function regenLayerArc(role){
+  const secs=Math.max(1,Math.round(TENS.sections));
+  const sb=TENS.sectionBars>0?Math.round(TENS.sectionBars):getBars();
+  const all=[]; let barCursor=0;
+  const savedShift=CURROOTSHIFT; CURROOTSHIFT=0;
+  for(let i=0;i<secs;i++){
+    const isLast=(i===secs-1);
+    let t;
+    if(isLast){ t=0.05; }
+    else { t=TENS.startTension+i*TENS.climb; if(t>TENS.threshold)t=TENS.threshold;
+           if(i>0&&rnd()<TENS.partialResolve)t*=0.55; t=Math.min(0.98,t); }
+    const saved=CURTENS; CURTENS=t;
+    let layer;
+    if(role==='lower') layer=genLowerN(sb);
+    else if(role==='inner') layer=genInnerN(sb, sectionLowerAt(barCursor,sb));
+    else layer=genUpperN(sb);
+    CURTENS=saved;
+    const shift=barCursor*4;
+    layer.notes.forEach(function(n){ n.startBeat+=shift; });
+    all.push.apply(all,layer.notes);
+    barCursor+=sb;
+  }
+  CURROOTSHIFT=savedShift;
+  if(role==='lower') LOWER={role:'lower',ch:chOf('lower'),mute:LOWER?LOWER.mute:false,notes:all,total:barCursor*4};
+  else if(role==='inner') INNER={role:'inner',ch:chOf('inner'),mute:INNER?INNER.mute:false,notes:all,total:barCursor*4};
+  else UPPER={role:'upper',ch:chOf('upper'),mute:UPPER?UPPER.mute:false,notes:all,total:barCursor*4};
+  TOTAL_BEATS=barCursor*4;
+}
+function regenLayer(role){
+  beforeGen();
+  const names={lower:'土台',inner:'内声',upper:'泳ぐ旋律'};
+  if(TENS.on){
+    // ARC MODE: re-roll just this layer ACROSS THE WHOLE ARC, keeping the
+    // others (and the section-by-section tension) intact.
+    const secs=Math.max(1,Math.round(TENS.sections));
+    const sb=TENS.sectionBars>0?Math.round(TENS.sectionBars):getBars();
+    const all=[]; let barCursor=0;
+    const savedShift=CURROOTSHIFT; CURROOTSHIFT=0;
+    for(let i=0;i<secs;i++){
+      const isLast=(i===secs-1);
+      let t;
+      if(isLast){ t=0.05; }
+      else { t=TENS.startTension+i*TENS.climb; if(t>TENS.threshold)t=TENS.threshold;
+             if(i>0&&rnd()<TENS.partialResolve)t*=0.55; t=Math.min(0.98,t); }
+      const saved=CURTENS; CURTENS=t;
+      let layer;
+      if(role==='lower') layer=genLowerN(sb);
+      else if(role==='inner') layer=genInnerN(sb, sectionLowerAt(barCursor,sb));
+      else layer=genUpperN(sb);
+      CURTENS=saved;
+      const shift=barCursor*4;
+      layer.notes.forEach(function(n){ n.startBeat+=shift; });
+      all.push.apply(all,layer.notes);
+      barCursor+=sb;
+    }
+    CURROOTSHIFT=savedShift;
+    if(role==='lower') LOWER={role:'lower',ch:chOf('lower'),mute:LOWER.mute,notes:all,total:barCursor*4};
+    else if(role==='inner') INNER={role:'inner',ch:chOf('inner'),mute:INNER.mute,notes:all,total:barCursor*4};
+    else UPPER={role:'upper',ch:chOf('upper'),mute:UPPER.mute,notes:all,total:barCursor*4};
+    TOTAL_BEATS=barCursor*4;
+    redraw(); pushHistory();
+    setInfo(names[role]+' だけを弧全体で生成し直した。緊張の構造と他層はそのまま。');
+    return;
+  }
+  // single-loop mode
+  if(role==='lower'){ LOWER=genLower(); INNER=genInner(); }
+  else if(role==='inner') INNER=genInner();
+  else if(role==='upper') UPPER=genUpper();
+  TOTAL_BEATS=getBars()*4;
+  redraw(); pushHistory();
+  setInfo(names[role]+' だけを生成し直した。他の層はそのまま。');
+}
+// helper: extract the lower-layer notes that fall in a given section window,
+// shifted back to local time, so inner can harmonize with the existing bass.
+function sectionLowerAt(barOffset,sb){
+  if(!LOWER) return null;
+  const lo=barOffset*4, hi=(barOffset+sb)*4;
+  const local={role:'lower',ch:chOf('lower'),mute:false,notes:[],total:sb*4};
+  LOWER.notes.forEach(function(n){ if(n.startBeat>=lo && n.startBeat<hi){ local.notes.push({startBeat:n.startBeat-lo,durBeat:n.durBeat,off:n.off,vel:n.vel,grav:n.grav,role:'lower'}); } });
+  return local.notes.length?local:null;
+}
+
+// ════════════════════════════════════════════════════════════
+//  PLAYBACK — lookahead scheduler, MIDI timestamps (background-proof)
+// ════════════════════════════════════════════════════════════
+let playing=false, audioCtx=null, keepNode=null, schedTimer=null, rafTimer=null;
+let startWall=0, scheduledUntil=0;   // beats already scheduled
+function getACtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function keepAlive(){const c=getACtx();if(keepNode)return;keepNode=c.createOscillator();const g=c.createGain();g.gain.value=0;keepNode.connect(g);g.connect(c.destination);keepNode.start();}
+function togglePlay(){ playing?stopPlay():startPlay(); }
+
+// ── background-proof ticker: Web Worker (not throttled when tab hidden) ──
+// (proven in Jamal — rAF/setTimeout pause in background; a Worker keeps firing.)
+const _WCODE='let id=null;self.onmessage=function(e){if(e.data===\'start\'){if(id)clearInterval(id);id=setInterval(function(){self.postMessage(0)},40);}else if(e.data===\'stop\'){if(id)clearInterval(id);id=null;}};';
+let _ticker=null;
+function getTicker(){
+  if(_ticker) return _ticker;
+  try{ const b=new Blob([_WCODE],{type:'application/javascript'}); _ticker=new Worker(URL.createObjectURL(b));
+    _ticker.onmessage=function(){ if(playing) scheduleTick(); };
+  }catch(e){ _ticker=null; }
+  return _ticker;
+}
+
+function startPlay(){
+  if(!UPPER) regen();
+  playing=true; document.getElementById('btnPlay').textContent='■ Stop';
+  keepAlive(); const c=getACtx(); if(c.state==='suspended')c.resume();
+  startWall=performance.now();
+  scheduledUntil=0;
+  const w=getTicker();
+  if(w){ w.postMessage('start'); } else { loopSchedule(); }   // worker drives scheduling
+  rafDraw();   // visuals (may pause in background — that's fine, only visual)
+}
+function rafDraw(){
+  if(!playing) return;
+  const beatMs=60000/getBPM();
+  draw((performance.now()-startWall)/beatMs);
+  monTick();
+  rafTimer=requestAnimationFrame(rafDraw);
+}
+// one scheduling pass (called by the worker tick OR by rAF fallback)
+function scheduleTick(){
+  if(!playing) return;
+  const bpm=getBPM(); const beatMs=60000/bpm;
+  const now=performance.now();
+  const nowBeat=(now-startWall)/beatMs;
+  const lookaheadBeats=(0.2)*1000/beatMs + 1;
+  const targetBeat=nowBeat+lookaheadBeats;
+  scheduleRange(beatMs,targetBeat);
+}
+function loopSchedule(){
+  if(!playing) return;
+  const bpm=getBPM(); const beatMs=60000/bpm;
+  const now=performance.now();
+  const nowBeat=(now-startWall)/beatMs;
+  const lookaheadBeats=(0.2)*1000/beatMs + 1;   // ~200ms + 1 beat lookahead
+  const targetBeat=nowBeat+lookaheadBeats;
+  scheduleRange(beatMs,targetBeat);
+  draw(nowBeat);
+  schedTimer=requestAnimationFrame(loopSchedule);
+}
+// schedule every note whose start falls in [scheduledUntil, targetBeat)
+function scheduleRange(beatMs,targetBeat){
+  const layers=[LOWER,INNER,UPPER].filter(Boolean);
+  layers.forEach(function(L){
+    if(L.mute) return;
+    const win=LOOPWIN[L.role];
+    if(win && win.len>0){
+      // VOICE LOOP: repeat only this voice's section window, every win.len beats,
+      // while the global playhead keeps advancing. Others continue normally.
+      const localNotes=L.notes.filter(function(n){ return n.startBeat>=win.start && n.startBeat<win.start+win.len; });
+      const firstCycle=Math.floor(scheduledUntil/win.len);
+      const lastCycle=Math.floor(targetBeat/win.len);
+      for(let k=firstCycle;k<=lastCycle;k++){
+        localNotes.forEach(function(n){
+          const gBeat=(n.startBeat-win.start) + k*win.len;
+          if(gBeat>=scheduledUntil && gBeat<targetBeat){
+            sendNote(L,n,gBeat,beatMs);
+          }
+        });
+      }
+    } else {
+      L.notes.forEach(function(n){
+        const firstCycle=Math.floor(scheduledUntil/TOTAL_BEATS);
+        const lastCycle=Math.floor(targetBeat/TOTAL_BEATS);
+        for(let k=firstCycle;k<=lastCycle;k++){
+          const gBeat=n.startBeat + k*TOTAL_BEATS;
+          if(gBeat>=scheduledUntil && gBeat<targetBeat){ sendNote(L,n,gBeat,beatMs); }
+        }
+      });
+    }
+  });
+  if(targetBeat>scheduledUntil) scheduledUntil=targetBeat;
+}
+function sendNote(L,n,gBeat,beatMs){
+  let fo=feelOffset(gBeat); if(!isFinite(fo)) fo=0;
+  let onAt=startWall + (gBeat+fo)*beatMs;
+  let offAt=startWall + (gBeat+fo+Math.max(0.02,n.durBeat))*beatMs;
+  // never schedule in the past (Web MIDI drops past timestamps) — clamp to now+1ms
+  const now=performance.now();
+  if(!isFinite(onAt) || onAt<now+1){ onAt=now+1; }
+  if(!isFinite(offAt) || offAt<=onAt){ offAt=onAt+Math.max(20, n.durBeat*beatMs); }
+  const midi=Math.max(0,Math.min(127, getRoot()+60+n.off+octOf(L.role)));
+  const ch=chOf(L.role);
+  if(midiOutPort){
+    try{
+      midiOutPort.send([0x90|ch,midi,n.vel], onAt);
+      midiOutPort.send([0x80|ch,midi,0], offAt);
+    }catch(e){}
+  }
+  // ── feed the MIDI monitor: record when this note will actually sound ──
+  monPush({playAt:onAt, role:L.role, ch:ch+1, midi:midi, vel:n.vel,
+           lenBeats:n.durBeat, lenMs:Math.round(n.durBeat*beatMs),
+           st:n.off, beat:gBeat});
+}
+// ── MIDI MONITOR ──
+const MON={buf:[],shown:[]};
+function monPush(ev){ MON.buf.push(ev); if(MON.buf.length>400) MON.buf.shift(); }
+function midiName(m){ const N=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; return N[((m%12)+12)%12]+(Math.floor(m/12)-1); }
+function monTick(){
+  if(!playing){ return; }
+  const now=performance.now();
+  // move notes whose playAt has passed into the shown list (most recent first)
+  let moved=false;
+  for(let i=MON.buf.length-1;i>=0;i--){
+    if(MON.buf[i].playAt<=now){
+      MON.shown.unshift(MON.buf[i]);
+      MON.buf.splice(i,1); moved=true;
+    }
+  }
+  if(moved){ if(MON.shown.length>14) MON.shown.length=14; renderMonitor(); }
+}
+function renderMonitor(){
+  const el=document.getElementById('midiMon'); if(!el) return;
+  const colMap={lower:'#7a9a88',inner:'#90b4d4',upper:'#e0b870'};
+  let h='<div class="monhead"><span style="width:30px">ch</span><span style="width:42px">note</span><span style="width:34px">ST</span><span style="width:30px">vel</span><span style="width:44px">len</span><span style="width:40px">#</span></div>';
+  MON.shown.forEach(function(e,i){
+    const op=Math.max(0.25,1-i*0.07);
+    const col=colMap[e.role]||'#cbc6d0';
+    h+='<div class="monrow" style="opacity:'+op+'">'
+      +'<span style="width:30px;color:'+col+'">'+e.ch+'</span>'
+      +'<span style="width:42px;color:'+col+'">'+midiName(e.midi)+'</span>'
+      +'<span style="width:34px;color:var(--inner)">ST'+e.st+'</span>'
+      +'<span style="width:30px">'+e.vel+'</span>'
+      +'<span style="width:44px;color:var(--dim)">'+e.lenMs+'ms</span>'
+      +'<span style="width:40px;color:var(--dim)">'+e.midi+'</span>'
+      +'</div>';
+  });
+  el.innerHTML=h;
+}
+function stopPlay(){
+  playing=false;
+  MON.buf.length=0;
+  if(schedTimer)cancelAnimationFrame(schedTimer);
+  if(rafTimer)cancelAnimationFrame(rafTimer);
+  if(_ticker) _ticker.postMessage('stop');
+  document.getElementById('btnPlay').textContent='▶ Play';
+  if(midiOutPort){for(let c=0;c<4;c++)try{midiOutPort.send([0xB0|c,123,0]);}catch(e){}}
+  playBeat=-1; draw(-1);
+}
+
+// ════════════════════════════════════════════════════════════
+//  MIDI
+// ════════════════════════════════════════════════════════════
+let midiAccess=null, midiOutPort=null;
+function initMIDI(){
+  if(!navigator.requestMIDIAccess){setMStat(false,'N/A');return;}
+  navigator.requestMIDIAccess().then(function(ma){midiAccess=ma;ma.onstatechange=function(){popPorts();};popPorts();}).catch(function(){setMStat(false,'denied');});
+}
+function popPorts(){
+  const sel=document.getElementById('midiOut');if(!sel||!midiAccess)return;
+  const prev=sel.value;sel.innerHTML='<option value="">—</option>';
+  midiAccess.outputs.forEach(function(p,id){const o=document.createElement('option');o.value=id;o.textContent=p.name;sel.appendChild(o);});
+  if(prev)sel.value=prev;
+  [...sel.options].forEach(function(o){if(o.textContent.includes('IAC')&&!sel.value){sel.value=o.value;selectOut(sel.value);}});
+  // populate MIDI INPUT (clock source) dropdown
+  const isel=document.getElementById('midiIn'); if(isel){
+    const ip=isel.value; isel.innerHTML='<option value="">— clock in —</option>';
+    midiAccess.inputs.forEach(function(p,id){const o=document.createElement('option');o.value=id;o.textContent=p.name;isel.appendChild(o);});
+    if(ip)isel.value=ip;
+    [...isel.options].forEach(function(o){if(o.textContent.includes('IAC')&&!isel.value){isel.value=o.value;selectIn(isel.value);}});
+  }
+}
+// ── MIDI CLOCK SLAVE ──
+let midiInPort=null, SLAVE={on:0, pulses:0, lastPulse:0, beat:0, bpm:120, running:false, intervals:[]};
+function selectIn(id){
+  if(midiInPort){ try{midiInPort.onmidimessage=null;}catch(e){} }
+  midiInPort = (id&&midiAccess)?midiAccess.inputs.get(id):null;
+  if(midiInPort){ midiInPort.onmidimessage=onMIDIClock; }
+}
+function toggleSlave(){
+  SLAVE.on = SLAVE.on?0:1;
+  const b=document.getElementById('slaveBtn');
+  if(b){ b.textContent='Slave '+(SLAVE.on?'●':'○'); b.classList.toggle('hi',!!SLAVE.on); }
+  setInfo(SLAVE.on?'スレイブ on。Ableton の MIDI Clock に同期する。Ableton 側で clock 出力を有効に、入力を選んで再生して。':'スレイブ off。内部クロックで動く。');
+}
+function onMIDIClock(ev){
+  const d=ev.data[0];
+  if(!SLAVE.on) return;
+  if(d===0xFA){ // Start
+    SLAVE.pulses=0; SLAVE.beat=0; SLAVE.running=true; SLAVE.intervals=[];
+    startWall=performance.now(); scheduledUntil=0;
+    if(!UPPER) regen();
+    if(!playing){ playing=true; document.getElementById('btnPlay').textContent='■ Stop (slave)'; keepAlive(); const c=getACtx(); if(c.state==='suspended')c.resume(); const w=getTicker(); if(w)w.postMessage('start'); rafDraw(); }
+  } else if(d===0xFC){ // Stop
+    SLAVE.running=false; if(playing) stopPlay();
+  } else if(d===0xF8){ // Clock pulse (24 per quarter note)
+    const now=ev.timeStamp||performance.now();
+    if(SLAVE.lastPulse){ const dt=now-SLAVE.lastPulse; if(dt>2&&dt<200){ SLAVE.intervals.push(dt); if(SLAVE.intervals.length>24)SLAVE.intervals.shift(); } }
+    SLAVE.lastPulse=now;
+    SLAVE.pulses++;
+    SLAVE.beat=SLAVE.pulses/24;
+    // derive tempo from average pulse interval (24 ppqn)
+    if(SLAVE.intervals.length>=8){
+      const avg=SLAVE.intervals.reduce(function(a,b){return a+b;},0)/SLAVE.intervals.length;
+      SLAVE.bpm=Math.round(60000/(avg*24));
+      if(SLAVE.bpm>20&&SLAVE.bpm<300){ const bpmEl=document.getElementById('bpm'); if(bpmEl)bpmEl.value=SLAVE.bpm; }
+    }
+    // realign the scheduler clock so (now-startWall)/beatMs === SLAVE.beat
+    const beatMs=60000/getBPM();
+    startWall = now - SLAVE.beat*beatMs;
+  }
+}
+function selectOut(id){if(!id){midiOutPort=null;setMStat(false,'—');return;}midiOutPort=midiAccess?midiAccess.outputs.get(id):null;if(midiOutPort)setMStat(true,midiOutPort.name);}
+function setMStat(ok,n){const d=document.getElementById('midiDot'),s=document.getElementById('midiStat');if(d)d.classList.toggle('on',ok);if(s){s.textContent=ok?'✓ '+n:n;s.style.color=ok?'var(--low)':'var(--dim)';}}
+let _taps=[];
+function tapTempo(){const n=Date.now();_taps.push(n);if(_taps.length>4)_taps.shift();if(_taps.length>=2){const g=_taps.slice(1).map(function(t,i){return t-_taps[i];});const a=g.reduce(function(x,y){return x+y;},0)/g.length;const b=Math.round(60000/a);if(b>30&&b<200)document.getElementById('bpm').value=b;}}
+
+// ── MIDI export (one cycle) ──
+function exportMIDI(){
+  const layers=[LOWER,INNER,UPPER].filter(function(L){return L&&!L.mute;});
+  if(!layers.length){setInfo('全層 mute。');return;}
+  const PPQ=480, root=getRoot();
+  const tracks=layers.map(function(L){
+    const evs=[];
+    L.notes.forEach(function(n){
+      const on=Math.round(n.startBeat*PPQ), off=Math.round((n.startBeat+n.durBeat)*PPQ);
+      const midi=root+60+n.off;
+      evs.push({tick:on,on:true,midi:midi,vel:n.vel});
+      evs.push({tick:off,on:false,midi:midi,vel:0});
+    });
+    evs.sort(function(a,b){return a.tick-b.tick||(a.on?1:-1);});
+    return {ch:L.ch,evs:evs};
+  });
+  const bytes=buildSMF(tracks,PPQ,getBPM());
+  const blob=new Blob([bytes],{type:'audio/midi'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='ciranda.mid';a.click();URL.revokeObjectURL(url);
+  setInfo('MIDI を書き出した。上層=連続時間の旋律, 各層別ch。Ableton で Pianoteq に。');
+}
+function buildSMF(tracks,PPQ,bpm){
+  function vlq(n){const b=[n&0x7f];n>>=7;while(n>0){b.unshift((n&0x7f)|0x80);n>>=7;}return b;}
+  function u32(n){return[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255];}
+  function u16(n){return[(n>>8)&255,n&255];}
+  const out=[];out.push(0x4d,0x54,0x68,0x64);out.push.apply(out,u32(6));out.push.apply(out,u16(1));
+  out.push.apply(out,u16(tracks.length+1));out.push.apply(out,u16(PPQ));
+  let tt=[];const mpqn=Math.round(60000000/bpm);tt.push.apply(tt,vlq(0));tt.push(0xff,0x51,0x03,(mpqn>>16)&255,(mpqn>>8)&255,mpqn&255);tt.push.apply(tt,vlq(0));tt.push(0xff,0x2f,0x00);
+  out.push(0x4d,0x54,0x72,0x6b);out.push.apply(out,u32(tt.length));out.push.apply(out,tt);
+  tracks.forEach(function(tr){let td=[];let last=0;tr.evs.forEach(function(e){const delta=e.tick-last;last=e.tick;td.push.apply(td,vlq(delta));if(e.on)td.push(0x90|(tr.ch&0x0f),e.midi&0x7f,e.vel&0x7f);else td.push(0x80|(tr.ch&0x0f),e.midi&0x7f,0);});td.push.apply(td,vlq(0));td.push(0xff,0x2f,0x00);out.push(0x4d,0x54,0x72,0x6b);out.push.apply(out,u32(td.length));out.push.apply(out,td);});
+  return new Uint8Array(out);
+}
+
+// ── scale display names & groups (for the dropdown) ──
+const SCALE_GROUPS=[
+  ['Western modes',['ionian','dorian','phrygian','lydian','mixolydian','aeolian','locrian']],
+  ['Melodic minor modes',['mel_minor','dorian_b2','lydian_aug','lydian_dom','mixo_b6','locrian_n2','altered']],
+  ['Harmonic minor modes',['har_minor','locrian_n6','ionian_s5','dorian_s4','phrygian_dom','lydian_s2','ultralocrian']],
+  ['Harmonic major modes',['har_major','dorian_b5','phrygian_b4','lydian_b3','mixo_b2','lydian_aug_s2']],
+  ['Double harmonic / Gypsy',['double_har','byzantine','hungarian_min','hungarian_maj','oriental','gypsy']],
+  ['Symmetric',['wholetone','dim_wh','dim_hw','augmented','tritone']],
+  ['Pentatonic (world)',['maj_pent','min_pent','blues','egyptian','man_gong','ritusen']],
+  ['Japanese 日本',['in_sen','hirajoshi','iwato','kumoi','yo','insen2','akebono']],
+  ['Indian raags राग',['bhairav','yaman','kafi','bhairavi','todi','marwa','purvi','des','malkauns','bhoopali','darbari','charukeshi','kirwani','ahirbhairav','madhuvanti','hamsadhwani','shree','pilu']],
+  ['Arabic maqamat',['hijaz','nahawand','kurd','ajam','saba','bayati','hijazkar','suzidil']],
+  ['Greek / Eastern Eu.',['phrygian_greek','chromatic_dorian','enigmatic','neapolitan_min','neapolitan_maj']],
+  ['Synthetic / exotic',['prometheus','scriabin','blues_maj','blues_nine','bebop_dom','bebop_maj','bebop_dorian','six_tone_sym','leading_whole']],
+  ['Chromatic',['chromatic']],
+];
+const SCALE_LABELS={
+  ionian:'Ionian (Major)',dorian:'Dorian',phrygian:'Phrygian',lydian:'Lydian',mixolydian:'Mixolydian',aeolian:'Aeolian (minor)',locrian:'Locrian',
+  mel_minor:'Melodic Minor',dorian_b2:'Dorian b2',lydian_aug:'Lydian Augmented',lydian_dom:'Lydian Dominant',mixo_b6:'Mixolydian b6',locrian_n2:'Locrian ♮2',altered:'Altered',
+  har_minor:'Harmonic Minor',locrian_n6:'Locrian ♮6',ionian_s5:'Ionian #5',dorian_s4:'Dorian #4',phrygian_dom:'Phrygian Dominant',lydian_s2:'Lydian #2',ultralocrian:'Ultralocrian',
+  har_major:'Harmonic Major',dorian_b5:'Dorian b5',phrygian_b4:'Phrygian b4',lydian_b3:'Lydian b3',mixo_b2:'Mixolydian b2',lydian_aug_s2:'Lydian Aug #2',
+  double_har:'Double Harmonic',byzantine:'Byzantine',hungarian_min:'Hungarian Minor',hungarian_maj:'Hungarian Major',oriental:'Oriental',gypsy:'Gypsy',
+  wholetone:'Whole Tone',dim_wh:'Diminished (W-H)',dim_hw:'Diminished (H-W)',augmented:'Augmented',tritone:'Tritone',
+  maj_pent:'Major Pentatonic',min_pent:'Minor Pentatonic',blues:'Blues',egyptian:'Egyptian',man_gong:'Man Gong',ritusen:'Ritusen',
+  in_sen:'In Sen 陰旋',hirajoshi:'Hirajoshi 平調子',iwato:'Iwato 岩戸',kumoi:'Kumoi 雲井',yo:'Yo 陽',insen2:'In Sen II',akebono:'Akebono 曙',
+  bhairav:'Bhairav',yaman:'Yaman',kafi:'Kafi',bhairavi:'Bhairavi',todi:'Todi',marwa:'Marwa',purvi:'Purvi',des:'Des',malkauns:'Malkauns',bhoopali:'Bhoopali',darbari:'Darbari',charukeshi:'Charukeshi',kirwani:'Kirwani',ahirbhairav:'Ahir Bhairav',madhuvanti:'Madhuvanti',hamsadhwani:'Hamsadhwani',shree:'Shree',pilu:'Pilu',
+  hijaz:'Hijaz',nahawand:'Nahawand',kurd:'Kurd',ajam:'Ajam',saba:'Saba',bayati:'Bayati',hijazkar:'Hijazkar',suzidil:'Suzidil',
+  phrygian_greek:'Phrygian (Greek)',chromatic_dorian:'Chromatic Dorian',enigmatic:'Enigmatic',neapolitan_min:'Neapolitan Minor',neapolitan_maj:'Neapolitan Major',
+  prometheus:'Prometheus',scriabin:'Scriabin',blues_maj:'Major Blues',blues_nine:'Nine-Tone Blues',bebop_dom:'Bebop Dominant',bebop_maj:'Bebop Major',bebop_dorian:'Bebop Dorian',six_tone_sym:'Six-Tone Symmetric',leading_whole:'Leading Whole-Tone',
+  chromatic:'Chromatic',
+};
+// ── chord color names (for the dropdown) ──
+const CHORD_COLORS=[
+  'Triad — 素の三和音','7th — テンション','9th — 豊かな緊張','11th — 広大','13th — 開いた支配',
+  'sus4 — 解決しない','sus2 — 開いた問い','6th — 古い暖かさ','6/9 — 開いた明るさ','add9 — 澄んだ',
+  'Quartal — McCoy的','Quintal — 冷たい空虚','Cluster — 最大緊張','Shell — 本質だけ','sus系 — 宙吊り',
+  'maj7#11 — 宙に浮く','min/maj — 不穏な美','add11 — 翳り','浮遊cluster — 重力喪失',
+];
+function populateChordColors(){
+  const sel=document.getElementById('chordColor'); if(!sel)return;
+  let html='';
+  CHORD_COLORS.forEach(function(name,i){ html+='<option value="'+i+'"'+(i===LOW.color?' selected':'')+'>'+name+'</option>'; });
+  sel.innerHTML=html;
+}
+function setChordColor(v){
+  LOW.color=parseInt(v)||0;
+  regenKeepHistory('lower');
+}
+function toggleChord(){
+  LOW.mode = LOW.mode? 0 : 1;
+  updateToggleBtns();
+  regenKeepHistory('lower');
+}
+function setFeel(v){ FEEL.type=parseInt(v)||0; setInfo('Feel: '+FEELS[FEEL.type].name+'。グルーヴ(時間の質)が変わった。'); }
+function populateFeel(){ const sel=document.getElementById('feelSel'); if(!sel)return; sel.innerHTML=FEELS.map(function(f,i){return '<option value="'+i+'"'+(FEEL.type===i?' selected':'')+'>'+f.name+'</option>';}).join(''); }
+function toggleBorrow(){
+  BORROW.on = BORROW.on? 0 : 1;
+  const b=document.getElementById('borrowToggle');
+  if(b){ b.textContent='拝借 '+(BORROW.on?'●':'○'); b.classList.toggle('hi',!!BORROW.on); }
+  buildSide(); regenKeepHistory('upper');
+  setInfo(BORROW.on?'<span class="k">拝借モード</span>。核の磁場にいながら、時間の流れの中で一瞬だけ別の世界へ踏み出し、戻る。下のパネルで踏み出し方と行き先を。':'拝借モードを解除。一つの磁場の中に留まる。');
+}
+const BORROW_TYPES=['経過的(半音すべり)','ピボット(5度・最も滑らか)','衝突(Stravinsky・3全音)','ステッピングアウト(Jazz)','借用(モーダル交換)'];
+function setBorrowType(v){ BORROW.type=parseInt(v); regenKeepHistory('upper'); }
+function setBorrowTarget(v){ BORROW.target=parseInt(v); regenKeepHistory('upper'); }
+function setBorrowParam(k,v){ BORROW[k]=parseFloat(v); const pv=document.getElementById('pv_b_'+k); if(pv)pv.textContent=fmt(BORROW[k]); regenKeepHistory('upper'); }
+function buildBorrowPanel(){
+  if(!BORROW.on) return '';
+  let h='<div class="panel"><div class="pt mel">拝借 — 踏み出しと帰還</div>'
+    +'<div class="note" style="margin-bottom:.4rem">核の磁場にいながら、時間の中で一瞬別の世界を拝借して戻る。歴史の職人技。</div>';
+  // type
+  h+='<div class="grp">踏み出し方</div><select onchange="setBorrowType(this.value)" style="width:100%;font-size:.6rem;margin-bottom:.3rem;background:var(--s1);color:var(--text);border:1px solid var(--bd)">';
+  BORROW_TYPES.forEach(function(n,i){ h+='<option value="'+i+'"'+(BORROW.type===i?' selected':'')+'>'+n+'</option>'; });
+  h+='</select>';
+  // target worldview
+  h+='<div class="grp">行き先(世界観) — AUTO or 配色で選ぶ</div><select onchange="setBorrowTarget(this.value)" style="width:100%;font-size:.6rem;margin-bottom:.3rem;background:var(--s1);color:var(--text);border:1px solid var(--bd)">';
+  BORROW_WORLDS.forEach(function(w,i){ h+='<option value="'+i+'"'+(BORROW.target===i?' selected':'')+'>'+w.name+'</option>'; });
+  h+='</select>';
+  // freq + len
+  h+='<div class="grp">頻度と長さ</div>';
+  h+=borrowSlider('freq','踏み出す頻度',0,1,0.05);
+  h+=borrowSlider('len','踏み出しの長さ(拍)',0.5,6,0.5);
+  h+='</div>';
+  return h;
+}
+function borrowSlider(k,label,min,max,step){
+  return '<div class="prm"><label>'+label+'</label>'
+    +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+BORROW[k]+'" oninput="setBorrowParam(\''+k+'\',this.value)">'
+    +'<span class="pv" id="pv_b_'+k+'">'+fmt(BORROW[k])+'</span></div>';
+}
+function toggleArc(){
+  TENS.on = TENS.on? 0 : 1;
+  // the whole structure changes (single loop <-> multi-section arc), so any
+  // per-voice loop windows now point at stale beats — clear them.
+  LOOPWIN.lower=null; LOOPWIN.inner=null; LOOPWIN.upper=null;
+  updateToggleBtns();
+  regen();   // arc on/off changes whole structure
+}
+function updateToggleBtns(){
+  const c=document.getElementById('chordToggle');
+  if(c){ c.textContent='和声 '+(LOW.mode?'●':'○'); c.classList.toggle('hi',!!LOW.mode); }
+  const a=document.getElementById('arcToggle');
+  if(a){ a.textContent='緊張 '+(TENS.on?'●':'○'); a.classList.toggle('hi',!!TENS.on); }
+}
+
+const NOTE_NAMES_SHARP=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function degName(d){ const root=getRoot(); return NOTE_NAMES_SHARP[((root+d)%12+12)%12]; }
+function buildNPBoard(){
+  const board=document.getElementById('npboard'); if(!board) return;
+  const degs=getScale();
+  if(Object.keys(NP.weight).length!==degs.length) npReset(degs);
+  // global row
+  let h='<div class="npglob"><span class="ttl">音の個性 — 指紋</span>'
+    +npGlob('leap','順次 ←→ 跳躍',0,1,0.05)
+    +npGlob('restWeight','中心の引力',0,2,0.05)
+    +npGlob('pakadOn','癖 on/off',0,1,1)
+    +npGlob('pakadFreq','癖の頻度',0,1,0.05)
+    +'<div class="monwrap"><div class="monttl">MIDI モニター</div><div id="midiMon" class="midimon"></div></div>'
+    +'</div>';
+  // wide grid: columns = [note] + one per degree; rows = attributes
+  const n=degs.length;
+  const attrs=[['weight','重み',0,2,0.05],['center','中心',0,1,0.05],['ascAvoid','↑避',0,1,0.05],['descAvoid','↓避',0,1,0.05],['octaveBias','8va',-1,1,0.1]];
+  h+='<div class="npgrid" style="grid-template-columns:54px repeat('+n+',1fr)">';
+  // header row: note names
+  h+='<div class="gh"></div>';
+  degs.forEach(function(d,i){ h+='<div class="gh" style="font-size:.74rem;color:var(--mel)">'+degName(d)+'<br><span style="font-size:.62rem;color:var(--inner);font-style:normal">ST'+d+'</span></div>'; });
+  // each attribute row
+  attrs.forEach(function(a){
+    h+='<div class="rn">'+a[1]+'</div>';
+    degs.forEach(function(d,i){
+      const val=NP[a[0]][i]!=null?NP[a[0]][i]:0;
+      h+='<div class="cell">'
+        +'<input type="range" min="'+a[2]+'" max="'+a[3]+'" step="'+a[4]+'" value="'+val+'" '
+          +'oninput="setNP('+i+',\''+a[0]+'\',this.value);this.nextElementSibling.textContent=(Math.round(this.value*100)/100)">'
+        +'<span class="cv">'+(Math.round(val*100)/100)+'</span>'
+        +'</div>';
+    });
+  });
+  h+='</div>';
+  board.innerHTML=h;
+}
+function npGlob(key,label,min,max,step){
+  const val=NP[key];
+  return '<span class="gctl"><label>'+label+'</label>'
+    +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" '
+    +'oninput="setNPGlobalLive(\''+key+'\',this.value,this.nextElementSibling)">'
+    +'<span class="cv" style="font-size:.5rem;color:var(--dim);width:24px">'+fmt(val)+'</span></span>';
+}
+function setNPGlobalLive(key,val,span){ NP[key]=parseFloat(val); if(span)span.textContent=fmt(NP[key]); regenKeepHistory('upper'); }
+function npGlobalRow(key,label,min,max,step){
+  const val=NP[key];
+  return '<div class="prm" id="prm_np_'+key+'">'
+    +'<label>'+label+'</label>'
+    +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" oninput="setNPGlobal(\''+key+'\',this.value)">'
+    +'<span class="pv" id="pv_np_'+key+'">'+fmt(val)+'</span>'
+    +'<div class="stepper"><button onclick="stepNPGlobal(\''+key+'\',-1,'+step+','+min+','+max+')">−</button>'
+    +'<button onclick="stepNPGlobal(\''+key+'\',1,'+step+','+min+','+max+')">+</button></div></div>';
+}
+function npMini(i,attr,min,max,step,glyph){
+  const val=NP[attr][i]!=null?NP[attr][i]:0;
+  return '<span style="display:inline-flex;align-items:center;gap:1px" title="'+attr+'">'
+    +'<span style="font-size:.5rem;color:var(--dim)">'+glyph+'</span>'
+    +'<input type="range" style="width:34px;height:2px" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" '
+    +'oninput="setNP('+i+',\''+attr+'\',this.value)"></span>';
+}
+function setNP(i,attr,val){ NP[attr][i]=parseFloat(val); regenKeepHistory('upper'); }
+function setNPGlobal(key,val){ NP[key]=parseFloat(val); const pv=document.getElementById('pv_np_'+key); if(pv)pv.textContent=fmt(NP[key]); regenKeepHistory('upper'); }
+function stepNPGlobal(key,dir,step,min,max){ NP[key]=Math.max(min,Math.min(max,Math.round((NP[key]+dir*step)*1000)/1000)); const sl=document.querySelector('#prm_np_'+key+' input[type=range]'); if(sl)sl.value=NP[key]; const pv=document.getElementById('pv_np_'+key); if(pv)pv.textContent=fmt(NP[key]); regenKeepHistory('upper'); }
+
+function populateScales(){
+  const sel=document.getElementById('scale'); if(!sel)return;
+  let html='';
+  SCALE_GROUPS.forEach(function(g){
+    html+='<optgroup label="'+g[0]+'">';
+    g[1].forEach(function(k){ if(SCALES[k]) html+='<option value="'+k+'"'+(k==='dorian'?' selected':'')+'>'+(SCALE_LABELS[k]||k)+'</option>'; });
+    html+='</optgroup>';
+  });
+  sel.innerHTML=html;
+  sel.value='dorian';
+}
+
+// ── init ──
+window.addEventListener('resize',function(){draw(playing?playBeat:-1);});
+document.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='z'){
+    e.preventDefault();
+    if(e.shiftKey) redo(); else undo();
+  }
+});
+populateScales();
+populateFeel();
+populateChordColors();
+updateToggleBtns();
+document.getElementById('root').value='9';   // A — a Gismonti-ish home
+regen();
+initMIDI();
+</script>
+</body>
+</html>

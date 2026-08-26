@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nusrat Fateh Ali Khan — Qawwali Sequencer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #080608;
+  --s0:    #0e0b0f;
+  --s1:    #181420;
+  --s2:    #22182e;
+  --bd:    #2a2040;
+  --text:  #d8d0e0;
+  --dim:   #5a5070;
+  --gold:  #c8a040;
+  --gold2: #e0c060;
+  --rose:  #b05060;
+  --rose2: #e06070;
+  --violet:#7050a0;
+  --violet2:#9070c0;
+  --ivory: #e8e0d0;
+  --teal:  #406858;
+  --dawn:  #c07040;
+  --arvo:  #6090a8;   /* Arvo Pärt color */
+  --arvo2: #90b8d0;
+  --ecstasy:#e0a050; /* Qawwali ecstasy color */
+  --silence:#304050; /* Tintinnabuli silence */
+  --re-c:  #ff6b35;
+  --re-b:  #ff3d7f;
+  --sh-c:  #4fc3f7;
+  --tdm-c: #80deea;
+  --cp-c:  #ffd54f;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+/* ── LFO ── */
+.lfo-inst{background:var(--s1);border:1px solid var(--bd);border-radius:3px;padding:.3rem .4rem;display:grid;grid-template-columns:52px 90px 135px 90px 1fr 44px;gap:.4rem;align-items:start}
+.lfo-inst.on{border-color:rgba(160,200,255,.35)}
+.lfo-sec{display:flex;flex-direction:column;gap:.15rem}
+.lfo-mini{font-size:.36rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+.lfo-shape{display:flex;gap:2px}
+.lfo-sbtn{padding:.12rem .22rem;border:1px solid var(--bd);border-radius:2px;background:transparent;color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:.44rem;cursor:pointer;transition:all .1s}
+.lfo-sbtn.on{border-color:#a0c8ff;color:#a0c8ff;background:rgba(160,200,255,.1)}
+.lfo-r{width:100%;accent-color:#a0c8ff;height:2px;cursor:pointer}
+.lfo-v{font-size:.4rem;color:#a0c8ff;min-width:34px;text-align:right}
+.lfo-cv{width:100%;height:28px;border-radius:2px;background:rgba(0,0,0,.3);display:block}
+.lfo-tsel{width:100%;font-size:.42rem;background:var(--s1);border:1px solid var(--bd);color:var(--text);padding:.1rem .2rem;border-radius:2px}
+.lfo-onbtn{width:100%;padding:.15rem 0;border:1px solid rgba(160,200,255,.3);border-radius:2px;background:transparent;color:var(--dim);font-size:.42rem;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .12s}
+.lfo-onbtn.on{color:#a0c8ff;border-color:rgba(160,200,255,.6);background:rgba(160,200,255,.08)}
+.lfo-delbtn{width:100%;padding:.15rem 0;border:1px solid rgba(255,61,127,.2);border-radius:2px;background:transparent;color:rgba(255,61,127,.45);font-size:.44rem;cursor:pointer;transition:all .12s;margin-top:.15rem}
+.lfo-delbtn:hover{border-color:rgba(255,61,127,.7);color:rgba(255,61,127,.9)}
+.lfo-syncbtn{padding:.08rem .18rem;border:1px solid var(--bd);border-radius:2px;background:transparent;color:var(--dim);font-size:.36rem;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .1s}
+.lfo-syncbtn.on{border-color:var(--sh-c);color:var(--sh-c)}
+.lfo-row{display:flex;align-items:center;gap:.3rem}
+.lfo-sync-row{display:flex;gap:2px;flex-wrap:wrap}
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 100% 50% at 50% -10%, rgba(112,80,160,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 30% at 20% 110%,  rgba(200,160,64,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 30% at 80% 110%,  rgba(96,144,168,.04) 0%, transparent 60%);
+  pointer-events:none; z-index:0;
+}
+
+/* ── Header ── */
+header {
+  padding:1rem 1.5rem .7rem;
+  border-bottom:1px solid var(--bd);
+  display:flex; align-items:flex-end; gap:1.5rem;
+  position:relative; z-index:10;
+}
+.hdr-title { flex:1; }
+.hdr-name {
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.9rem; font-weight:300; letter-spacing:.06em;
+  line-height:1;
+  background:linear-gradient(135deg, var(--gold2), var(--rose2), var(--violet2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hdr-sub { font-size:.5rem; color:var(--dim); letter-spacing:.3em; text-transform:uppercase; margin-top:.2rem; }
+
+/* Ecstasy meter */
+.ecstasy-wrap {
+  display:flex; flex-direction:column; align-items:flex-end; gap:.3rem;
+  flex-shrink:0;
+}
+.ecstasy-label { font-size:.44rem; color:var(--dim); letter-spacing:.2em; text-transform:uppercase; }
+.ecstasy-outer {
+  width:160px; height:8px;
+  background:var(--s1); border-radius:4px; overflow:hidden;
+  border:1px solid var(--bd);
+}
+.ecstasy-fill {
+  height:100%; border-radius:4px;
+  background:linear-gradient(90deg, var(--violet), var(--rose2), var(--ecstasy));
+  transition:width .3s; width:0%;
+}
+.ecstasy-val { font-size:.52rem; color:var(--ecstasy); }
+
+/* Arvo fusion indicator */
+.fusion-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:.2rem; flex-shrink:0; }
+.fusion-label { font-size:.4rem; color:var(--arvo); letter-spacing:.15em; text-transform:uppercase; }
+.fusion-bar-outer { width:100px; height:4px; background:var(--s1); border-radius:2px; overflow:hidden; }
+.fusion-bar-fill { height:100%; border-radius:2px; background:var(--arvo); transition:width .4s; width:0%; }
+
+/* ── Raag strip ── */
+.raag-strip {
+  border-bottom:1px solid var(--bd);
+  padding:.35rem 1.2rem;
+  display:flex; gap:.3rem; overflow-x:auto; scrollbar-width:none;
+  background:var(--s0); align-items:center;
+}
+.raag-chip {
+  padding:.2rem .5rem;
+  border:1px solid var(--bd); border-radius:2px;
+  font-family:'Cormorant Garamond',serif; font-size:.9rem; font-style:italic;
+  color:var(--dim); cursor:pointer; transition:all .15s; white-space:nowrap;
+  background:transparent; flex-shrink:0;
+}
+.raag-chip:hover { color:var(--gold); border-color:rgba(200,160,64,.4); }
+.raag-chip.active { color:var(--gold2); border-color:var(--gold); background:rgba(200,160,64,.07); }
+.raag-chip .chip-time { font-family:'JetBrains Mono',monospace; font-size:.35rem; opacity:.5; margin-left:.2rem; }
+
+/* ── Layout ── */
+.layout { display:grid; grid-template-columns:240px 1fr; min-height:calc(100vh - 160px); position:relative; z-index:1; }
+
+/* ── Left panel ── */
+.left-panel { border-right:1px solid var(--bd); padding:.7rem; display:flex; flex-direction:column; gap:.5rem; overflow-y:auto; }
+.panel { background:var(--s0); border:1px solid var(--bd); border-radius:3px; padding:.55rem .65rem; }
+.panel-title { font-size:.42rem; letter-spacing:.25em; text-transform:uppercase; color:var(--dim); margin-bottom:.45rem; display:flex; align-items:center; gap:.3rem; }
+.panel-title::before { content:''; width:2px; height:9px; background:var(--gold); border-radius:1px; }
+
+/* Shruti grid */
+.shruti-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:2px; margin:.35rem 0; }
+.s-cell { aspect-ratio:1; border-radius:2px; background:var(--s1); border:1px solid transparent; display:flex; align-items:center; justify-content:center; font-size:.34rem; cursor:pointer; transition:all .15s; position:relative; }
+.s-cell.vadi    { background:rgba(200,160,64,.2); border-color:var(--gold); color:var(--gold2); }
+.s-cell.samvadi { background:rgba(112,80,160,.2); border-color:var(--violet); color:var(--violet2); }
+.s-cell.active  { background:rgba(176,80,96,.12); border-color:rgba(176,80,96,.5); color:var(--rose2); }
+.s-cell .cent   { font-size:.28rem; color:var(--dim); position:absolute; bottom:1px; right:2px; }
+
+/* Param rows */
+.pr { display:flex; align-items:center; gap:.3rem; margin-bottom:.18rem; }
+.pr label { font-size:.4rem; color:var(--dim); width:56px; flex-shrink:0; }
+.pr-val { font-size:.42rem; width:22px; text-align:right; flex-shrink:0; }
+input[type=range] { height:3px; accent-color:var(--gold); cursor:pointer; }
+select { background:var(--s1); border:1px solid var(--bd); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.5rem; padding:.12rem .25rem; border-radius:2px; }
+.btn { padding:.18rem .55rem; border:1px solid var(--bd); border-radius:2px; background:transparent; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.5rem; cursor:pointer; transition:all .12s; }
+.btn:hover { border-color:var(--gold); color:var(--gold); }
+.btn.gold { border-color:rgba(200,160,64,.5); color:var(--gold); background:rgba(200,160,64,.07); }
+.btn.active { border-color:var(--gold); color:var(--gold); background:rgba(200,160,64,.12); }
+.btn.rose { border-color:rgba(176,80,96,.5); color:var(--rose2); background:rgba(176,80,96,.07); }
+.btn.arvo { border-color:rgba(96,144,168,.5); color:var(--arvo2); background:rgba(96,144,168,.07); }
+.midi-dot { width:7px; height:7px; border-radius:50%; background:var(--dim); flex-shrink:0; transition:all .3s; }
+.midi-dot.connected { background:var(--teal); box-shadow:0 0 6px var(--teal); }
+
+/* ── Main area ── */
+.main-area { display:flex; flex-direction:column; overflow:hidden; }
+
+/* Transport */
+.transport { padding:.45rem .9rem; border-bottom:1px solid var(--bd); display:flex; align-items:center; gap:.6rem; background:var(--s0); flex-wrap:wrap; }
+
+/* Section bar */
+.section-bar { display:flex; gap:2px; padding:.3rem .9rem; border-bottom:1px solid var(--bd); background:var(--s0); align-items:center; }
+.sec-seg { flex:1; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:.85rem; font-style:italic; cursor:pointer; border-radius:2px; transition:all .2s; border:1px solid transparent; color:var(--dim); }
+.sec-seg:hover { color:var(--gold); }
+.sec-seg.active { color:var(--gold2); border-color:rgba(200,160,64,.4); background:rgba(200,160,64,.06); }
+.sec-seg .sdesc { font-family:'JetBrains Mono',monospace; font-size:.32rem; letter-spacing:.08em; margin-left:.25rem; opacity:.45; }
+
+/* Phrase area */
+.phrase-area { flex:1; padding:.7rem .9rem; overflow-y:auto; }
+.voice-block { margin-bottom:.85rem; }
+.voice-header { display:flex; align-items:center; gap:.45rem; margin-bottom:.28rem; }
+.voice-label { font-size:.44rem; letter-spacing:.18em; text-transform:uppercase; }
+.voice-info { font-size:.4rem; color:var(--dim); margin-left:auto; }
+
+.step-grid { display:flex; gap:2px; overflow-x:auto; padding-bottom:3px; scrollbar-width:thin; scrollbar-color:var(--bd) transparent; }
+.step { flex-shrink:0; width:38px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; border-radius:2px; padding:.12rem .08rem; border:1px solid transparent; transition:border-color .1s; position:relative; }
+.step:hover { border-color:var(--bd); }
+.step.playing { border-color:var(--gold) !important; background:rgba(200,160,64,.07); }
+.step.bar4 { border-left:1px solid var(--bd) !important; }
+.step.sam { border-top:2px solid var(--gold) !important; }
+.step-note { font-family:'Cormorant Garamond',serif; font-size:.72rem; color:var(--dim); line-height:1; }
+.step-note.on { color:var(--ivory); }
+.step-bar { width:26px; border-radius:1px; min-height:3px; transition:height .15s; }
+.step-num { font-size:.3rem; color:rgba(92,80,112,.4); }
+.step-orn { font-size:.26rem; color:var(--gold); opacity:.7; position:absolute; top:1px; right:2px; }
+.step-tint { position:absolute; bottom:2px; left:2px; font-size:.26rem; color:var(--arvo); opacity:.8; }
+
+/* Tintinnabuli overlay */
+.step.tint-m { border-color:rgba(96,144,168,.3); }
+.step.tint-t { background:rgba(96,144,168,.06); }
+
+/* ── Engine Dock ── */
+.engine-dock { border-top:1px solid var(--bd); background:var(--s0); position:sticky; bottom:0; z-index:20; }
+.dock-tabbar { display:flex; align-items:stretch; border-bottom:1px solid var(--bd); overflow-x:auto; scrollbar-width:none; }
+.dock-tab { padding:.26rem .55rem; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:.42rem; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; gap:.22rem; transition:all .15s; white-space:nowrap; }
+.dock-tab:hover { color:var(--text); }
+.dock-tab.active { color:var(--text); border-bottom-color:var(--tc,var(--gold)); }
+.dock-tdot { width:5px; height:5px; border-radius:50%; opacity:.5; transition:opacity .15s; }
+.dock-tab.active .dock-tdot { opacity:1; }
+.dock-minibar { display:flex; align-items:center; gap:.45rem; padding:0 .7rem; margin-left:auto; flex-shrink:0; }
+.mini-lbl { font-size:.35rem; color:var(--dim); }
+.mini-bar { width:28px; height:3px; background:var(--s1); border-radius:2px; overflow:hidden; }
+.mini-fill { height:100%; border-radius:2px; transition:width .2s; width:0%; }
+.dock-panels { max-height:210px; overflow:hidden; transition:max-height .25s cubic-bezier(.4,0,.2,1); }
+.dock-panels.collapsed { max-height:0 !important; }
+.dock-panel { display:none; padding:.45rem .7rem .6rem; }
+.dock-panel.active { display:block; }
+.dpg { display:grid; gap:.45rem; }
+.dpg-2 { grid-template-columns:1fr 1fr; }
+.dpg-3 { grid-template-columns:1fr 1fr 1fr; }
+.dpg-4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+.dsub { background:rgba(255,255,255,.02); border:1px solid var(--bd); border-radius:3px; padding:.42rem .5rem; }
+.dsub-t { font-size:.38rem; letter-spacing:.18em; text-transform:uppercase; margin-bottom:.3rem; padding-left:.28rem; border-left:2px solid currentColor; }
+.dg-row { display:flex; align-items:center; gap:.28rem; margin-bottom:.18rem; }
+.dg-lbl { font-size:.38rem; color:var(--dim); width:52px; flex-shrink:0; }
+.dg-track { flex:1; height:4px; background:var(--s1); border-radius:2px; overflow:hidden; }
+.dg-fill { height:100%; border-radius:2px; transition:width .15s; width:0%; }
+.dg-val { font-size:.38rem; width:20px; text-align:right; flex-shrink:0; }
+.dg-log { font-size:.38rem; color:var(--dim); line-height:1.8; max-height:64px; overflow:hidden; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-title">
+    <div class="hdr-name">Nusrat Fateh Ali Khan</div>
+    <div class="hdr-sub">Qawwali Sequencer · Raag · Ecstasy Engine · Arvo Pärt Fusion · 5 Voices</div>
+  </div>
+  <!-- Ecstasy meter -->
+  <div class="ecstasy-wrap">
+    <span class="ecstasy-label">Ecstasy ＼ Wajd</span>
+    <div class="ecstasy-outer"><div class="ecstasy-fill" id="ecstasyFill"></div></div>
+    <span class="ecstasy-val" id="ecstasyVal">0%</span>
+  </div>
+  <!-- Arvo Pärt fusion meter -->
+  <div class="fusion-wrap">
+    <span class="fusion-label">Pärt Fusion</span>
+    <div class="fusion-bar-outer"><div class="fusion-bar-fill" id="partFusionFill"></div></div>
+    <span style="font-size:.4rem;color:var(--arvo)" id="partFusionVal">0%</span>
+  </div>
+</header>
+
+<!-- Raag strip -->
+<div class="raag-strip" id="raagStrip"></div>
+
+<div class="layout">
+
+  <!-- Left panel -->
+  <div class="left-panel">
+
+    <!-- Raag DNA -->
+    <div class="panel">
+      <div class="panel-title">Raag DNA</div>
+      <div class="shruti-grid" id="shrutiGrid"></div>
+      <div style="font-size:.38rem;color:var(--dim);margin-top:.2rem;line-height:1.7">
+        <span style="color:var(--gold)">■</span> Vadi &nbsp;
+        <span style="color:var(--violet2)">■</span> Samvadi &nbsp;
+        <span style="color:var(--rose2)">■</span> Active
+      </div>
+    </div>
+
+    <!-- Microtonal -->
+    <div class="panel">
+      <div class="panel-title">Shruti Cents</div>
+      <div id="centRows"></div>
+    </div>
+
+    <!-- Qawwali params -->
+    <div class="panel">
+      <div class="panel-title">Qawwali 奏法</div>
+      <div class="pr"><label>Murkī</label><input type="range" id="murki" min="0" max="100" value="45" style="flex:1" oninput="document.getElementById('murkiV').textContent=this.value"><span class="pr-val" id="murkiV" style="color:var(--gold)">45</span></div>
+      <div class="pr"><label>Gamak</label><input type="range" id="gamak" min="0" max="100" value="35" style="flex:1" oninput="document.getElementById('gamakV').textContent=this.value"><span class="pr-val" id="gamakV" style="color:var(--rose2)">35</span></div>
+      <div class="pr"><label>Meend</label><input type="range" id="meend" min="0" max="100" value="30" style="flex:1" oninput="document.getElementById('meendV').textContent=this.value"><span class="pr-val" id="meendV" style="color:var(--violet2)">30</span></div>
+      <div class="pr"><label>Aakar</label><input type="range" id="aakar" min="0" max="100" value="60" style="flex:1" oninput="document.getElementById('aakarV').textContent=this.value"><span class="pr-val" id="aakarV" style="color:var(--dawn)">60</span></div>
+    </div>
+
+    <!-- Arvo Pärt fusion -->
+    <div class="panel" style="border-color:rgba(96,144,168,.25);background:rgba(96,144,168,.03)">
+      <div class="panel-title" style="color:var(--arvo)">Arvo Pärt 融合</div>
+      <div class="pr">
+        <label style="color:var(--arvo)">Fusion</label>
+        <input type="range" id="partFusion" min="0" max="100" value="0" style="flex:1;accent-color:var(--arvo)" oninput="onPartFusionChange(this.value)">
+        <span class="pr-val" id="partFusionSliderV" style="color:var(--arvo)">0</span>
+      </div>
+      <div class="pr">
+        <label>Silence</label>
+        <input type="range" id="silenceWeight" min="0" max="100" value="20" style="flex:1;accent-color:var(--arvo2)" oninput="document.getElementById('silenceWeightV').textContent=this.value">
+        <span class="pr-val" id="silenceWeightV" style="color:var(--arvo2)">20</span>
+      </div>
+      <div class="pr">
+        <label>T-chord</label>
+        <select id="partTriad" style="flex:1;font-size:.46rem" onchange="regenerateTint()">
+          <option value="minor" selected>Minor (0-3-7)</option>
+          <option value="major">Major (0-4-7)</option>
+          <option value="sus2">Sus2 (0-2-7)</option>
+          <option value="sus4">Sus4 (0-5-7)</option>
+          <option value="diminished">Diminished (0-3-6)</option>
+          <option value="augmented">Augmented (0-4-8)</option>
+          <option value="quartal">Quartal (0-5-10)</option>
+          <option value="raag">Raag-derived (Sa+Vadi+Samvadi)</option>
+          <option value="sa_pa_ni">Sa-Pa-Ni (0-7-11)</option>
+          <option value="sa_ma_pa">Sa-Ma-Pa (0-5-7)</option>
+          <option value="sa_ga_ni">Sa-Ga-Ni (0-4-11)</option>
+        </select>
+      </div>
+      <div style="font-size:.38rem;color:rgba(96,144,168,.5);margin-top:.25rem;line-height:1.6">
+        Lead→M-voice · Chorus→T-voice<br>
+        恍惚と沈黙の拮抗
+      </div>
+    </div>
+
+    <!-- Root & Tempo -->
+    <div class="panel">
+      <div class="panel-title">Sa / Tempo</div>
+      <div class="pr">
+        <label>Sa (Root)</label>
+        <select id="rootSel" onchange="onRootChange()" style="flex:1">
+          <option value="60">C4</option><option value="61">C#4</option>
+          <option value="62">D4</option><option value="63">D#4</option>
+          <option value="64">E4</option><option value="65">F4</option>
+          <option value="66">F#4</option><option value="67" selected>G4</option>
+          <option value="68">G#4</option><option value="69">A4</option>
+          <option value="70">A#4</option><option value="71">B4</option>
+        </select>
+      </div>
+      <div class="pr">
+        <label>BPM</label>
+        <input type="number" id="bpmIn" value="92" min="20" max="300" style="width:52px;font-size:.54rem;background:var(--s1);border:1px solid var(--bd);color:var(--text);padding:.1rem .25rem;border-radius:2px">
+        <button class="btn" onclick="tapTempo()" style="font-size:.42rem;padding:.1rem .3rem">TAP</button>
+        <span style="font-size:.4rem;color:var(--ecstasy);margin-left:.3rem" id="surgeBpmDisplay"></span>
+      </div>
+    </div>
+
+    <!-- MIDI -->
+    <div class="panel">
+      <div class="panel-title">MIDI Out</div>
+      <div class="pr" style="margin-bottom:.3rem">
+        <div class="midi-dot" id="midiDot"></div>
+        <span id="midiStatus" style="font-size:.46rem;color:var(--dim)">Not connected</span>
+      </div>
+      <button class="btn" onclick="initMIDI()" style="width:100%;margin-bottom:.3rem;font-size:.48rem">⟳ Refresh</button>
+      <div class="pr"><label>Out</label><select id="midiDevSel" onchange="selectMidiOut(this.value)" style="flex:1;font-size:.44rem"></select></div>
+      <div style="font-size:.38rem;color:var(--dim);margin:.3rem 0 .15rem;border-top:1px solid var(--bd);padding-top:.25rem">Channels</div>
+      <div class="pr"><label>Lead</label><select id="chLead" style="flex:1;font-size:.44rem">
+        <option value="1" selected>Ch 1</option><option value="2">Ch 2</option><option value="3">Ch 3</option><option value="4">Ch 4</option><option value="5">Ch 5</option><option value="6">Ch 6</option><option value="7">Ch 7</option><option value="8">Ch 8</option><option value="9">Ch 9</option><option value="10">Ch 10</option><option value="11">Ch 11</option><option value="12">Ch 12</option><option value="13">Ch 13</option><option value="14">Ch 14</option><option value="15">Ch 15</option><option value="16">Ch 16</option>
+      </select></div>
+      <div class="pr"><label>Chorus 1</label><select id="chCho1" style="flex:1;font-size:.44rem">
+        <option value="1">Ch 1</option><option value="2" selected>Ch 2</option><option value="3">Ch 3</option><option value="4">Ch 4</option><option value="5">Ch 5</option><option value="6">Ch 6</option><option value="7">Ch 7</option><option value="8">Ch 8</option><option value="9">Ch 9</option><option value="10">Ch 10</option><option value="11">Ch 11</option><option value="12">Ch 12</option><option value="13">Ch 13</option><option value="14">Ch 14</option><option value="15">Ch 15</option><option value="16">Ch 16</option>
+      </select></div>
+      <div class="pr"><label>Chorus 2</label><select id="chCho2" style="flex:1;font-size:.44rem">
+        <option value="1">Ch 1</option><option value="2">Ch 2</option><option value="3" selected>Ch 3</option><option value="4">Ch 4</option><option value="5">Ch 5</option><option value="6">Ch 6</option><option value="7">Ch 7</option><option value="8">Ch 8</option><option value="9">Ch 9</option><option value="10">Ch 10</option><option value="11">Ch 11</option><option value="12">Ch 12</option><option value="13">Ch 13</option><option value="14">Ch 14</option><option value="15">Ch 15</option><option value="16">Ch 16</option>
+      </select></div>
+      <div class="pr"><label>Harmonium</label><select id="chHarm" style="flex:1;font-size:.44rem">
+        <option value="1">Ch 1</option><option value="2">Ch 2</option><option value="3">Ch 3</option><option value="4" selected>Ch 4</option><option value="5">Ch 5</option><option value="6">Ch 6</option><option value="7">Ch 7</option><option value="8">Ch 8</option><option value="9">Ch 9</option><option value="10">Ch 10</option><option value="11">Ch 11</option><option value="12">Ch 12</option><option value="13">Ch 13</option><option value="14">Ch 14</option><option value="15">Ch 15</option><option value="16">Ch 16</option>
+      </select></div>
+      <div class="pr"><label>Tabla</label><select id="chTabla" style="flex:1;font-size:.44rem">
+        <option value="1">Ch 1</option><option value="2">Ch 2</option><option value="3">Ch 3</option><option value="4">Ch 4</option><option value="5" selected>Ch 5</option><option value="6">Ch 6</option><option value="7">Ch 7</option><option value="8">Ch 8</option><option value="9">Ch 9</option><option value="10">Ch 10</option><option value="11">Ch 11</option><option value="12">Ch 12</option><option value="13">Ch 13</option><option value="14">Ch 14</option><option value="15">Ch 15</option><option value="16">Ch 16</option>
+      </select></div>
+      <div class="pr" style="margin-top:.3rem">
+        <label>Oct</label>
+        <select id="leadOct" style="font-size:.48rem"><option value="1">+1</option><option value="0" selected>0</option><option value="-1">-1</option></select>
+        <label style="margin-left:.4rem">PB</label>
+        <select id="pbRange" style="font-size:.48rem"><option value="200" selected>±200¢</option><option value="100">±100¢</option></select>
+      </div>
+      <button class="btn gold" onclick="exportMIDI()" style="width:100%;margin-top:.35rem;font-size:.48rem">↓ Export MIDI</button>
+      <button class="btn" onclick="exportCurrentRaagScl()" style="width:100%;margin-top:.22rem;font-size:.48rem;color:var(--teal)">↓ Export SCL (current Raag)</button>
+      <button class="btn" onclick="exportAllRaagsScl()" style="width:100%;margin-top:.18rem;font-size:.46rem;color:rgba(64,104,88,.6)">↓ Export All Raags SCL</button>
+    </div>
+
+    <!-- Ableton Sync -->
+    <div class="panel">
+      <div class="panel-title">Ableton Sync</div>
+      <div class="pr"><label>Clock In</label><select id="midiClockSel" onchange="selectClockIn(this.value)" style="flex:1;font-size:.44rem"><option value="">— select —</option></select></div>
+      <div class="pr" style="margin-top:.2rem">
+        <button id="btnSlave" class="btn" onclick="toggleSlave()" style="flex:1;font-size:.44rem">Slave: OFF</button>
+        <span id="slaveBpm" style="font-size:.48rem;color:var(--gold);min-width:34px;text-align:right">—</span>
+      </div>
+    </div>
+
+  </div><!-- /left -->
+
+  <!-- Main area -->
+  <div class="main-area">
+
+    <!-- Transport -->
+    <div class="transport">
+      <button class="btn gold active" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+      <button class="btn" onclick="stopAll()">■ Stop</button>
+      <button class="btn" onclick="generateAll()">⟳ Generate</button>
+      <button class="btn rose" onclick="generateAll('surge')">⚡ Surge</button>
+      <button class="btn arvo" onclick="generateAll('tint')">∞ Tintinnabuli</button>
+      <button class="btn" id="btnAutoArc" onclick="toggleAutoArc()" style="color:var(--gold);border-color:rgba(200,168,80,.5);background:rgba(200,168,80,.07)">ARC: ON</button>
+      <button class="btn" id="btnFreeze" onclick="toggleFreeze()" style="color:var(--dim)">Freeze: OFF</button>
+      <button class="btn" id="btnUndo" onclick="undo()" style="opacity:.3">↩</button>
+      <button class="btn" id="btnRedo" onclick="redo()" style="opacity:.3">↪</button>
+      <button class="btn" onclick="saveStateJSON()" style="color:var(--gold)">↓ Save</button>
+      <label class="btn" style="cursor:pointer;color:var(--teal)">↑ Load<input type="file" accept=".json" onchange="loadStateJSON(event)" style="display:none"></label>
+      <div class="pr">
+        <span style="font-size:.42rem;color:var(--dim)">Lead</span>
+        <select id="leadStepsSel" onchange="onVoiceStepsChange('lead',this.value)" style="font-size:.48rem;min-width:40px">
+          <option value="7">7</option><option value="11">11</option><option value="13">13</option><option value="16" selected>16</option><option value="17">17</option><option value="19">19</option><option value="23">23</option>
+        </select>
+      </div>
+      <div class="pr">
+        <span style="font-size:.42rem;color:var(--dim)">Cho</span>
+        <select id="choStepsSel" onchange="onVoiceStepsChange('cho',this.value)" style="font-size:.48rem;min-width:40px">
+          <option value="5">5</option><option value="7">7</option><option value="11">11</option><option value="13" selected>13</option><option value="16">16</option>
+        </select>
+      </div>
+      <div class="pr">
+        <span style="font-size:.42rem;color:var(--dim)">Harm</span>
+        <select id="harmStepsSel" onchange="onVoiceStepsChange('harm',this.value)" style="font-size:.48rem;min-width:40px">
+          <option value="4">4</option><option value="7">7</option><option value="8" selected>8</option><option value="11">11</option>
+        </select>
+      </div>
+      <span style="font-size:.4rem;color:var(--dim)">LCM:<span id="lcmDisplay" style="color:var(--gold)">—</span></span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:.5rem">
+        <span style="font-size:.42rem;color:var(--dim)" id="sectionLabel">Darbar</span>
+        <span style="font-size:.44rem;color:var(--ecstasy)" id="beatDisplay">—</span>
+      </div>
+    </div>
+
+    <!-- Section bar -->
+    <div class="section-bar">
+      <div class="sec-seg active" id="sec-darbar" onclick="jumpToSection('darbar')">
+        Darbar<span class="sdesc">gathering · slow</span>
+      </div>
+      <div class="sec-seg" id="sec-qawl" onclick="jumpToSection('qawl')">
+        Qawl<span class="sdesc">call · moderate</span>
+      </div>
+      <div class="sec-seg" id="sec-rang" onclick="jumpToSection('rang')">
+        Rang<span class="sdesc">color · building</span>
+      </div>
+      <div class="sec-seg" id="sec-wajd" onclick="jumpToSection('wajd')">
+        Wajd ⚡<span class="sdesc">ecstasy · surge</span>
+      </div>
+      <div style="flex:1"></div>
+      <button id="arcToggle" onclick="toggleArc()"
+        style="font-size:.5rem;padding:.25rem .7rem;border:1px solid var(--bd);border-radius:4px;
+               background:rgba(79,195,247,.14);color:#9fdcff;cursor:pointer;letter-spacing:.05em;"
+        title="奏法の自動展開（セクション進行・密度引力・恍惚変奏・サージ）のオン/オフ">
+        ARC&nbsp;ON
+      </button>
+    </div>
+
+    <!-- 5 Voice grids -->
+    <div class="phrase-area">
+
+      <div class="voice-block">
+        <div class="voice-header">
+          <span class="voice-label" style="color:var(--gold2)">Lead Qawwal</span>
+          <canvas id="leadCurve" width="100" height="22" style="border-radius:2px;background:rgba(0,0,0,.3)"></canvas>
+          <span class="voice-info" id="leadInfo">16 steps</span>
+        </div>
+        <div class="step-grid" id="leadGrid"></div>
+      </div>
+
+      <div class="voice-block">
+        <div class="voice-header">
+          <span class="voice-label" style="color:var(--violet2)">Chorus 1 — Response</span>
+          <canvas id="cho1Curve" width="100" height="22" style="border-radius:2px;background:rgba(0,0,0,.3)"></canvas>
+          <span class="voice-info" id="cho1Info">13 steps</span>
+        </div>
+        <div class="step-grid" id="cho1Grid"></div>
+      </div>
+
+      <div class="voice-block">
+        <div class="voice-header">
+          <span class="voice-label" style="color:var(--rose2)">Chorus 2 — Drone/Sustain</span>
+          <span class="voice-info" id="cho2Info">13 steps</span>
+        </div>
+        <div class="step-grid" id="cho2Grid"></div>
+      </div>
+
+      <div class="voice-block">
+        <div class="voice-header">
+          <span class="voice-label" style="color:var(--dawn)">Harmonium</span>
+          <span style="font-size:.38rem;color:var(--arvo);margin-left:.3rem" id="harmModeLabel"></span>
+          <span class="voice-info" id="harmInfo">8 steps</span>
+        </div>
+        <div class="step-grid" id="harmGrid"></div>
+      </div>
+
+      <div class="voice-block">
+        <div class="voice-header">
+          <span class="voice-label" style="color:var(--rose)">Tabla / Dholak</span>
+          <div style="display:flex;align-items:center;gap:.3rem;margin-left:.3rem">
+            <select id="taalSel" onchange="onTaalChange()" style="font-size:.44rem">
+              <option value="tintal">Tintal (16)</option>
+              <option value="ektal">Ektal (12)</option>
+              <option value="keherwa">Keherwa (8)</option>
+              <option value="dadra">Dadra (6)</option>
+              <option value="qawwali">Qawwali (8)</option>
+            </select>
+          </div>
+          <span class="voice-info" id="tablaInfo">16 steps</span>
+        </div>
+        <div class="step-grid" id="tablaGrid"></div>
+        <div style="display:flex;gap:.35rem;margin-top:.25rem;font-size:.36rem;color:var(--dim);flex-wrap:wrap">
+          <span style="color:var(--rose2)">● Dha</span><span style="color:var(--dawn)">● Dhin</span>
+          <span style="color:var(--gold)">● Tin</span><span style="color:var(--teal)">● Ge/Ke</span>
+          <span style="color:rgba(92,80,112,.4)">● Rest</span>
+        </div>
+      </div>
+
+    </div><!-- /phrase-area -->
+
+  </div><!-- /main-area -->
+</div><!-- /layout -->
+
+<!-- Engine Dock -->
+<div class="engine-dock">
+  <div class="dock-tabbar">
+    <button class="dock-tab active" data-panel="ecstasy" style="--tc:var(--ecstasy)"><span class="dock-tdot" style="background:var(--ecstasy)"></span>恍惚 Ecstasy</button>
+    <button class="dock-tab" data-panel="tintinnabuli" style="--tc:var(--arvo)"><span class="dock-tdot" style="background:var(--arvo)"></span>Tintinnabuli</button>
+    <button class="dock-tab" data-panel="reflex" style="--tc:var(--re-c)"><span class="dock-tdot" style="background:var(--re-c)"></span>反射性</button>
+    <button class="dock-tab" data-panel="shadow" style="--tc:var(--sh-c)"><span class="dock-tdot" style="background:var(--sh-c)"></span>Qawwali Arc</button>
+    <button class="dock-tab" data-panel="tdm" style="--tc:var(--tdm-c)"><span class="dock-tdot" style="background:var(--tdm-c)"></span>TDM</button>
+    <button class="dock-tab" data-panel="lfo" style="--tc:#a0c8ff"><span class="dock-tdot" style="background:#a0c8ff"></span>LFO</button>
+    <div class="dock-minibar">
+      <span class="mini-lbl">E</span><div class="mini-bar"><div class="mini-fill" id="miniE" style="background:var(--ecstasy)"></div></div>
+      <span class="mini-lbl">T</span><div class="mini-bar"><div class="mini-fill" id="miniT" style="background:var(--re-c)"></div></div>
+      <span class="mini-lbl">P</span><div class="mini-bar"><div class="mini-fill" id="miniP" style="background:var(--arvo)"></div></div>
+      <span style="font-size:.38rem;color:var(--dim);padding-left:.3rem" id="miniWill">—</span>
+      <button onclick="toggleDock()" id="dockColBtn" style="background:transparent;border:none;color:var(--dim);font-size:.48rem;cursor:pointer">▲</button>
+    </div>
+  </div>
+
+  <div class="dock-panels" id="dockPanels">
+
+    <!-- ① Ecstasy / Wajd Engine -->
+    <div class="dock-panel active" id="dp-ecstasy">
+      <div class="dpg dpg-4">
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--ecstasy)">恍惚エンジン</div>
+          <div class="dg-row"><span class="dg-lbl">恍惚度</span><div class="dg-track"><div class="dg-fill" id="ecF" style="background:linear-gradient(90deg,var(--violet),var(--ecstasy))"></div></div><span class="dg-val" id="ecV" style="color:var(--ecstasy)">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">反復回数</span><div class="dg-track"><div class="dg-fill" id="repF" style="background:var(--rose2)"></div></div><span class="dg-val" id="repV" style="color:var(--rose2)">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">Surge</span><div class="dg-track"><div class="dg-fill" id="surgeF" style="background:var(--gold)"></div></div><span class="dg-val" id="surgeV" style="color:var(--gold)">0</span></div>
+          <div style="font-size:.38rem;color:var(--dim);margin-top:.25rem">State: <span id="ecState" style="font-style:italic">—</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--ecstasy)">感度 / 自律度</div>
+          <div class="dg-row"><span class="dg-lbl">感度</span><input type="range" id="ecSens" min="1" max="100" value="50" style="flex:1" oninput="document.getElementById('ecSensV').textContent=this.value"><span class="dg-val" id="ecSensV" style="color:var(--ecstasy)">50</span></div>
+          <div class="dg-row"><span class="dg-lbl">自律度</span><input type="range" id="ecAuto" min="0" max="100" value="45" style="flex:1" oninput="document.getElementById('ecAutoV').textContent=this.value"><span class="dg-val" id="ecAutoV" style="color:var(--violet2)">45</span></div>
+          <canvas id="ecCanvas" height="44" style="width:100%;display:block;border-radius:2px;background:rgba(0,0,0,.3);margin-top:.25rem"></canvas>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--ecstasy)">Tempo Surge</div>
+          <div class="dg-row"><span class="dg-lbl">Surge BPM</span><input type="range" id="surgeBpm" min="120" max="280" value="180" style="flex:1" oninput="document.getElementById('surgeBpmV').textContent=this.value"><span class="dg-val" id="surgeBpmV" style="color:var(--ecstasy)">180</span></div>
+          <div class="dg-row"><span class="dg-lbl">Surge速度</span><input type="range" id="surgeRate" min="1" max="30" value="8" style="flex:1" oninput="document.getElementById('surgeRateV').textContent=this.value"><span class="dg-val" id="surgeRateV" style="color:var(--gold)">8</span></div>
+          <div class="dg-row"><span class="dg-lbl">解放閾値</span><input type="range" id="releaseThresh" min="60" max="99" value="85" style="flex:1" oninput="document.getElementById('releaseThreshV').textContent=this.value+'%'"><span class="dg-val" id="releaseThreshV" style="color:var(--rose2)">85%</span></div>
+          <button onclick="ecForceWajd()" style="margin-top:.25rem;border:1px solid rgba(224,160,80,.4);color:var(--ecstasy);background:transparent;font-family:inherit;font-size:.44rem;padding:.22rem;border-radius:2px;cursor:pointer;width:100%">⚡ Force Wajd</button>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--ecstasy)">ログ</div>
+          <div id="ecLog" class="dg-log"><span style="color:rgba(224,160,80,.4)">— 待機中 —</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② Tintinnabuli -->
+    <div class="dock-panel" id="dp-tintinnabuli">
+      <div class="dpg dpg-4">
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--arvo)">Tintinnabuli 理論</div>
+          <div style="font-size:.38rem;color:var(--dim);line-height:1.8;margin-bottom:.3rem">
+            M-voice: 隣接音のみ移動<br>
+            T-voice: トリアード音のみ<br>
+            沈黙 = 音符と同等の重力
+          </div>
+          <div class="dg-row"><span class="dg-lbl">M比率</span><input type="range" id="tintMRatio" min="0" max="100" value="60" style="flex:1;accent-color:var(--arvo)" oninput="document.getElementById('tintMRatioV').textContent=this.value;regenerateTint()"><span class="dg-val" id="tintMRatioV" style="color:var(--arvo)">60</span></div>
+          <div class="dg-row"><span class="dg-lbl">T-pos</span>
+            <select id="tintTPos" style="flex:1;font-size:.46rem" onchange="regenerateTint()">
+              <option value="1above">1st above</option>
+              <option value="1below" selected>1st below</option>
+              <option value="2above">2nd above</option>
+              <option value="alt">Alternating</option>
+            </select>
+          </div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--arvo)">沈黙エンジン</div>
+          <div class="dg-row"><span class="dg-lbl">沈黙密度</span><input type="range" id="silenceDens" min="0" max="80" value="25" style="flex:1;accent-color:var(--arvo2)" oninput="document.getElementById('silenceDensV').textContent=this.value;regenerateTint()"><span class="dg-val" id="silenceDensV" style="color:var(--arvo2)">25</span></div>
+          <div class="dg-row"><span class="dg-lbl">沈黙長</span><input type="range" id="silenceLen" min="1" max="8" value="2" style="flex:1;accent-color:var(--arvo2)" oninput="document.getElementById('silenceLenV').textContent=this.value"><span class="dg-val" id="silenceLenV" style="color:var(--arvo2)">2</span></div>
+          <div class="dg-row"><span class="dg-lbl">Gravity</span><input type="range" id="silenceGrav" min="0" max="100" value="40" style="flex:1;accent-color:var(--silence)"><span class="dg-val" style="color:var(--arvo2)">40</span></div>
+          <div style="font-size:.38rem;color:rgba(96,144,168,.5);margin-top:.2rem;line-height:1.6">沈黙のあとに<br>音符が引き寄せられる</div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--arvo)">恍惚↔沈黙 拮抗</div>
+          <canvas id="tintCanvas" height="60" style="width:100%;display:block;background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+          <div style="font-size:.36rem;color:var(--dim);margin-top:.2rem;display:flex;gap:.4rem">
+            <span style="color:var(--ecstasy)">— 恍惚</span>
+            <span style="color:var(--arvo)">— 沈黙</span>
+          </div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--arvo)">Fusion Controls</div>
+          <div style="display:flex;flex-direction:column;gap:.25rem">
+            <button onclick="applyTintinnabuli()" style="border:1px solid rgba(96,144,168,.4);color:var(--arvo2);background:transparent;font-family:inherit;font-size:.44rem;padding:.22rem;border-radius:2px;cursor:pointer">∞ Apply Tintinnabuli</button>
+            <button onclick="applyTintinnabuli('lead')" style="border:1px solid rgba(96,144,168,.3);color:var(--arvo);background:transparent;font-family:inherit;font-size:.44rem;padding:.22rem;border-radius:2px;cursor:pointer">∞ Lead only</button>
+            <button onclick="resetTintinnabuli()" style="border:1px solid rgba(200,160,64,.3);color:var(--gold);background:transparent;font-family:inherit;font-size:.44rem;padding:.22rem;border-radius:2px;cursor:pointer">⟳ Pure Qawwali</button>
+          </div>
+          <div id="tintLog" style="font-size:.37rem;color:rgba(96,144,168,.7);margin-top:.3rem;line-height:1.8">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ Reflexivity -->
+    <div class="dock-panel" id="dp-reflex">
+      <div class="dpg dpg-4">
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--re-c)">観測器</div>
+          <div class="dg-row"><span class="dg-lbl">緊張</span><div class="dg-track"><div class="dg-fill" id="reTF" style="background:var(--re-c)"></div></div><span class="dg-val" id="reTV" style="color:var(--re-c)">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">退屈</span><div class="dg-track"><div class="dg-fill" id="reBF" style="background:var(--re-b)"></div></div><span class="dg-val" id="reBV" style="color:var(--re-b)">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">勢い</span><div class="dg-track"><div class="dg-fill" id="reMF" style="background:#9b59b6"></div></div><span class="dg-val" id="reMV" style="color:#9b59b6">0</span></div>
+          <div style="font-size:.38rem;color:var(--dim);margin-top:.2rem">Will: <span id="reWill" style="color:var(--re-c);font-style:italic">—</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--re-c)">感度 / 自律度</div>
+          <div class="dg-row"><span class="dg-lbl">感度</span><input type="range" id="reSens" min="1" max="100" value="55" style="flex:1" oninput="document.getElementById('reSensV').textContent=this.value"><span class="dg-val" id="reSensV" style="color:var(--re-c)">55</span></div>
+          <div class="dg-row"><span class="dg-lbl">自律度</span><input type="range" id="reAuto" min="0" max="100" value="40" style="flex:1" oninput="document.getElementById('reAutoV').textContent=this.value"><span class="dg-val" id="reAutoV" style="color:#9b59b6">40</span></div>
+          <canvas id="reCanvas" height="44" style="width:100%;display:block;border-radius:2px;background:rgba(0,0,0,.3);margin-top:.25rem"></canvas>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--re-c)">Override</div>
+          <div style="display:flex;flex-direction:column;gap:.25rem">
+            <button id="reBtnFreeze" onclick="reOverride('freeze')" style="border:1px solid rgba(255,107,53,.35);color:var(--re-c);background:transparent;font-family:inherit;font-size:.44rem;padding:.22rem;border-radius:2px;cursor:pointer">❄ Freeze</button>
+            <button onclick="reOverride('crisis')" style="border:1px solid rgba(255,61,127,.35);color:var(--re-b);background:transparent;font-family:inherit;font-size:.44rem;padding:.22rem;border-radius:2px;cursor:pointer">⚡ Crisis</button>
+            <button onclick="reOverride('release')" style="border:1px solid rgba(64,104,88,.4);color:var(--teal);background:transparent;font-family:inherit;font-size:.44rem;padding:.22rem;border-radius:2px;cursor:pointer">∿ Release</button>
+          </div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--re-c)">ログ</div>
+          <div id="reLog" class="dg-log"><span style="color:rgba(255,107,53,.4)">— 待機中 —</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ Shadow -->
+    <div class="dock-panel" id="dp-shadow">
+      <div class="dpg dpg-3">
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--sh-c)">Qawwali 演奏弧</div>
+          <div style="display:flex;gap:2px;height:18px;margin:.25rem 0;border-radius:2px;overflow:hidden">
+            <div id="ss0" onclick="ssJump(0)" style="flex:2;background:rgba(79,195,247,.1);color:#4fc3f7;font-size:.4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Cormorant Garamond',serif;font-style:italic">Darbar</div>
+            <div id="ss1" onclick="ssJump(1)" style="flex:2;background:rgba(192,136,80,.1);color:var(--dawn);font-size:.4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Cormorant Garamond',serif;font-style:italic">Qawl</div>
+            <div id="ss2" onclick="ssJump(2)" style="flex:2;background:rgba(200,160,64,.12);color:var(--gold);font-size:.4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Cormorant Garamond',serif;font-style:italic">Rang</div>
+            <div id="ss3" onclick="ssJump(3)" style="flex:1;background:rgba(224,160,80,.15);color:var(--ecstasy);font-size:.4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Cormorant Garamond',serif;font-style:italic">Wajd</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.3rem;margin-bottom:.2rem">
+            <span style="font-size:.36rem;color:var(--dim)">現在:</span>
+            <span id="ssLabel" style="font-size:.46rem;color:var(--sh-c);font-style:italic;font-family:'Cormorant Garamond',serif">Darbar</span>
+            <span style="margin-left:auto;font-size:.35rem;color:rgba(79,195,247,.4)" id="ssStep">0</span>
+          </div>
+          <canvas id="ssCanvas" height="44" style="width:100%;display:block;border-radius:2px;background:rgba(0,0,0,.3)"></canvas>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--sh-c)">引力場</div>
+          <div class="dg-row"><span class="dg-lbl">Pull</span><div class="dg-track"><div class="dg-fill" id="ssPF" style="background:var(--sh-c)"></div></div><span class="dg-val" id="ssPV" style="color:var(--sh-c)">0</span></div>
+          <div class="dg-row"><span class="dg-lbl">Drift</span><div class="dg-track"><div class="dg-fill" id="ssDF" style="background:#b39ddb"></div></div><span class="dg-val" id="ssDV" style="color:#b39ddb">0</span></div>
+          <div class="dg-row" style="margin-top:.3rem"><span class="dg-lbl">強度</span><input type="range" id="ssStr" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('ssStrV').textContent=this.value"><span class="dg-val" id="ssStrV" style="color:var(--sh-c)">50</span></div>
+          <div class="dg-row"><span class="dg-lbl">自動進行</span><input type="range" id="ssAdv" min="0" max="100" value="60" style="flex:1" oninput="document.getElementById('ssAdvV').textContent=this.value"><span class="dg-val" id="ssAdvV" style="color:#b39ddb">60</span></div>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--sh-c)">Control</div>
+          <div style="display:flex;flex-direction:column;gap:.22rem">
+            <button onclick="ssOverride('pull')" style="border:1px solid rgba(79,195,247,.35);color:var(--sh-c);background:transparent;font-family:inherit;font-size:.42rem;padding:.2rem;border-radius:2px;cursor:pointer">⬤ Pull</button>
+            <button onclick="ssOverride('resist')" style="border:1px solid rgba(179,157,219,.35);color:#b39ddb;background:transparent;font-family:inherit;font-size:.42rem;padding:.2rem;border-radius:2px;cursor:pointer">↗ Resist</button>
+            <button onclick="ssOverride('skip')" style="border:1px solid rgba(200,160,64,.3);color:var(--gold);background:transparent;font-family:inherit;font-size:.42rem;padding:.2rem;border-radius:2px;cursor:pointer">⟶ Skip</button>
+          </div>
+          <div id="ssLog" style="font-size:.37rem;color:rgba(79,195,247,.7);margin-top:.3rem;line-height:1.8">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ TDM -->
+    <div class="dock-panel" id="dp-tdm">
+      <div class="dpg" style="grid-template-columns:2fr 1fr">
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--tdm-c)">Temporal Dissonance Map</div>
+          <canvas id="tdmCanvas" height="68" style="width:100%;display:block;background:rgba(0,0,0,.35);border-radius:2px"></canvas>
+        </div>
+        <div class="dsub">
+          <div class="dsub-t" style="color:var(--tdm-c)">現在値</div>
+          <div style="display:flex;flex-direction:column;gap:.28rem;margin-bottom:.35rem">
+            <div><div style="font-size:.34rem;color:var(--dim)">音程</div><div style="font-size:.5rem" id="tdmP">—</div></div>
+            <div><div style="font-size:.34rem;color:var(--dim)">時間</div><div style="font-size:.5rem" id="tdmT">—</div></div>
+            <div><div style="font-size:.34rem;color:var(--dim)">複合</div><div style="font-size:.5rem" id="tdmTot">—</div></div>
+          </div>
+          <div class="dg-row"><span class="dg-lbl">減衰</span><input type="range" id="tdmDecay" min="1" max="100" value="55" style="flex:1" oninput="document.getElementById('tdmDecayV').textContent=this.value"><span class="dg-val" id="tdmDecayV" style="color:var(--tdm-c)">55</span></div>
+          <div class="dg-row"><span class="dg-lbl">感度</span><input type="range" id="tdmSens" min="1" max="100" value="65" style="flex:1" oninput="document.getElementById('tdmSensV').textContent=this.value"><span class="dg-val" id="tdmSensV" style="color:#ce93d8">65</span></div>
+          <div style="font-size:.36rem;margin-top:.3rem;color:rgba(128,222,234,.5)" id="tdmNote">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dock-panels -->
+
+    <!-- ⑥ LFO -->
+    <div class="dock-panel" id="dp-lfo">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.2rem .5rem .15rem;border-bottom:1px solid var(--bd)">
+        <div style="font-size:.42rem;color:#a0c8ff;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:.3rem">
+          <span style="width:6px;height:6px;border-radius:50%;background:#a0c8ff;display:inline-block;opacity:.8"></span>
+          LFO Modulator — 複数同時
+        </div>
+        <div style="display:flex;gap:.35rem">
+          <button onclick="lfoStopAll()" style="border:1px solid rgba(255,61,127,.3);color:rgba(255,61,127,.6);background:transparent;font-family:inherit;font-size:.4rem;padding:.1rem .3rem;border-radius:2px;cursor:pointer">■ All Stop</button>
+          <button onclick="lfoAddInstance()" style="border:1px dashed rgba(160,200,255,.4);color:#a0c8ff;background:transparent;font-family:inherit;font-size:.44rem;padding:.1rem .4rem;border-radius:2px;cursor:pointer">+ Add LFO</button>
+        </div>
+      </div>
+      <div id="lfoList" style="display:flex;flex-direction:column;gap:.25rem;padding:.3rem .5rem;overflow-y:auto;flex:1;min-height:80px"></div>
+      <div style="font-size:.33rem;color:rgba(92,96,128,.4);padding:.1rem .5rem .25rem;line-height:1.6">
+        tick()がスライダー値を毎ステップ読む。Ecstasy/Wajdとも連動。
+      </div>
+    </div>
+</div><!-- /engine-dock -->
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+//  RAAG DATABASE — Qawwali / Pakistani classical
+// ═══════════════════════════════════════════════════════
+const NOTE_NAMES = ['Sa','re','Re','ga','Ga','Ma','ma','Pa','dha','Dha','ni','Ni'];
+
+const RAAGS = {
+  yaman_kalyan: {
+    name:'Yaman Kalyan', time:'SANDHYA', timeDesc:'Dusk',
+    degrees:[0,2,4,6,7,9,11], cents:[0,+4,+8,-2,0,+4,+6],
+    aroha:[0,2,4,6,7,9,11,12], avaroha:[12,11,9,7,6,4,2,0],
+    vadi:6, samvadi:11, color:'#8060c0', mood:'Serene devotion',
+  },
+  kafi: {
+    name:'Kafi', time:'MADHYAHNA', timeDesc:'Midday',
+    degrees:[0,2,3,5,7,9,10], cents:[0,0,-8,0,0,+2,-8],
+    aroha:[0,2,3,5,7,9,10,12], avaroha:[12,10,9,7,5,3,2,0],
+    vadi:5, samvadi:9, color:'#406040', mood:'Longing, folk vitality',
+  },
+  bhairavi: {
+    name:'Bhairavi', time:'MORNING END', timeDesc:'Late morning',
+    degrees:[0,1,3,5,7,8,10], cents:[0,-14,-8,0,0,-14,-8],
+    aroha:[0,1,3,5,7,8,10,12], avaroha:[12,10,8,7,5,3,1,0],
+    vadi:5, samvadi:8, color:'#806040', mood:'Pathos, farewell',
+  },
+  des: {
+    name:'Des', time:'RATRI FIRST', timeDesc:'Evening',
+    degrees:[0,2,4,5,7,9,10], cents:[0,0,+6,0,0,+4,-6],
+    aroha:[0,2,4,5,7,9,10,12], avaroha:[12,10,9,7,5,4,2,0],
+    vadi:5, samvadi:9, color:'#604020', mood:'Folk, romantic joy',
+  },
+  pahadi: {
+    name:'Pahadi', time:'EVENING', timeDesc:'Any time',
+    degrees:[0,2,4,7,9], cents:[0,+2,+6,0,+2],
+    aroha:[0,2,4,7,9,12], avaroha:[12,9,7,5,4,2,0],
+    vadi:5, samvadi:9, color:'#408060', mood:'Mountain freshness',
+  },
+  khamaj: {
+    name:'Khamaj', time:'RATRI FIRST', timeDesc:'Night',
+    degrees:[0,2,4,5,7,9,10], cents:[0,0,+6,0,0,+4,-8],
+    aroha:[0,2,4,5,7,9,10,12], avaroha:[12,10,9,7,5,4,2,0],
+    vadi:7, samvadi:3, color:'#602060', mood:'Romantic, sensuous',
+  },
+  tilang: {
+    name:'Tilang', time:'RATRI FIRST', timeDesc:'Night',
+    degrees:[0,4,7,10], cents:[0,+6,0,-8],
+    aroha:[0,4,7,10,12], avaroha:[12,10,7,4,0],
+    vadi:7, samvadi:4, color:'#406080', mood:'Yearning devotion',
+  },
+};
+
+// ═══════════════════════════════════════════════════════
+//  TAAL DATABASE
+// ═══════════════════════════════════════════════════════
+const TAALS = {
+  tintal:  { name:'Tintal',  beats:16, vibhag:[4,4,4,4], sam:[1,5,13], khali:[9] },
+  ektal:   { name:'Ektal',   beats:12, vibhag:[2,2,2,2,2,2], sam:[1,5], khali:[3,7,9,11] },
+  keherwa: { name:'Keherwa', beats:8,  vibhag:[4,4], sam:[1,5], khali:[5] },
+  dadra:   { name:'Dadra',   beats:6,  vibhag:[3,3], sam:[1,4], khali:[4] },
+  qawwali: { name:'Qawwali', beats:8,  vibhag:[4,4], sam:[1,3,5,7], khali:[] },
+};
+const BOLS = {
+  Dha:  { vel:1.0,  color:'var(--rose2)',  midi:'bolDha' },
+  Dhin: { vel:0.85, color:'var(--dawn)',   midi:'bolDha' },
+  Tin:  { vel:0.75, color:'var(--gold)',   midi:'bolTin' },
+  Na:   { vel:0.65, color:'var(--gold)',   midi:'bolTin' },
+  Ge:   { vel:0.55, color:'var(--teal)',   midi:'bolGe'  },
+  Ke:   { vel:0.40, color:'var(--teal)',   midi:'bolGe'  },
+  '—':  { vel:0,    color:'rgba(92,80,112,.25)', midi:null },
+};
+let bolDha = 36, bolTin = 38, bolGe = 41;
+
+// Sections
+const SECTIONS = {
+  darbar: { name:'Darbar', densityRange:[0.30,0.55], tempoMult:0.55, ecstasyBuild:0.003 },
+  qawl:   { name:'Qawl',   densityRange:[0.50,0.70], tempoMult:0.80, ecstasyBuild:0.006 },
+  rang:   { name:'Rang',   densityRange:[0.65,0.82], tempoMult:1.0,  ecstasyBuild:0.010 },
+  wajd:   { name:'Wajd',   densityRange:[0.78,0.95], tempoMult:1.35, ecstasyBuild:0.018 },
+};
+
+// State
+let currentRaag = 'yaman_kalyan';
+let currentSection = 'darbar';
+let currentTaal = 'tintal';
+
+let leadSteps=[], cho1Steps=[], cho2Steps=[], harmSteps=[], tablaSteps=[];
+let leadLen=16, choLen=13, harmLen=8, tablaLen=16;
+let leadIdx=0, cho1Idx=0, cho2Idx=0, harmIdx=0, tablaIdx=0;
+
+let playing=false, playTimer=null;
+let barCount=0;
+let centOffsets = new Array(12).fill(0);
+let tintMode = false; // Tintinnabuli active flag
+let partFusionLevel = 0; // 0-1
+
+// MIDI
+let midiOut=null, midiAccess=null;
+// Slave
+const SLAVE={active:false,clockInPort:null,ppqn:24,pulsesPerStep:6,pulseCount:0,bpmSmoothed:92,bpmAlpha:0.15,jitter:0,running:false,lastPulseTime:0};
+
+// ─────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────
+function getRaag()  { return RAAGS[currentRaag]; }
+function getRoot()  { return (parseInt(document.getElementById('rootSel').value)||67) + rgxShift(); }
+function getBpm()   { return parseInt(document.getElementById('bpmIn').value)||92; }
+function gcdOf(a,b){ return b===0?a:gcdOf(b,a%b); }
+function lcmOf(a,b){ return a/gcdOf(a,b)*b; }
+
+function getScaleMidi(raagKey, root) {
+  const r = RAAGS[raagKey]||RAAGS.yaman_kalyan;
+  const pool=[];
+  for(let o=-1;o<=2;o++) r.degrees.forEach((d,i)=>{ const m=root+d+o*12; if(m>=24&&m<=108) pool.push({midi:m,deg:d,degIdx:i}); });
+  return pool.sort((a,b)=>a.midi-b.midi);
+}
+
+function getTriadMidis(root, type) {
+  // Tintinnabuli T-voice: tonic triad variants
+  let intervals;
+  switch(type) {
+    case 'major':        intervals=[0,4,7]; break;
+    case 'minor':        intervals=[0,3,7]; break;
+    case 'sus2':         intervals=[0,2,7]; break;
+    case 'sus4':         intervals=[0,5,7]; break;
+    case 'diminished':   intervals=[0,3,6]; break;
+    case 'augmented':    intervals=[0,4,8]; break;
+    case 'quartal':      intervals=[0,5,10]; break;   // 4度積み
+    case 'raag': {
+      // ラーガの最初の3つの重要な音（Sa + Vadi + Samvadi）
+      const r=getRaag();
+      intervals=[0, r.degrees[r.vadi], r.degrees[r.samvadi]].sort((a,b)=>a-b);
+      break;
+    }
+    case 'sa_pa_ni': intervals=[0,7,11]; break;  // Sa-Pa-Ni (Nusrat的)
+    case 'sa_ma_pa': intervals=[0,5,7]; break;   // Sa-Ma-Pa (平和)
+    case 'sa_ga_ni': intervals=[0,4,11]; break;  // Sa-Ga-Ni (緊張)
+    default:         intervals=[0,3,7];
+  }
+  const pool=[];
+  for(let o=-1;o<=2;o++) intervals.forEach(d=>{ const m=root+d+o*12; if(m>=24&&m<=108) pool.push(m); });
+  return pool.sort((a,b)=>a-b);
+}
+
+function centToPitchBend(cents) {
+  const range=parseInt(document.getElementById('pbRange')?.value||200);
+  return Math.max(0,Math.min(16383, Math.round(8192+cents/range*8191)));
+}
+
+// ─────────────────────────────────────────
+//  Timer — Web Worker based (バックグラウンド・他ページでもthrottleされない)
+// ─────────────────────────────────────────
+let audioCtx=null;
+function getAudioCtx(){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+let _keepNode=null;
+function startKeepAlive(){
+  const ctx=getAudioCtx(); if(_keepNode) return;
+  _keepNode=ctx.createOscillator();
+  const g=ctx.createGain(); g.gain.value=0;
+  _keepNode.connect(g); g.connect(ctx.destination); _keepNode.start();
+}
+
+// Web Worker timer — setTimeoutはバックグラウンドで1秒throttleされるがWorkerは影響を受けない
+const _workerCode = `
+  const timers = {};
+  let nextId = 1;
+  self.onmessage = function(e) {
+    const { type, id, delay } = e.data;
+    if (type === 'set') {
+      timers[id] = setTimeout(() => {
+        delete timers[id];
+        self.postMessage({ id });
+      }, delay);
+    } else if (type === 'clear') {
+      clearTimeout(timers[id]);
+      delete timers[id];
+    }
+  };
+`;
+let _timerWorker = null;
+const _timerCallbacks = {};
+let _timerNextId = 1;
+
+function getTimerWorker() {
+  if(_timerWorker) return _timerWorker;
+  try {
+    const blob = new Blob([_workerCode], { type: 'application/javascript' });
+    _timerWorker = new Worker(URL.createObjectURL(blob));
+    _timerWorker.onmessage = (e) => {
+      const cb = _timerCallbacks[e.data.id];
+      if(cb) { delete _timerCallbacks[e.data.id]; cb(); }
+    };
+  } catch(err) {
+    _timerWorker = null; // fallback to setTimeout
+  }
+  return _timerWorker;
+}
+
+function accurateTimeout(fn, ms) {
+  const ctx = getAudioCtx();
+  if(ctx.state === 'suspended') ctx.resume();
+  const worker = getTimerWorker();
+  if(worker) {
+    // Worker-based: immune to background throttle
+    const id = _timerNextId++;
+    const deadline = ctx.currentTime + ms/1000;
+    _timerCallbacks[id] = () => {
+      // Fine-tune with AudioContext clock
+      const remaining = (deadline - ctx.currentTime) * 1000;
+      if(remaining > 2) {
+        // Schedule a tight follow-up
+        const id2 = _timerNextId++;
+        _timerCallbacks[id2] = fn;
+        worker.postMessage({ type:'set', id:id2, delay:Math.max(0, remaining-1) });
+      } else {
+        fn();
+      }
+    };
+    worker.postMessage({ type:'set', id, delay:Math.max(0, ms-5) });
+    return {
+      cancelled: false,
+      cancel: () => { worker.postMessage({ type:'clear', id }); delete _timerCallbacks[id]; }
+    };
+  }
+  // Fallback: AudioContext polling
+  const deadline = ctx.currentTime + ms/1000;
+  const tid = { cancelled:false }; let t=null;
+  function check(){
+    if(tid.cancelled) return;
+    const rem=(deadline-ctx.currentTime)*1000;
+    if(rem<=1) fn(); else { t=setTimeout(check, rem<25?1:Math.max(1,rem-20)); }
+  }
+  t=setTimeout(check, Math.max(1,ms-20));
+  tid.cancel=()=>{tid.cancelled=true;if(t)clearTimeout(t);};
+  return tid;
+}
+
+document.addEventListener('visibilitychange',()=>{
+  const ctx=getAudioCtx(); if(ctx.state==='suspended') ctx.resume();
+  if(!document.hidden && midiOut) for(let c=0;c<16;c++) midiOut.send([0xB0|c,123,0]);
+});
+
+// ─────────────────────────────────────────
+//  GENERATE
+// ─────────────────────────────────────────
+function generateAll(mode) {
+  if(freezeOn) return;  // ── FREEZE中は再生成ブロック ──
+  pushUndo();
+  const raag = getRaag();
+  const root = getRoot();
+  const pool = getScaleMidi(currentRaag, root);
+  if(!pool.length) return;
+  const sec = SECTIONS[currentSection];
+  const dens = Math.random()*(sec.densityRange[1]-sec.densityRange[0])+sec.densityRange[0];
+
+  // Lead — melodic, vadi-oriented
+  leadSteps = genMelody(pool, leadLen, dens, raag, 'lead', mode);
+  // Chorus 1 — response, slightly offset
+  cho1Steps = genMelody(pool, choLen, dens*0.8, raag, 'cho1', mode);
+  // Chorus 2 — sustained, drone-like
+  cho2Steps = genMelody(pool, choLen, dens*0.65, raag, 'cho2', mode);
+  // Harmonium — chord tones
+  harmSteps = genHarmonium(pool, harmLen, root, raag, mode);
+  // Tabla
+  tablaSteps = genTabla(currentTaal, tablaLen);
+
+  // Tintinnabuli fusion
+  if(partFusionLevel > 0.05 || mode==='tint') {
+    applyTintinnabuli(null, partFusionLevel);
+  }
+
+  buildGrid('lead'); buildGrid('cho1'); buildGrid('cho2'); buildGrid('harm'); buildTablaGrid();
+  updateRaagDisplay(); updateLcmDisplay();
+}
+
+function genMelody(pool, len, dens, raag, voice, mode) {
+  const root = getRoot();
+  const murs = parseInt(document.getElementById('murki')?.value||45)/100;
+  const gamk = parseInt(document.getElementById('gamak')?.value||35)/100;
+  const meend= parseInt(document.getElementById('meend')?.value||30)/100;
+
+  let pos = Math.floor(pool.length*0.4);
+  let dir = 1;
+  const steps = [];
+  for(let i=0;i<len;i++){
+    const t=i/len;
+    if(t>0.5&&dir===1) dir=-1;
+    if(t>0.85&&dir===-1) dir=1;
+    const leap=Math.random()<0.12;
+    pos=Math.max(0,Math.min(pool.length-1, pos+(leap?(Math.floor(Math.random()*3)+2)*dir:dir)));
+    const note=pool[pos];
+    const active=Math.random()<dens*(voice==='cho2'?0.7:1);
+    let orn=null;
+    const r=Math.random();
+    if(r<murs*0.25) orn='murki';
+    else if(r<murs*0.25+gamk*0.2) orn='gamak';
+    else if(r<murs*0.25+gamk*0.2+meend*0.18) orn='meend';
+    steps.push({
+      midi:note.midi, deg:note.deg, degIdx:note.degIdx,
+      active, vel:0.45+Math.random()*0.45,
+      ornament:orn, cents:centOffsets[note.deg]||0,
+      isVadi:note.deg===raag.degrees[raag.vadi],
+      tintType: null, // 'M' or 'T' when tintinnabuli active
+    });
+  }
+  return steps;
+}
+
+function genHarmonium(pool, len, root, raag, mode) {
+  // Harmonium: chord tones, sustained, cadential
+  const chordDeg = [0,4,7]; // Sa-Ga-Pa base chord (adapted per raag)
+  const rootDegs = raag.degrees.slice(0,4);
+  const steps=[];
+  for(let i=0;i<len;i++){
+    const beat=i%4;
+    const deg = beat===0 ? 0 : beat===2 ? 7 : rootDegs[i%rootDegs.length]||0;
+    const midi = Math.max(36,Math.min(96, root+deg-(i%2===0?12:0)));
+    steps.push({ midi, deg, degIdx:0, active:i%2===0||Math.random()<0.4, vel:0.35+Math.random()*0.3, ornament:null, cents:0, isHarm:true });
+  }
+  return steps;
+}
+
+function genTabla(taalKey, len) {
+  const taal=TAALS[taalKey]||TAALS.tintal;
+  const sec=SECTIONS[currentSection];
+  const isWajd=currentSection==='wajd';
+  const beats=taal.beats;
+  const steps=[];
+  const dens = 0.5+EC.ecstasy*0.4;
+  for(let i=0;i<len;i++){
+    const beat=(i%beats)+1;
+    const isSam=taal.sam.includes(beat)||i===0;
+    const isKhali=taal.khali.includes(beat);
+    let bol='—';
+    if(i===0||isSam) bol='Dha';
+    else if(isKhali) bol=Math.random()<0.5?'Tin':'Na';
+    else if(currentSection==='darbar') bol=Math.random()<0.25?'Ge':'—';
+    else {
+      const r=Math.random();
+      if(r<dens*0.25) bol='Dha';
+      else if(r<dens*0.45) bol='Dhin';
+      else if(r<dens*0.6) bol='Tin';
+      else if(r<dens*0.75) bol='Ge';
+      else bol='—';
+    }
+    const bd=BOLS[bol]||BOLS['—'];
+    steps.push({ bol, active:bol!=='—', vel:bd.vel*(0.85+Math.random()*0.3), color:bd.color, midi:getMidiForBol(bol), isSam:isSam||(i===0), isKhali });
+  }
+  return steps;
+}
+function getMidiForBol(bol){ return bol==='Dha'||bol==='Dhin'?bolDha:bol==='Tin'||bol==='Na'?bolTin:bol==='Ge'||bol==='Ke'?bolGe:null; }
+
+// ─────────────────────────────────────────
+//  BUILD GRIDS
+// ─────────────────────────────────────────
+function buildGrid(voice){
+  const el=document.getElementById(voice+'Grid'); if(!el) return;
+  const steps=voice==='lead'?leadSteps:voice==='cho1'?cho1Steps:voice==='cho2'?cho2Steps:harmSteps;
+  const color=voice==='lead'?'var(--gold2)':voice==='cho1'?'var(--violet2)':voice==='cho2'?'var(--rose2)':'var(--dawn)';
+  el.innerHTML='';
+  steps.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='step'+(i%4===0?' bar4':'')+(s.tintType==='M'?' tint-m':s.tintType==='T'?' tint-t':'');
+    d.id=`${voice}Step${i}`;
+    const h=s.active?4+Math.round(s.vel*32):3;
+    const c=s.active?(s.isVadi?'var(--gold2)':s.tintType==='T'?'var(--arvo)':color):'rgba(255,255,255,.03)';
+    const orn=s.ornament==='murki'?'m':s.ornament==='gamak'?'~':s.ornament==='meend'?'↗':s.ornament==='andolan'?'≈':'';
+    const tl=s.tintType?`<span class="step-tint">${s.tintType}</span>`:'';
+    d.innerHTML=`${orn?`<span class="step-orn">${orn}</span>`:''}${tl}<span class="step-note${s.active?' on':''}">${NOTE_NAMES[s.deg%12]||'—'}</span><div class="step-bar" style="height:${h}px;background:${c}"></div><span class="step-num">${i+1}</span>`;
+    d.addEventListener('click',()=>{pushUndo();s.active=!s.active;buildGrid(voice);});
+    d.addEventListener('contextmenu',e=>{e.preventDefault();s.vel=Math.max(0.1,s.vel-0.1);buildGrid(voice);});
+    el.appendChild(d);
+  });
+  const info=document.getElementById(voice+'Info'); if(info) info.textContent=`${steps.length} steps · ${steps.filter(s=>s.active).length} active`;
+  drawCurve(voice);
+}
+
+function buildTablaGrid(){
+  const el=document.getElementById('tablaGrid'); if(!el) return;
+  const taal=TAALS[currentTaal]||TAALS.tintal;
+  el.innerHTML='';
+  tablaSteps.forEach((s,i)=>{
+    const beat=(i%taal.beats)+1;
+    const d=document.createElement('div');
+    d.className='step'+(i%4===0?' bar4':'')+(s.isSam?' sam':'');
+    d.style.position='relative';
+    d.innerHTML=`<span class="step-note${s.active?' on':''}" style="font-size:.65rem;font-family:'Cormorant Garamond',serif;color:${s.active?s.color:'var(--dim)'}">${s.bol}</span><div class="step-bar" style="height:${s.active?4+Math.round(s.vel*24):3}px;background:${s.active?s.color:'rgba(255,255,255,.03)'}"></div><span class="step-num">${beat}</span>`;
+    d.addEventListener('click',()=>{
+      pushUndo();
+      s.active=!s.active;
+      if(s.active&&s.bol==='—'){s.bol='Ge';s.color=BOLS.Ge.color;s.midi=bolGe;}
+      buildTablaGrid();
+    });
+    d.addEventListener('contextmenu',e=>{
+      e.preventDefault();
+      const list=['Dha','Dhin','Tin','Na','Ge','Ke','—'];
+      const idx=list.indexOf(s.bol); s.bol=list[(idx+1)%list.length];
+      const bd=BOLS[s.bol]||BOLS['—'];
+      s.active=s.bol!=='—'; s.color=bd.color; s.midi=getMidiForBol(s.bol);
+      buildTablaGrid();
+    });
+    el.appendChild(d);
+  });
+  const info=document.getElementById('tablaInfo'); if(info) info.textContent=`${tablaSteps.length} steps`;
+}
+
+function drawCurve(voice){
+  const cvId=voice==='lead'?'leadCurve':voice==='cho1'?'cho1Curve':null; if(!cvId) return;
+  const cv=document.getElementById(cvId); if(!cv) return;
+  const steps=voice==='lead'?leadSteps:cho1Steps;
+  const W=cv.width,H=cv.height; const ctx=cv.getContext('2d'); ctx.clearRect(0,0,W,H);
+  const act=steps.filter(s=>s.active); if(act.length<2) return;
+  const mids=act.map(s=>s.midi), mn=Math.min(...mids)-1, mx=Math.max(...mids)+1;
+  const col=voice==='lead'?'rgba(200,160,64,.7)':'rgba(112,80,160,.7)';
+  ctx.beginPath(); act.forEach((s,i)=>{ const x=(i/(act.length-1))*W,y=H-((s.midi-mn)/(mx-mn))*(H-4)-2; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+// ─────────────────────────────────────────
+//  RAAG DISPLAY
+// ─────────────────────────────────────────
+function buildRaagStrip(){
+  const el=document.getElementById('raagStrip'); if(!el) return;
+  el.innerHTML='';
+  Object.entries(RAAGS).forEach(([key,r])=>{
+    const c=document.createElement('button');
+    c.className='raag-chip'+(key===currentRaag?' active':'');
+    c.dataset.key=key;
+    c.innerHTML=`<span style="font-style:italic">${r.name}</span><span class="chip-time">${r.timeDesc}</span>`;
+    if(key===currentRaag){c.style.borderColor=r.color;c.style.color=r.color;}
+    c.onclick=()=>selectRaag(key);
+    el.appendChild(c);
+  });
+}
+function selectRaag(key){
+  pushUndo();
+  currentRaag=key;
+  document.querySelectorAll('.raag-chip').forEach(c=>{
+    const a=c.dataset.key===key; c.classList.toggle('active',a);
+    const r=RAAGS[c.dataset.key]; c.style.borderColor=a?r.color:''; c.style.color=a?r.color:'';
+  });
+  updateRaagDisplay(); generateAll();
+}
+function updateRaagDisplay(){
+  const r=getRaag();
+  buildShrutiGrid(); buildCentRows();
+  // Panel title color
+}
+function buildShrutiGrid(){
+  const r=getRaag(); const el=document.getElementById('shrutiGrid'); if(!el) return;
+  el.innerHTML='';
+  for(let d=0;d<12;d++){
+    const c=document.createElement('div'); c.className='s-cell';
+    const inScale=r.degrees.includes(d);
+    const isVadi=inScale&&d===r.degrees[r.vadi];
+    const isSam=inScale&&d===r.degrees[r.samvadi];
+    if(!inScale) c.style.opacity='.2';
+    else if(isVadi) c.classList.add('vadi');
+    else if(isSam) c.classList.add('samvadi');
+    else c.classList.add('active');
+    c.textContent=NOTE_NAMES[d];
+    const ci=r.degrees.indexOf(d);
+    if(ci>=0&&r.cents[ci]){const cs=document.createElement('span');cs.className='cent';cs.textContent=(r.cents[ci]>0?'+':'')+r.cents[ci];c.appendChild(cs);}
+    el.appendChild(c);
+  }
+}
+function buildCentRows(){
+  const r=getRaag(); const el=document.getElementById('centRows'); if(!el) return;
+  el.innerHTML='';
+  r.degrees.forEach((d,i)=>{
+    centOffsets[d]=r.cents[i]||0;
+    const row=document.createElement('div'); row.className='pr';
+    row.innerHTML=`<label style="color:var(--ivory);width:24px">${NOTE_NAMES[d]}</label><input type="range" min="-50" max="50" value="${r.cents[i]||0}" style="flex:1;accent-color:var(--gold)" oninput="centOffsets[${d}]=parseInt(this.value);this.nextElementSibling.textContent=(this.value>0?'+':'')+this.value+'¢'"><span class="pr-val" style="color:var(--gold)">${(r.cents[i]||0)>0?'+':''}${r.cents[i]||0}¢</span>`;
+    el.appendChild(row);
+  });
+}
+function onRootChange(){
+  pushUndo();
+  const root=getRoot(); const r=getRaag();
+  const pool=getScaleMidi(currentRaag,root);
+  [leadSteps,cho1Steps,cho2Steps].forEach(steps=>{
+    steps.forEach(s=>{
+      const oct=Math.floor(s.midi/12),pc=s.midi%12,rpc=root%12;
+      const scalePCs=r.degrees.map(d=>(rpc+d)%12);
+      let best=scalePCs[0],bd2=12;
+      scalePCs.forEach(sp=>{const dist=Math.min(Math.abs(sp-pc),12-Math.abs(sp-pc));if(dist<bd2){bd2=dist;best=sp;}});
+      let nm=oct*12+best; if(Math.abs(nm-s.midi)>6) nm+=s.midi>nm?12:-12;
+      s.midi=Math.max(24,Math.min(108,nm));
+    });
+  });
+  buildGrid('lead');buildGrid('cho1');buildGrid('cho2');buildCentRows();
+}
+
+// LCM
+function updateLcmDisplay(){
+  const lcm=lcmOf(lcmOf(lcmOf(leadLen,choLen),harmLen),tablaLen);
+  const el=document.getElementById('lcmDisplay'); if(el) el.textContent=lcm;
+}
+function onVoiceStepsChange(voice,val){
+  const n=parseInt(val);
+  if(voice==='lead') {leadLen=n;leadSteps=[];leadIdx=0;}
+  if(voice==='cho')  {choLen=n;cho1Steps=[];cho2Steps=[];cho1Idx=0;cho2Idx=0;}
+  if(voice==='harm') {harmLen=n;harmSteps=[];harmIdx=0;}
+  updateLcmDisplay(); generateAll();
+}
+function onTaalChange(){ currentTaal=document.getElementById('taalSel').value; tablaLen=TAALS[currentTaal].beats; tablaSteps=[];tablaIdx=0; generateAll(); }
+function jumpToSection(sec){
+  currentSection=sec;
+  ['darbar','qawl','rang','wajd'].forEach(s=>document.getElementById('sec-'+s)?.classList.toggle('active',s===sec));
+  document.getElementById('sectionLabel').textContent=SECTIONS[sec].name;
+  generateAll(sec);
+}
+
+// Tap tempo
+let _taps=[];
+function tapTempo(){ const now=Date.now();_taps.push(now);if(_taps.length>4)_taps.shift();if(_taps.length>=2){const gaps=_taps.slice(1).map((t,i)=>t-_taps[i]);const avg=gaps.reduce((a,b)=>a+b,0)/gaps.length;const bpm=Math.round(60000/avg);if(bpm>20&&bpm<300)document.getElementById('bpmIn').value=bpm;} }
+
+// ═══════════════════════════════════════════════════════
+//  ECSTASY / WAJD ENGINE
+// ═══════════════════════════════════════════════════════
+const EC = {
+  ecstasy: 0,      // 0-1
+  repetitions: 0,  // 反復カウント
+  surgeProg: 0,    // 0-1 surge progress
+  inSurge: false,
+  currentBpm: 92,
+  history: [],
+  phraseHash: [],
+  state: 'gathering',
+  tickCount: 0,
+};
+
+function ecComputeRepetition(){
+  const hash=leadSteps.slice(0,8).map(s=>s.active?s.midi:0).join(',');
+  EC.phraseHash.push(hash); if(EC.phraseHash.length>6) EC.phraseHash.shift();
+  const reps=EC.phraseHash.slice(-5).filter(h=>h===hash).length;
+  EC.repetitions=reps;
+  // 反復するほど恍惚が高まる — Qawwaliの本質
+  const sec=SECTIONS[currentSection];
+  EC.ecstasy=Math.min(1, EC.ecstasy+sec.ecstasyBuild*reps);
+}
+
+function ecUpdateSurge(){
+  if(!EC.inSurge){
+    const thresh=parseInt(document.getElementById('releaseThresh')?.value||85)/100;
+    if(EC.ecstasy>thresh){
+      EC.inSurge=true; EC.surgeProg=0;
+      ecLog('⚡ Wajd — Surge 開始!');
+      // Wajdセクションへ
+      if(currentSection!=='wajd') jumpToSection('wajd');
+    }
+    return;
+  }
+  // Surge中: BPMを上昇させる
+  const surgeRate=parseInt(document.getElementById('surgeRate')?.value||8)/100;
+  const targetBpm=parseInt(document.getElementById('surgeBpm')?.value||180);
+  const baseBpm=getBpm();
+  EC.surgeProg=Math.min(1,EC.surgeProg+surgeRate*0.05);
+  EC.currentBpm=baseBpm+(targetBpm-baseBpm)*Math.sin(EC.surgeProg*Math.PI*0.5);
+  // Surge完了
+  if(EC.surgeProg>=1){
+    EC.inSurge=false; EC.ecstasy*=0.3; EC.currentBpm=baseBpm;
+    ecLog('∿ Wajd 解放 — 恍惚が解ける');
+    if(Math.random()<0.5) generateAll(); // 解放後にフレーズ変容
+  }
+  const el=document.getElementById('surgeBpmDisplay'); if(el) el.textContent=EC.inSurge?`↑${EC.currentBpm.toFixed(0)}BPM`:'';
+}
+
+function ecActuate(){
+  const auto=parseInt(document.getElementById('ecAuto')?.value||45)/100;
+  const sens=parseInt(document.getElementById('ecSens')?.value||50)/100;
+  if(!EC.inSurge && EC.ecstasy>0.6*sens && Math.random()<auto*0.15){
+    // 恍惚が高まると変奏が自動生成される
+    const pool=getScaleMidi(currentRaag,getRoot());
+    leadSteps.forEach(s=>{
+      if(!s.active||Math.random()>0.15) return;
+      // Vadiに引き寄せる
+      const r=getRaag(); const root=getRoot();
+      const vadiMidi=root+r.degrees[r.vadi];
+      if(Math.abs(s.midi-vadiMidi)>3) s.midi+=s.midi<vadiMidi?1:-1;
+    });
+    buildGrid('lead');
+    ecLog('∿ 恍惚変奏: →Vadi');
+  }
+}
+
+function ecForceWajd(){ EC.inSurge=true; EC.surgeProg=0; EC.ecstasy=0.9; ecLog('👤 Force Wajd'); }
+
+function ecUpdateUI(){
+  const ef=document.getElementById('ecF'),rf=document.getElementById('repF'),sf=document.getElementById('surgeF');
+  const ev=document.getElementById('ecV'),rv=document.getElementById('repV'),sv2=document.getElementById('surgeV');
+  if(ef) ef.style.width=(EC.ecstasy*100).toFixed(0)+'%';
+  if(rf) rf.style.width=Math.min(100,EC.repetitions*20)+'%';
+  if(sf) sf.style.width=(EC.surgeProg*100).toFixed(0)+'%';
+  if(ev) ev.textContent=(EC.ecstasy*100).toFixed(0);
+  if(rv) rv.textContent=EC.repetitions;
+  if(sv2) sv2.textContent=(EC.surgeProg*100).toFixed(0);
+  const states={gathering:'集まり',building:'高まり',ecstatic:'恍惚',surge:'⚡Surge',release:'解放'};
+  EC.state=EC.inSurge?'surge':EC.ecstasy>0.8?'ecstatic':EC.ecstasy>0.5?'building':EC.repetitions>2?'building':'gathering';
+  const es=document.getElementById('ecState'); if(es) es.textContent=states[EC.state]||EC.state;
+  // Main ecstasy fill
+  const mef=document.getElementById('ecstasyFill'),mev=document.getElementById('ecstasyVal');
+  if(mef) mef.style.width=(EC.ecstasy*100).toFixed(0)+'%';
+  if(mev) mev.textContent=(EC.ecstasy*100).toFixed(0)+'%';
+  // Mini
+  const me=document.getElementById('miniE'); if(me) me.style.width=(EC.ecstasy*100).toFixed(0)+'%';
+  const mw=document.getElementById('miniWill'); if(mw) mw.textContent=EC.state==='surge'?'⚡':EC.state==='ecstatic'?'∞':'○';
+}
+
+function ecDrawCanvas(){
+  const cv=document.getElementById('ecCanvas'); if(!cv) return;
+  const W=cv.parentElement?.offsetWidth||160; cv.width=W; cv.height=44;
+  const ctx=cv.getContext('2d'); ctx.clearRect(0,0,W,44);
+  EC.history.push(EC.ecstasy); if(EC.history.length>W) EC.history.shift();
+  const h=EC.history;
+  if(h.length>2){
+    ctx.beginPath(); h.forEach((v,i)=>{const x=(i/h.length)*W,y=44-v*40-2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.strokeStyle='rgba(224,160,80,.8)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.lineTo(W,44);ctx.lineTo(0,44);ctx.closePath();
+    const g=ctx.createLinearGradient(0,0,0,44); g.addColorStop(0,'rgba(224,160,80,.25)'); g.addColorStop(1,'rgba(224,160,80,.01)');
+    ctx.fillStyle=g; ctx.fill();
+  }
+  if(EC.inSurge){ ctx.fillStyle=`rgba(224,160,80,${EC.surgeProg*0.2})`; ctx.fillRect(0,0,W,44); }
+}
+
+function ecLog(msg){ const log=document.getElementById('ecLog');if(!log)return;const s=document.createElement('span');s.textContent=new Date().toLocaleTimeString('ja',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})+' '+msg;s.style.cssText='color:rgba(224,160,80,.85);display:block';log.insertBefore(s,log.firstChild);while(log.children.length>4)log.removeChild(log.lastChild); }
+
+let _ecTick=0;
+function ecTick(){
+  if(!playing)return; _ecTick++;
+  if(_ecTick%8===0) ecComputeRepetition();
+  if(ARC_ON && _ecTick%4===0) ecUpdateSurge();
+  if(ARC_ON && _ecTick%16===0) ecActuate();
+  if(_ecTick%10===0){ecUpdateUI();ecDrawCanvas();}
+}
+
+// ═══════════════════════════════════════════════════════
+//  TINTINNABULI ENGINE
+// ═══════════════════════════════════════════════════════
+function applyTintinnabuli(voiceOnly, strength) {
+  const str = strength||partFusionLevel;
+  const root = getRoot();
+  const triadType = document.getElementById('partTriad')?.value||'minor';
+  const triad = getTriadMidis(root, triadType);
+  const tPos = document.getElementById('tintTPos')?.value||'1below';
+  const mRatio = parseInt(document.getElementById('tintMRatio')?.value||60)/100;
+  const silDens = parseInt(document.getElementById('silenceDens')?.value||25)/100;
+  const silLen = parseInt(document.getElementById('silenceLen')?.value||2);
+
+  function mVoiceStep(step) {
+    // M-voice: 隣接音のみ許可（半音または全音）
+    step.tintType = 'M';
+    // velをより整然と
+    step.vel = step.vel*0.8 + 0.5*0.2;
+    step.ornament = null; // Pärtの世界に装飾音はない
+  }
+
+  function tVoiceStep(step, idx) {
+    // T-voice: トリアード音のみ
+    if(!step.active) return;
+    // 現在音に最も近いトリアード音を選ぶ（上or下）
+    const above = triad.filter(m=>m>=step.midi);
+    const below = triad.filter(m=>m<step.midi);
+    let target;
+    if(tPos==='1above') target=above.length?above[0]:below[below.length-1]||step.midi;
+    else if(tPos==='1below') target=below.length?below[below.length-1]:above[0]||step.midi;
+    else if(tPos==='2above') target=above.length>1?above[1]:above[0]||step.midi;
+    else target=idx%2===0?(above[0]||step.midi):(below[below.length-1]||step.midi);
+    step.midi = target||step.midi;
+    step.tintType = 'T';
+    step.ornament = null;
+    step.vel = step.vel*0.7 + 0.45*0.3;
+  }
+
+  function applySilence(steps) {
+    // 沈黙をランダムに挿入（連続silLen拍）
+    for(let i=0;i<steps.length;i++){
+      if(Math.random()<silDens*str){
+        for(let k=0;k<silLen&&i+k<steps.length;k++) steps[i+k].active=false;
+        i+=silLen;
+      }
+    }
+  }
+
+  // Lead → M-voice割合に応じて変換
+  leadSteps.forEach((s,i)=>{
+    if(!s.active) return;
+    if(Math.random()<mRatio*str) mVoiceStep(s);
+    else if(Math.random()<(1-mRatio)*str*0.8) tVoiceStep(s,i);
+  });
+  applySilence(leadSteps);
+
+  // Chorus 1 → T-voice
+  if(!voiceOnly||voiceOnly==='cho1'){
+    cho1Steps.forEach((s,i)=>{ if(s.active&&Math.random()<str*0.7) tVoiceStep(s,i); });
+    applySilence(cho1Steps);
+  }
+
+  // Harmonium → 完全沈黙化（Pärtの世界では伴奏が消える）
+  if(str>0.5){
+    harmSteps.forEach(s=>{ if(Math.random()<(str-0.5)*2*0.6) s.active=false; });
+  }
+
+  buildGrid('lead'); buildGrid('cho1'); buildGrid('cho2'); buildGrid('harm');
+
+  // Pärt融合バー更新
+  const fill=document.getElementById('partFusionFill');
+  const val=document.getElementById('partFusionVal');
+  if(fill) fill.style.width=(str*100).toFixed(0)+'%';
+  if(val) val.textContent=(str*100).toFixed(0)+'%';
+  const mfill=document.getElementById('miniP'); if(mfill) mfill.style.width=(str*100).toFixed(0)+'%';
+
+  // Tint canvas
+  drawTintCanvas();
+  tintLog(`∞ Tintinnabuli applied (${(str*100).toFixed(0)}%)`);
+}
+
+function regenerateTint(){ if(partFusionLevel>0.05) applyTintinnabuli(null,partFusionLevel); }
+function resetTintinnabuli(){
+  leadSteps.forEach(s=>s.tintType=null);
+  cho1Steps.forEach(s=>s.tintType=null);
+  cho2Steps.forEach(s=>s.tintType=null);
+  buildGrid('lead'); buildGrid('cho1'); buildGrid('cho2');
+  tintLog('⟳ Pure Qawwali');
+}
+
+function onPartFusionChange(val){
+  partFusionLevel=parseInt(val)/100;
+  document.getElementById('partFusionSliderV').textContent=val;
+  if(partFusionLevel>0.05) applyTintinnabuli(null,partFusionLevel);
+  else resetTintinnabuli();
+}
+
+function drawTintCanvas(){
+  const cv=document.getElementById('tintCanvas'); if(!cv) return;
+  const W=cv.parentElement?.offsetWidth||180; cv.width=W; cv.height=60;
+  const ctx=cv.getContext('2d'); ctx.clearRect(0,0,W,60);
+  // Ecstasy curve (gold)
+  const eh=EC.history.slice(-W);
+  if(eh.length>2){
+    ctx.beginPath(); eh.forEach((v,i)=>{const x=(i/eh.length)*W,y=60-v*56-2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.strokeStyle='rgba(224,160,80,.65)'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  // Silence (arvo) — inverse of ecstasy when fusion is active
+  const silLevel=partFusionLevel*(1-EC.ecstasy*0.5);
+  const silHistory=eh.map(e=>partFusionLevel*(1-e*0.5));
+  if(silHistory.length>2){
+    ctx.beginPath(); silHistory.forEach((v,i)=>{const x=(i/silHistory.length)*W,y=60-v*56-2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.strokeStyle='rgba(96,144,168,.65)'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  // Intersection fill
+  ctx.fillStyle=`rgba(112,80,160,${silLevel*EC.ecstasy*0.2})`;
+  ctx.fillRect(0,0,W,60);
+}
+
+function tintLog(msg){ const log=document.getElementById('tintLog');if(log)log.textContent=msg; }
+
+// ═══════════════════════════════════════════════════════
+//  REFLEXIVITY ENGINE
+// ═══════════════════════════════════════════════════════
+const RE={tension:0,boredom:0,momentum:0,will:'observe',override:null,overrideTimer:0,freezeActive:false,freezeStepsLeft:0,pressure:0,aftershockActive:false,aftershockCycles:0,aftershockIntensity:0,pitchHistory:[],tensionHistory:[],cycle:0,patternHash:[],tickCount:0};
+function reComputeTension(){const r=getRaag();const root=getRoot();const active=leadSteps.filter(s=>s.active);if(!active.length){RE.tension*=0.92;return;}const scalePCs=r.degrees.map(d=>(root+d)%12);let out=0;active.slice(Math.max(0,leadIdx-8),leadIdx+1).forEach(s=>{if(!scalePCs.includes(s.midi%12))out++;});RE.tension=RE.tension*0.85+(out/Math.max(1,Math.min(8,active.length)))*0.15;}
+function reComputeBoredom(){const hash=leadSteps.map(s=>s.active?s.midi:0).join(',');RE.patternHash.push(hash);if(RE.patternHash.length>5)RE.patternHash.shift();const reps=RE.patternHash.slice(-4).filter(h=>h===hash).length;RE.boredom=RE.boredom*0.7+Math.min(1,(reps-1)/3)*0.3;}
+function reComputeMomentum(){const cur=leadSteps[leadIdx]?.midi;if(cur&&RE.pitchHistory.length>0)RE.momentum=RE.momentum*0.8+Math.min(1,Math.abs(cur-RE.pitchHistory[RE.pitchHistory.length-1])/24)*0.2;if(cur){RE.pitchHistory.push(cur);if(RE.pitchHistory.length>32)RE.pitchHistory.shift();}}
+function reUpdateWill(){const sens=parseInt(document.getElementById('reSens')?.value||55)/100;if(RE.freezeActive){RE.freezeStepsLeft--;RE.pressure=Math.min(1,RE.pressure+(RE.tension*.6+RE.boredom*.4)*.04);if(RE.pressure>=.85||RE.freezeStepsLeft<=0){reTriggerRelease();return;}RE.will='frozen';return;}if(RE.aftershockActive){RE.aftershockCycles--;if(RE.aftershockCycles<=0){RE.aftershockActive=false;RE.will='observe';}else RE.will='aftershock';return;}if(RE.override){if(RE.overrideTimer-->0){RE.will=RE.override;return;}else RE.override=null;}if(RE.tension>.9*sens)RE.will='escape';else if(RE.boredom>.7*sens)RE.will='crisis';else if(RE.tension>.75*sens)RE.will='resolve';else RE.will='observe';}
+function reActuate(){if(RE.freezeActive)return;const auto=parseInt(document.getElementById('reAuto')?.value||40)/100;if(RE.will==='crisis'&&Math.random()<auto){generateAll();reLog('⚡ Crisis');RE.boredom*=0.4;RE.cycle++;}else if(RE.will==='resolve'&&Math.random()<auto*.5){const r=getRaag();const root=getRoot();const vadi=root+r.degrees[r.vadi];leadSteps.forEach(s=>{if(s.active&&Math.random()<.25&&Math.abs(s.midi-vadi)>2)s.midi+=s.midi<vadi?1:-1;});buildGrid('lead');reLog('∿ →Vadi');RE.cycle++;}else if(RE.will==='aftershock'&&Math.random()<auto*RE.aftershockIntensity*.4){const pool=getScaleMidi(currentRaag,getRoot());const idx=Math.floor(Math.random()*leadSteps.length);if(pool.length)leadSteps[idx].midi=pool[Math.floor(Math.random()*pool.length)].midi;buildGrid('lead');}}
+function reTriggerRelease(){RE.freezeActive=false;const p=RE.pressure;RE.pressure=0;const auto=parseInt(document.getElementById('reAuto')?.value||40)/100;for(let i=0;i<Math.round(1+p*auto*4);i++) generateAll();reLog(`💥 解放(${(p*100).toFixed(0)}%)`);RE.aftershockActive=true;RE.aftershockCycles=Math.round(2+p*5);RE.aftershockIntensity=p;RE.will='aftershock';RE.cycle++;const btn=document.getElementById('reBtnFreeze');if(btn){btn.style.borderColor='rgba(255,107,53,.35)';btn.style.color='var(--re-c)';btn.textContent='❄ Freeze';}}
+function reOverride(type){if(type==='freeze'){if(RE.freezeActive){reTriggerRelease();return;}RE.freezeActive=true;RE.freezeStepsLeft=24;RE.pressure=0;RE.will='frozen';const btn=document.getElementById('reBtnFreeze');if(btn){btn.style.borderColor='rgba(255,107,53,.7)';btn.style.color='#ffa040';}reLog('❄ Freeze');}else if(type==='crisis'){RE.override='crisis';RE.overrideTimer=6;reActuate();}else{RE.override='resolve';RE.overrideTimer=12;reActuate();}}
+function reLog(msg){const log=document.getElementById('reLog');if(!log)return;const s=document.createElement('span');s.textContent=new Date().toLocaleTimeString('ja',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})+' '+msg;s.style.cssText='color:rgba(255,107,53,.85);display:block';log.insertBefore(s,log.firstChild);while(log.children.length>4)log.removeChild(log.lastChild);}
+function reDrawCanvas(){const cv=document.getElementById('reCanvas');if(!cv)return;const W=cv.parentElement?.offsetWidth||160;cv.width=W;cv.height=44;const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,44);RE.tensionHistory.push(RE.tension);if(RE.tensionHistory.length>W)RE.tensionHistory.shift();const h=RE.tensionHistory;if(h.length>2){ctx.beginPath();h.forEach((v,i)=>{const x=(i/h.length)*W,y=44-v*40-2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.strokeStyle='rgba(255,107,53,.8)';ctx.lineWidth=1.5;ctx.stroke();ctx.lineTo(W,44);ctx.lineTo(0,44);ctx.closePath();const g=ctx.createLinearGradient(0,0,0,44);g.addColorStop(0,'rgba(255,107,53,.22)');g.addColorStop(1,'rgba(255,107,53,.01)');ctx.fillStyle=g;ctx.fill();}if(RE.freezeActive){ctx.fillStyle=`rgba(255,107,53,${RE.pressure*.15})`;ctx.fillRect(0,0,W,44);}}
+function reUpdateUI(){const g=(id,v)=>{const el=document.getElementById(id);if(el)el.style.width=(v*100).toFixed(0)+'%';};g('reTF',RE.tension);g('reBF',RE.boredom);g('reMF',RE.momentum);const tv=document.getElementById('reTV'),bv=document.getElementById('reBV'),mv=document.getElementById('reMV');if(tv)tv.textContent=(RE.tension*100).toFixed(0);if(bv)bv.textContent=(RE.boredom*100).toFixed(0);if(mv)mv.textContent=(RE.momentum*100).toFixed(0);const wl={observe:'観測中',crisis:'⚡危機',resolve:'∿解決',frozen:`❄${(RE.pressure*100).toFixed(0)}%`,escape:'↑逃走',aftershock:`💥余韻${RE.aftershockCycles}`};const w=document.getElementById('reWill');if(w)w.textContent=wl[RE.will]||RE.will;const mt=document.getElementById('miniT');if(mt)mt.style.width=(RE.tension*100).toFixed(0)+'%';}
+let _reTick=0;
+function reTick(){if(!playing)return;_reTick++;reComputeTension();reComputeMomentum();if(_reTick%8===0){reComputeBoredom();reUpdateWill();if(ARC_ON)reActuate();}if(_reTick%12===0){reUpdateUI();reDrawCanvas();}}
+
+// ═══════════════════════════════════════════════════════
+//  SHADOW SCORE — Qawwali Arc
+// ═══════════════════════════════════════════════════════
+const QARC=[
+  {id:0,name:'Darbar',color:'rgba(79,195,247',densityTarget:.40,velMult:.45,dur:16,section:'darbar'},
+  {id:1,name:'Qawl',  color:'rgba(192,136,80',densityTarget:.60,velMult:.65,dur:16,section:'qawl'},
+  {id:2,name:'Rang',  color:'rgba(200,160,64',densityTarget:.78,velMult:.80,dur:14,section:'rang'},
+  {id:3,name:'Wajd',  color:'rgba(224,160,80',densityTarget:.90,velMult:.92,dur:12,section:'wajd'},
+];
+const SS={section:0,stepInSec:0,pull:0,drift:0,override:null,overrideTimer:0,driftHistory:[],loopCount:0};
+// ── ARC master switch: when OFF, all auto-development freezes (manual play only) ──
+let ARC_ON = true;
+function toggleArc(){
+  ARC_ON = !ARC_ON;
+  const b=document.getElementById('arcToggle');
+  if(b){
+    b.innerHTML = ARC_ON ? 'ARC&nbsp;ON' : 'ARC&nbsp;OFF';
+    b.style.background = ARC_ON ? 'rgba(79,195,247,.14)' : 'rgba(255,90,90,.12)';
+    b.style.color      = ARC_ON ? '#9fdcff' : '#ff9b9b';
+    b.style.borderColor= ARC_ON ? 'var(--bd)' : 'rgba(255,90,90,.5)';
+  }
+  // If turning surge off mid-surge, release cleanly so BPM doesn't stay stuck.
+  if(!ARC_ON && typeof EC!=='undefined' && EC.inSurge){
+    EC.inSurge=false; EC.currentBpm=getBpm();
+    const el=document.getElementById('surgeBpmDisplay'); if(el) el.textContent='';
+  }
+}
+function ssComputeDrift(){const sec=QARC[SS.section];const d=leadSteps.filter(s=>s.active).length/Math.max(1,leadSteps.length);SS.drift=Math.abs(d-sec.densityTarget);SS.pull=SS.pull*.8+Math.min(1,SS.drift*(parseInt(document.getElementById('ssStr')?.value||50)/100))*.2;}
+function ssApplyGravity(){if(SS.override==='resist')return;const auto=parseInt(document.getElementById('reAuto')?.value||40)/100;if(SS.pull<.15||Math.random()>SS.pull*auto*1.2)return;const sec=QARC[SS.section];const cur=leadSteps.filter(s=>s.active).length/Math.max(1,leadSteps.length);const idx=Math.floor(Math.random()*leadSteps.length);if(cur<sec.densityTarget)leadSteps[idx].active=true;else if(cur>sec.densityTarget+.1)leadSteps[idx].active=false;leadSteps[idx].vel=leadSteps[idx].vel*.85+sec.velMult*.15;buildGrid('lead');ssLog(`⬤(${sec.name})`);}
+function ssAdvanceSection(){const auto=parseInt(document.getElementById('ssAdv')?.value||60)/100;if(Math.random()>auto)return;SS.stepInSec++;if(SS.stepInSec>=QARC[SS.section].dur){SS.section=(SS.section+1)%QARC.length;if(SS.section===0)SS.loopCount++;SS.stepInSec=0;jumpToSection(QARC[SS.section].section);ssUpdateUI();ssLog(`→${QARC[SS.section].name}`);}}
+function ssJump(i){SS.section=i;SS.stepInSec=0;jumpToSection(QARC[i].section);ssUpdateUI();ssLog(`👤→${QARC[i].name}`);}
+function ssOverride(t){SS.override=t;SS.overrideTimer=t==='skip'?1:12;if(t==='skip'){ssJump((SS.section+1)%QARC.length);SS.override=null;}}
+function ssUpdateUI(){QARC.forEach((s,i)=>{const el=document.getElementById('ss'+i);if(el)el.style.outline=i===SS.section?'2px solid rgba(79,195,247,.7)':'';});const l=document.getElementById('ssLabel');if(l)l.textContent=QARC[SS.section].name;const sp=document.getElementById('ssStep');if(sp)sp.textContent=`${SS.stepInSec}/${QARC[SS.section].dur}`;const pf=document.getElementById('ssPF'),df=document.getElementById('ssDF');if(pf)pf.style.width=(SS.pull*100).toFixed(0)+'%';if(df)df.style.width=(SS.drift*100).toFixed(0)+'%';const pv=document.getElementById('ssPV'),dv=document.getElementById('ssDV');if(pv)pv.textContent=(SS.pull*100).toFixed(0);if(dv)dv.textContent=(SS.drift*100).toFixed(0);}
+function ssDrawCanvas(){const cv=document.getElementById('ssCanvas');if(!cv)return;const W=cv.parentElement?.offsetWidth||180;cv.width=W;cv.height=44;const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,44);const sec=QARC[SS.section];const g=ctx.createLinearGradient(0,0,W,0);g.addColorStop(0,`${sec.color},.08)`);g.addColorStop(1,`${sec.color},.02)`);ctx.fillStyle=g;ctx.fillRect(0,0,W,44);SS.driftHistory.push(SS.drift);if(SS.driftHistory.length>W)SS.driftHistory.shift();if(SS.driftHistory.length>2){ctx.beginPath();SS.driftHistory.forEach((v,i)=>{const x=(i/SS.driftHistory.length)*W,y=44-v*40-2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.strokeStyle=`${sec.color},.6)`;ctx.lineWidth=1.5;ctx.stroke();}const prog=SS.stepInSec/QARC[SS.section].dur;ctx.fillStyle=`${sec.color},.18)`;ctx.fillRect(0,39,W*prog,5);}
+function ssLog(msg){const log=document.getElementById('ssLog');if(log)log.textContent=new Date().toLocaleTimeString('ja',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})+' '+msg;}
+let _ssTick=0;
+function ssTick(){if(!playing)return;_ssTick++;ssComputeDrift();if(ARC_ON&&_ssTick%10===0){ssApplyGravity();if(leadIdx===0)ssAdvanceSection();}if(_ssTick%12===0){ssUpdateUI();ssDrawCanvas();if(SS.override&&SS.overrideTimer-->0){}else SS.override=null;}}
+
+// ═══════════════════════════════════════════════════════
+//  TDM
+// ═══════════════════════════════════════════════════════
+const TDM={noteMemory:[],maxMem:28,map:Array(12).fill(null).map(()=>new Float32Array(16).fill(0)),pitchDis:0,timeDis:0,total:0,nc:0};
+const TDM_DIS=[0,.9,.7,.2,.1,.15,.85,.05,.1,.2,.5,.8];
+function tdmTC(s){if(s===0)return 1;if(s<=3)return.85-s*.05;if(s<=8)return.6-(s-4)*.07;return Math.max(.05,.32-(s-9)*.03);}
+function tdmAdd(midi,step){TDM.nc++;TDM.noteMemory.push({midi,t:step});if(TDM.noteMemory.length>TDM.maxMem)TDM.noteMemory.shift();}
+function tdmCompute(){const decay=parseInt(document.getElementById('tdmDecay')?.value||55)/100;const sens=parseInt(document.getElementById('tdmSens')?.value||65)/100;for(let iv=0;iv<12;iv++)for(let td=0;td<16;td++)TDM.map[iv][td]*=(1-decay*.05);const r=TDM.noteMemory.slice(-12);let pS=0,tS=0,pairs=0;for(let i=0;i<r.length;i++)for(let j=i+1;j<r.length;j++){const iv=Math.abs(r[i].midi-r[j].midi)%12,td=Math.min(15,Math.abs(r[i].t-r[j].t));const ps=TDM_DIS[iv]||0,ts=tdmTC(td),comb=ps*ts*sens;TDM.map[iv][td]=Math.min(1,TDM.map[iv][td]+comb*.3);pS+=ps;tS+=ts;pairs++;}if(pairs>0){TDM.pitchDis=TDM.pitchDis*.8+(pS/pairs)*.2;TDM.timeDis=TDM.timeDis*.8+(tS/pairs)*.2;TDM.total=Math.sqrt(TDM.pitchDis*TDM.timeDis)*sens;}}
+function tdmDraw(){const cv=document.getElementById('tdmCanvas');if(!cv)return;const W=cv.parentElement?.offsetWidth||220;cv.width=W;cv.height=68;const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,68);const cW=W/12,cH=68/16;for(let iv=0;iv<12;iv++)for(let td=0;td<16;td++){const v=TDM.map[iv][td];if(v<.02)continue;ctx.fillStyle=`rgba(${Math.round(v*240)},${Math.round(128*(1-v))},${Math.round(234*(1-v*.5))},${.3+v*.65})`;ctx.fillRect(iv*cW,td*cH,cW-1,cH-1);if(v>.6){ctx.fillStyle=`rgba(206,147,216,${v*.3})`;ctx.fillRect(iv*cW,td*cH,cW-1,cH-1);}}ctx.strokeStyle='rgba(128,222,234,.07)';ctx.lineWidth=.5;for(let iv=0;iv<=12;iv++){ctx.beginPath();ctx.moveTo(iv*cW,0);ctx.lineTo(iv*cW,68);ctx.stroke();}for(let td=0;td<=16;td++){ctx.beginPath();ctx.moveTo(0,td*cH);ctx.lineTo(W,td*cH);ctx.stroke();}const r=getRaag();ctx.fillStyle='rgba(200,160,64,.4)';ctx.font='7px "JetBrains Mono"';r.degrees.forEach(d=>ctx.fillText(NOTE_NAMES[d],d*cW+1,67));const cp=Math.round(TDM.pitchDis*11),ct=Math.min(15,Math.round(TDM.timeDis*15));ctx.strokeStyle='rgba(200,160,64,.9)';ctx.lineWidth=1.5;ctx.strokeRect(cp*cW,ct*cH,cW-1,cH-1);}
+function tdmUI(){const p=document.getElementById('tdmP'),t=document.getElementById('tdmT'),tot=document.getElementById('tdmTot'),note=document.getElementById('tdmNote');if(p){p.textContent=(TDM.pitchDis*100).toFixed(0)+'%';p.style.color=TDM.pitchDis>.6?'#ce93d8':'var(--tdm-c)';}if(t){t.textContent=(TDM.timeDis*100).toFixed(0)+'%';t.style.color=TDM.timeDis>.6?'var(--re-b)':'var(--tdm-c)';}if(tot){tot.textContent=(TDM.total*100).toFixed(0)+'%';tot.style.color=TDM.total>.7?'var(--re-b)':TDM.total>.4?'#ce93d8':'var(--tdm-c)';}if(note)note.textContent=TDM.total>.75?'⚡臨界':TDM.total>.5?'↗高緊張':TDM.total>.25?'∿中緊張':'○安定';}
+let _tdmTick=0;
+function tdmTick(){if(!playing)return;_tdmTick++;if(_tdmTick%5===0)tdmCompute();if(_tdmTick%10===0){tdmUI();tdmDraw();}}
+
+// ═══════════════════════════════════════════════════════
+//  PLAYBACK
+// ═══════════════════════════════════════════════════════
+function togglePlay(){ playing?stopAll():startPlay(); }
+
+function startPlay(){
+  const ctx=getAudioCtx(); if(ctx.state==='suspended') ctx.resume();
+  startKeepAlive();
+  playing=true; leadIdx=0;cho1Idx=0;cho2Idx=0;harmIdx=0;tablaIdx=0;barCount=0;
+  document.getElementById('btnPlay').textContent='■ Stop';
+  tick(); // always start internal timer; MIDI clock sync overrides BPM
+}
+
+function stopAll(){
+  playing=false; if(playTimer){playTimer.cancelled=true;playTimer=null;}
+  document.getElementById('btnPlay').textContent='▶ Play';
+  document.getElementById('beatDisplay').textContent='—';
+  leadIdx=0;cho1Idx=0;cho2Idx=0;harmIdx=0;tablaIdx=0;
+  if(midiOut) for(let c=0;c<16;c++) midiOut.send([0xB0|c,123,0]);
+  document.querySelectorAll('.step.playing').forEach(e=>e.classList.remove('playing'));
+}
+
+function tick(){
+  if(!playing) return;
+  const bpm = EC.inSurge ? EC.currentBpm : getBpm();
+  const sec = SECTIONS[currentSection];
+  const stepMs = Math.max(20,(60000/bpm/4)*(1/sec.tempoMult));
+  const rubato = 0.15;
+  const jitter = (Math.random()-.5)*rubato*stepMs*0.3;
+
+  // Highlights
+  document.querySelectorAll('#leadGrid .step').forEach((e,i)=>e.classList.toggle('playing',i===leadIdx));
+  document.querySelectorAll('#cho1Grid .step').forEach((e,i)=>e.classList.toggle('playing',i===cho1Idx));
+  document.querySelectorAll('#cho2Grid .step').forEach((e,i)=>e.classList.toggle('playing',i===cho2Idx));
+  document.querySelectorAll('#harmGrid .step').forEach((e,i)=>e.classList.toggle('playing',i===harmIdx));
+  document.querySelectorAll('#tablaGrid .step').forEach((e,i)=>e.classList.toggle('playing',i===tablaIdx));
+
+  rgxFieldTick();
+  const _bMs=60000/bpm;
+  const _gLd=rgxGate('lead',stepMs,_bMs), _gC1=rgxGate('cho1',stepMs,_bMs), _gC2=rgxGate('cho2',stepMs,_bMs),
+        _gHm=rgxGate('harm',stepMs,_bMs), _gTb=rgxGate('tabla',stepMs,_bMs);
+  if(_gLd) sendVoice(leadSteps, leadIdx, 'chLead', 0);
+  if(_gC1) sendVoice(cho1Steps, cho1Idx, 'chCho1', -12);
+  if(_gC2) sendVoice(cho2Steps, cho2Idx, 'chCho2', -12);
+  if(_gHm) sendVoice(harmSteps, harmIdx, 'chHarm', -12, true);
+  if(_gTb) sendTabla(tablaIdx, stepMs);
+
+  tdmAdd(leadSteps[leadIdx]?.midi||0, leadIdx);
+
+  document.getElementById('beatDisplay').textContent=`${barCount+1} · ${leadIdx+1}/${leadLen}`;
+  if(_gLd){ leadIdx++;  if(leadIdx>=leadLen)  {leadIdx=0;barCount++;} }
+  if(_gC1){ cho1Idx++;  if(cho1Idx>=choLen)   cho1Idx=0; }
+  if(_gC2){ cho2Idx++;  if(cho2Idx>=choLen)   cho2Idx=0; }
+  if(_gHm){ harmIdx++;  if(harmIdx>=harmLen)  harmIdx=0; }
+  if(_gTb){ tablaIdx++; if(tablaIdx>=tablaLen) tablaIdx=0; }
+
+  ecTick(); reTick(); ssTick(); tdmTick();
+  playTimer=accurateTimeout(tick, stepMs+jitter);
+}
+
+function sendVoice(steps, idx, chId, octOff, isHarm){
+  if(!steps.length||!midiOut) return;
+  const s=steps[idx%steps.length]; if(!s||!s.active) return;
+  const ch=(parseInt(document.getElementById(chId)?.value||1)-1);
+  const oct=(parseInt(document.getElementById('leadOct')?.value||0));
+  const m=Math.max(0,Math.min(127,s.midi+octOff+(isHarm?0:oct*12)));
+  const v=Math.round(s.vel*100+27);
+  const bpm=EC.inSurge?EC.currentBpm:getBpm();
+  const sec2=SECTIONS[currentSection];
+  const stepMs=Math.max(20,(60000/bpm/4)*(1/sec2.tempoMult));
+  // Pitch bend
+  const cents=centOffsets[s.deg]||0;
+  if(cents!==0){const pb=centToPitchBend(cents);midiOut.send([0xE0|ch,pb&0x7F,(pb>>7)&0x7F]);}
+  else midiOut.send([0xE0|ch,0,64]);
+  midiOut.send([0x90|ch,m,v]);
+  setTimeout(()=>{if(midiOut)midiOut.send([0x80|ch,m,0]);},stepMs*.85);
+  // Ornaments via pitch bend
+  if(s.ornament==='gamak'){setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,70]);},stepMs*.3);setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,58]);},stepMs*.6);setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,64]);},stepMs*.9);}
+  else if(s.ornament==='meend'){for(let k=0;k<8;k++){const bc=cents+(k/8)*25,pb2=centToPitchBend(bc);setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,pb2&0x7F,(pb2>>7)&0x7F]);},stepMs*k/8);}}
+  else if(s.ornament==='murki'){// Rapid oscillation
+    for(let k=0;k<3;k++){const bend=k%2===0?70:58;setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,bend]);},stepMs*.2+k*stepMs*.08);}
+    setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,64]);},stepMs*.6);}
+}
+
+function sendTabla(idx, stepMs){
+  if(!tablaSteps.length||!midiOut) return;
+  const s=tablaSteps[idx%tablaLen]; if(!s||!s.active||!s.midi) return;
+  const ch=(parseInt(document.getElementById('chTabla')?.value||5)-1);
+  // Section volume
+  const sv=currentSection==='darbar'?0.2:currentSection==='qawl'?0.55:currentSection==='rang'?0.8:1.0;
+  midiOut.send([0x90|ch,s.midi,Math.min(127,Math.round(s.vel*sv*100+27))]);
+  setTimeout(()=>{if(midiOut)midiOut.send([0x80|ch,s.midi,0]);},stepMs*.45);
+}
+
+// ═══════════════════════════════════════════════════════
+//  ABLETON SLAVE
+// ═══════════════════════════════════════════════════════
+function toggleSlave(){SLAVE.active=!SLAVE.active;const btn=document.getElementById('btnSlave');if(btn){btn.textContent=SLAVE.active?'Slave: ON':'Slave: OFF';btn.style.borderColor=SLAVE.active?'rgba(64,104,88,.7)':'';btn.style.color=SLAVE.active?'var(--teal)':'';} // Slave ON: keep internal timer running as fallback; MIDI clock sync overrides BPM else if(!SLAVE.active&&playing) tick();
+}
+function selectClockIn(id){if(SLAVE.clockInPort)SLAVE.clockInPort.onmidimessage=null;if(!id||!midiAccess)return;SLAVE.clockInPort=midiAccess.inputs.get(id);if(SLAVE.clockInPort)SLAVE.clockInPort.onmidimessage=onClockMsg;}
+function onClockMsg(e){const d=e.data[0];if(d===0xFA){SLAVE.running=true;SLAVE.pulseCount=0;if(!playing){startPlay();}else{/* sync: reset positions on Ableton Start */}return;}if(d===0xFB){SLAVE.running=true;if(!playing){playing=true;document.getElementById('btnPlay').textContent='■ Stop';}return;}if(d===0xFC){SLAVE.running=false;if(playing&&SLAVE.active)stopAll();return;}if(d!==0xF8||!SLAVE.active||!SLAVE.running)return;const now=e.timeStamp||performance.now();if(SLAVE.lastPulseTime>0){const interval=now-SLAVE.lastPulseTime;const ibpm=60000/(interval*SLAVE.ppqn);if(ibpm>20&&ibpm<300){SLAVE.bpmSmoothed=SLAVE.bpmSmoothed*(1-SLAVE.bpmAlpha)+ibpm*SLAVE.bpmAlpha;}}SLAVE.lastPulseTime=now;SLAVE.pulseCount++;if(SLAVE.pulseCount>=SLAVE.pulsesPerStep){SLAVE.pulseCount=0;if(playing)slaveTick();}if(SLAVE.pulseCount===0){const el=document.getElementById('slaveBpm');if(el)el.textContent=SLAVE.bpmSmoothed.toFixed(1);document.getElementById('bpmIn').value=Math.round(SLAVE.bpmSmoothed);}}
+function slaveTick(){if(!playing||!leadSteps.length)return;const stepMs=60000/SLAVE.bpmSmoothed/4;document.querySelectorAll('#leadGrid .step').forEach((e,i)=>e.classList.toggle('playing',i===leadIdx));document.querySelectorAll('#cho1Grid .step').forEach((e,i)=>e.classList.toggle('playing',i===cho1Idx));rgxFieldTick();const _bMs=stepMs*4;const _gLd=rgxGate('lead',stepMs,_bMs),_gC1=rgxGate('cho1',stepMs,_bMs),_gC2=rgxGate('cho2',stepMs,_bMs),_gHm=rgxGate('harm',stepMs,_bMs),_gTb=rgxGate('tabla',stepMs,_bMs);if(_gLd)sendVoice(leadSteps,leadIdx,'chLead',0);if(_gC1)sendVoice(cho1Steps,cho1Idx,'chCho1',-12);if(_gC2)sendVoice(cho2Steps,cho2Idx,'chCho2',-12);if(_gHm)sendVoice(harmSteps,harmIdx,'chHarm',-12,true);if(_gTb)sendTabla(tablaIdx,stepMs);tdmAdd(leadSteps[leadIdx]?.midi||0,leadIdx);if(_gLd){leadIdx++;if(leadIdx>=leadLen){leadIdx=0;barCount++;}}if(_gC1){cho1Idx++;if(cho1Idx>=choLen)cho1Idx=0;}if(_gC2){cho2Idx++;if(cho2Idx>=choLen)cho2Idx=0;}if(_gHm){harmIdx++;if(harmIdx>=harmLen)harmIdx=0;}if(_gTb){tablaIdx++;if(tablaIdx>=tablaLen)tablaIdx=0;}ecTick();reTick();ssTick();tdmTick();}
+
+// ═══════════════════════════════════════════════════════
+//  MIDI OUT
+// ═══════════════════════════════════════════════════════
+function initMIDI(){if(!navigator.requestMIDIAccess){setMidiStatus(false,'Not supported');return;}navigator.requestMIDIAccess().then(ma=>{midiAccess=ma;ma.onstatechange=()=>{populatePorts();populateInputPorts();};populatePorts();populateInputPorts();}).catch(()=>setMidiStatus(false,'Permission denied'));}
+function populatePorts(){const sel=document.getElementById('midiDevSel');if(!sel||!midiAccess)return;const prev=sel.value;sel.innerHTML='<option value="">— select —</option>';midiAccess.outputs.forEach((p,id)=>{const o=document.createElement('option');o.value=id;o.textContent=p.name;sel.appendChild(o);});if(prev)sel.value=prev;[...sel.options].forEach(o=>{if(o.textContent.includes('IAC')&&!sel.value){sel.value=o.value;selectMidiOut(sel.value);}});}
+function populateInputPorts(){const sel=document.getElementById('midiClockSel');if(!sel||!midiAccess)return;const prev=sel.value;sel.innerHTML='<option value="">— select —</option>';midiAccess.inputs.forEach((p,id)=>{const o=document.createElement('option');o.value=id;o.textContent=p.name;sel.appendChild(o);});if(prev)sel.value=prev;[...sel.options].forEach(o=>{if(o.textContent.includes('IAC')&&!sel.value){sel.value=o.value;selectClockIn(sel.value);}});}
+function selectMidiOut(id){if(!id){midiOut=null;setMidiStatus(false,'—');return;}midiOut=midiAccess?.outputs.get(id);if(midiOut)setMidiStatus(true,midiOut.name);}
+function setMidiStatus(ok,name){const dot=document.getElementById('midiDot'),stat=document.getElementById('midiStatus');if(dot)dot.classList.toggle('connected',ok);if(stat){stat.textContent=ok?`✓ ${name}`:name;stat.style.color=ok?'var(--teal)':'var(--dim)';}}
+
+// Export MIDI
+// ── SCL Export ──
+function raagToScl(raagKey) {
+  const r = RAAGS[raagKey]; if(!r) return null;
+  const scaleDegrees = r.degrees.filter(d => d > 0);
+  const lines = [
+    `! ${r.name.replace(/\s/g,'_')}.scl`, '!',
+    `${r.name} — ${r.timeDesc} — ${r.mood}`,
+    String(scaleDegrees.length + 1), '!'
+  ];
+  scaleDegrees.forEach((deg, i) => {
+    const cv = deg * 100 + (r.cents[i + 1] || 0);
+    lines.push(cv.toFixed(3));
+  });
+  lines.push('1200.000');
+  return lines.join('\n');
+}
+function exportCurrentRaagScl() {
+  const scl = raagToScl(currentRaag); if(!scl) return;
+  const r = RAAGS[currentRaag];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([scl],{type:'text/plain'}));
+  a.download = `${r.name.replace(/\s/g,'_')}.scl`; a.click();
+}
+function exportAllRaagsScl() {
+  const lines = ['! nusrat_all_raags.scl.txt','! Nusrat Fateh Ali Khan Sequencer — All Raags','! ' + new Date().toISOString(),'!'];
+  Object.entries(RAAGS).forEach(([k,r]) => { const scl=raagToScl(k); if(scl){lines.push('');lines.push('! ─────────');lines.push(scl);} });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));
+  a.download = 'nusrat_all_raags.scl.txt'; a.click();
+}
+
+function exportMIDI(){
+  const bpm=getBpm();const ticksPerBeat=480;const stepTicks=ticksPerBeat/4;const µs=Math.round(60000000/bpm);
+  function writeVar(val){const buf=[];buf.push(val&0x7F);val>>=7;while(val>0){buf.unshift((val&0x7F)|0x80);val>>=7;}return buf;}
+  function int32(v){return[(v>>24)&0xFF,(v>>16)&0xFF,(v>>8)&0xFF,v&0xFF];}
+  function int16(v){return[(v>>8)&0xFF,v&0xFF];}
+  const ch=(parseInt(document.getElementById('chLead')?.value||1)-1);
+  const oct=(parseInt(document.getElementById('leadOct')?.value||0));
+  const events=[];
+  leadSteps.forEach((s,i)=>{if(!s.active)return;const t=i*stepTicks;const m=Math.max(0,Math.min(127,s.midi+oct*12));const cents=centOffsets[s.deg]||0;if(cents){const pb=centToPitchBend(cents);events.push([t,[0xE0|ch,pb&0x7F,(pb>>7)&0x7F]]);}events.push([t,[0x90|ch,m,Math.round(s.vel*100+27)]]);events.push([t+Math.round(stepTicks*.85),[0x80|ch,m,0]]);});
+  events.sort((a,b)=>a[0]-b[0]);
+  let lastT=0;const tData=[];
+  tData.push(...[0,0xFF,0x51,0x03,...int32(µs).slice(1)]);
+  events.forEach(([t,msg])=>{tData.push(...writeVar(t-lastT),...msg);lastT=t;});
+  tData.push(0,0xFF,0x2F,0);
+  const header=[0x4D,0x54,0x68,0x64,0,0,0,6,0,0,0,1,...int16(ticksPerBeat)];
+  const tLen=int32(tData.length);
+  const bytes=new Uint8Array([...header,0x4D,0x54,0x72,0x6B,...tLen,...tData]);
+  const blob=new Blob([bytes],{type:'audio/midi'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=`${getRaag().name.replace(/\s/g,'_')}_qawwali.mid`;a.click();
+}
+
+// ═══════════════════════════════════════════════════════
+//  UNDO / REDO / SAVE / LOAD
+// ═══════════════════════════════════════════════════════
+const UNDO_MAX=30;let _undoStack=[],_redoStack=[];
+
+// ── Panel parameters that shape the feel (now part of Undo/Redo + Save) ──
+const FEEL_PARAM_IDS = ['ecSens','ecAuto','surgeBpm','surgeRate','releaseThresh','tintMRatio','silenceDens','silenceLen','silenceGrav','reSens','reAuto','ssStr','ssAdv','tdmDecay','tdmSens','partFusion'];
+function captureParams(){
+  const p={};
+  FEEL_PARAM_IDS.forEach(function(id){
+    const el=document.getElementById(id);
+    if(el) p[id]=el.value;
+  });
+  // engine internal states that aren't pure sliders
+  p._SS_section = SS.section; p._SS_stepInSec = SS.stepInSec;
+  return p;
+}
+function applyParams(p){
+  if(!p) return;
+  FEEL_PARAM_IDS.forEach(function(id){
+    if(p[id]===undefined) return;
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.value=p[id];
+    // refresh the little value label next to each slider
+    const v=document.getElementById(id+'V');
+    if(v){
+      // releaseThresh shows a % suffix
+      v.textContent = (id==='releaseThresh') ? (p[id]+'%') : p[id];
+    }
+  });
+  // re-apply side effects for params that drive generators
+  if(p.partFusion!==undefined && typeof onPartFusionChange==='function'){
+    onPartFusionChange(parseInt(p.partFusion));
+  }
+  if((p.tintMRatio!==undefined||p.silenceDens!==undefined) && typeof regenerateTint==='function'){
+    // regenerateTint reads sliders directly; only call if tint is active
+  }
+  if(p._SS_section!==undefined){SS.section=p._SS_section;SS.stepInSec=p._SS_stepInSec||0;}
+}
+
+function captureState(){return{raagKey:currentRaag,rootMidi:getRoot(),centOffsets:[...centOffsets],leadSteps:JSON.parse(JSON.stringify(leadSteps)),cho1Steps:JSON.parse(JSON.stringify(cho1Steps)),cho2Steps:JSON.parse(JSON.stringify(cho2Steps)),harmSteps:JSON.parse(JSON.stringify(harmSteps)),tablaSteps:JSON.parse(JSON.stringify(tablaSteps)),leadLen,choLen,harmLen,tablaLen,currentSection,currentTaal,partFusionLevel,bpm:getBpm(),params:captureParams()};}
+function pushUndo(){_undoStack.push(captureState());if(_undoStack.length>UNDO_MAX)_undoStack.shift();_redoStack=[];updateUndoButtons();}
+function applyState(state){currentRaag=state.raagKey;centOffsets=[...state.centOffsets];leadSteps=JSON.parse(JSON.stringify(state.leadSteps));cho1Steps=JSON.parse(JSON.stringify(state.cho1Steps));cho2Steps=JSON.parse(JSON.stringify(state.cho2Steps));harmSteps=JSON.parse(JSON.stringify(state.harmSteps));tablaSteps=JSON.parse(JSON.stringify(state.tablaSteps));leadLen=state.leadLen||16;choLen=state.choLen||13;harmLen=state.harmLen||8;tablaLen=state.tablaLen||16;currentSection=state.currentSection||'darbar';currentTaal=state.currentTaal||'tintal';partFusionLevel=state.partFusionLevel||0;const rs=document.getElementById('rootSel');if(rs)rs.value=state.rootMidi;const bi=document.getElementById('bpmIn');if(bi)bi.value=state.bpm||92;const pf=document.getElementById('partFusion');if(pf)pf.value=Math.round((state.partFusionLevel||0)*100);['darbar','qawl','rang','wajd'].forEach(s=>document.getElementById('sec-'+s)?.classList.toggle('active',s===currentSection));document.getElementById('sectionLabel').textContent=SECTIONS[currentSection]?.name||'Darbar';document.querySelectorAll('.raag-chip').forEach(c=>{const a=c.dataset.key===currentRaag;c.classList.toggle('active',a);const r=RAAGS[c.dataset.key];c.style.borderColor=a?r.color:'';c.style.color=a?r.color:'';});buildGrid('lead');buildGrid('cho1');buildGrid('cho2');buildGrid('harm');buildTablaGrid();buildCentRows();buildShrutiGrid();applyParams(state.params);updateLcmDisplay();updateUndoButtons();}
+function undo(){if(!_undoStack.length)return;_redoStack.push(captureState());applyState(_undoStack.pop());}
+function redo(){if(!_redoStack.length)return;_undoStack.push(captureState());applyState(_redoStack.pop());}
+function updateUndoButtons(){const u=document.getElementById('btnUndo'),r=document.getElementById('btnRedo');if(u)u.style.opacity=_undoStack.length?'1':'.3';if(r)r.style.opacity=_redoStack.length?'1':'.3';}
+document.addEventListener('keydown',e=>{
+  // ⌘Z / Ctrl+Z — Undo
+  if((e.metaKey||e.ctrlKey)&&e.code==='KeyZ'){e.preventDefault();if(e.shiftKey)redo();else undo();}
+  // ⌘Y / Ctrl+Y — Redo
+  if((e.metaKey||e.ctrlKey)&&e.code==='KeyY'){e.preventDefault();redo();}
+  // Space = Play or Stop (input以外でのみ)
+  if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='SELECT'){e.preventDefault();togglePlay();}
+  // G — Generate
+  if(e.code==='KeyG'&&e.target.tagName!=='INPUT'){e.preventDefault();generateAll();}
+  // W — Force Wajd
+  if(e.code==='KeyW'&&e.target.tagName!=='INPUT'){e.preventDefault();ecForceWajd();}
+  // T — Tintinnabuli toggle
+  if(e.code==='KeyT'&&e.target.tagName!=='INPUT'){e.preventDefault();const pf=document.getElementById('partFusion');if(pf){const v=parseInt(pf.value)>0?0:60;pf.value=v;onPartFusionChange(v);}}
+  // 1-4 — Section jump
+  if(e.code==='Digit1'&&e.target.tagName!=='INPUT'){jumpToSection('darbar');}
+  if(e.code==='Digit2'&&e.target.tagName!=='INPUT'){jumpToSection('qawl');}
+  if(e.code==='Digit3'&&e.target.tagName!=='INPUT'){jumpToSection('rang');}
+  if(e.code==='Digit4'&&e.target.tagName!=='INPUT'){jumpToSection('wajd');}
+});
+function saveStateJSON(){const s=captureState();s._v='1.0';s._tool='NusratQawwaliSequencer';s._at=new Date().toISOString();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(s,null,2)],{type:'application/json'}));a.download=`qawwali_${getRaag().name.replace(/\s/g,'_')}_${new Date().toISOString().slice(0,16).replace('T','_')}.json`;a.click();}
+function loadStateJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const s=JSON.parse(ev.target.result);if(!s.leadSteps||!s.raagKey){alert('このJSONはNusrat Qawwaliシーケンサーのデータではありません');return;}pushUndo();applyState(s);}catch(err){alert('JSON読み込み失敗: '+err.message);}};r.readAsText(f);e.target.value='';}
+
+// ═══════════════════════════════════════════════════════
+//  DOCK TABS
+// ═══════════════════════════════════════════════════════
+(function(){document.querySelectorAll('.dock-tab[data-panel]').forEach(tab=>{tab.addEventListener('click',()=>{const p=tab.dataset.panel;if(tab.classList.contains('active')){toggleDock();return;}document.querySelectorAll('.dock-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.dock-panel').forEach(p2=>p2.classList.remove('active'));const dp=document.getElementById('dp-'+p);if(dp)dp.classList.add('active');const panels=document.getElementById('dockPanels');if(panels){panels.classList.remove('collapsed');document.getElementById('dockColBtn').textContent='▲';}});});})();
+let _dockOpen=true;
+function toggleDock(){_dockOpen=!_dockOpen;const p=document.getElementById('dockPanels'),b=document.getElementById('dockColBtn');if(p)p.classList.toggle('collapsed',!_dockOpen);if(b)b.textContent=_dockOpen?'▲':'▼';}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  ARC MASTER — 全エンジン一括ON/OFF
+// ═══════════════════════════════════════════════════════
+let arcMasterOn = true;
+
+function toggleAutoArc() {
+  arcMasterOn = !arcMasterOn;
+  const btn = document.getElementById('btnAutoArc');
+  if(!btn) return;
+  if(arcMasterOn) {
+    btn.textContent = 'ARC: ON';
+    btn.style.color = 'var(--gold)';
+    btn.style.borderColor = 'rgba(200,168,80,.5)';
+    btn.style.background = 'rgba(200,168,80,.07)';
+  } else {
+    btn.textContent = 'ARC: OFF';
+    btn.style.color = 'var(--dim)';
+    btn.style.borderColor = '';
+    btn.style.background = '';
+  }
+}
+
+// ── Engine tick を ARC でゲート ──
+const _origEcTick  = ecTick;  ecTick  = ()=>{ if(arcMasterOn) _origEcTick();  };
+const _origReTick2 = reTick;  reTick  = ()=>{ if(arcMasterOn) _origReTick2(); };
+const _origSsTick2 = ssTick;  ssTick  = ()=>{ if(arcMasterOn) _origSsTick2(); };
+const _origTdmTick2= tdmTick; tdmTick = ()=>{ if(arcMasterOn) _origTdmTick2();};
+
+// ═══════════════════════════════════════════════════════
+//  FREEZE — generateAll 完全ブロック
+// ═══════════════════════════════════════════════════════
+let freezeOn = false;
+
+function toggleFreeze() {
+  freezeOn = !freezeOn;
+  const btn = document.getElementById('btnFreeze');
+  if(!btn) return;
+  if(freezeOn) {
+    btn.textContent = 'Freeze: ON';
+    btn.style.color = '#4fc3f7';
+    btn.style.borderColor = 'rgba(79,195,247,.6)';
+    btn.style.background = 'rgba(79,195,247,.1)';
+    btn.style.boxShadow = '0 0 8px rgba(79,195,247,.2)';
+  } else {
+    btn.textContent = 'Freeze: OFF';
+    btn.style.color = 'var(--dim)';
+    btn.style.borderColor = '';
+    btn.style.background = '';
+    btn.style.boxShadow = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  LIVE PARAMS — tick()が毎ステップ読む
+// ═══════════════════════════════════════════════════════
+function getLiveParams() {
+  return {
+    murki:   parseInt(document.getElementById('murki')?.value  || 45) / 100,
+    gamak:   parseInt(document.getElementById('gamak')?.value  || 35) / 100,
+    meend:   parseInt(document.getElementById('meend')?.value  || 30) / 100,
+    density: parseInt(document.getElementById('density')?.value|| 60) / 100,
+    sec:     SECTIONS[currentSection],
+  };
+}
+
+function liveOrnament(live) {
+  const { murki, gamak, meend } = live;
+  const r = Math.random();
+  if     (r < murki * 0.25)                            return 'murki';
+  else if(r < murki * 0.25 + gamak * 0.20)            return 'gamak';
+  else if(r < murki * 0.25 + gamak * 0.20 + meend * 0.18) return 'meend';
+  return null;
+}
+
+function liveActive(s, live) {
+  const base = s.active ? 0.65 : 0.35;
+  return Math.random() < (base * 0.4 + live.density * 0.6);
+}
+
+// ── sendVoice をライブ化 ──
+function sendVoiceLive(steps, idx, chId, octOff, isHarm, live) {
+  if(!steps.length || !midiOut) return;
+  const s = steps[idx % steps.length];
+  if(!s) return;
+
+  // liveActive で毎ステップ active 判定（harmは除く）
+  const isActive = isHarm ? s.active : liveActive(s, live);
+  if(!isActive) return;
+
+  const ch  = (parseInt(document.getElementById(chId)?.value || 1) - 1);
+  const oct = parseInt(document.getElementById('leadOct')?.value || 0);
+  const m   = Math.max(0, Math.min(127, s.midi + octOff + (isHarm ? 0 : oct * 12)));
+  const v   = Math.round(s.vel * 100 + 27);
+  const bpm2= EC.inSurge ? EC.currentBpm : getBpm();
+  const sec2= SECTIONS[currentSection];
+  const stepMs = Math.max(20, (60000 / bpm2 / 4) * (1 / sec2.tempoMult));
+
+  const cents = centOffsets[s.deg] || 0;
+  if(cents !== 0) { const pb=centToPitchBend(cents); midiOut.send([0xE0|ch, pb&0x7F, (pb>>7)&0x7F]); }
+  else midiOut.send([0xE0|ch, 0, 64]);
+
+  midiOut.send([0x90|ch, m, v]);
+  setTimeout(()=>{ if(midiOut) midiOut.send([0x80|ch, m, 0]); }, stepMs * .85);
+
+  // ライブ ornament
+  const orn = liveOrnament(live);
+  if(orn === 'gamak') {
+    setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,70]);}, stepMs*.3);
+    setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,58]);}, stepMs*.6);
+    setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,64]);}, stepMs*.9);
+  } else if(orn === 'meend') {
+    for(let k=0;k<8;k++){const bc=cents+(k/8)*25,pb2=centToPitchBend(bc);setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,pb2&0x7F,(pb2>>7)&0x7F]);},stepMs*k/8);}
+  } else if(orn === 'murki') {
+    for(let k=0;k<3;k++){const bend=k%2===0?70:58;setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,bend]);},stepMs*.2+k*stepMs*.08);}
+    setTimeout(()=>{if(midiOut)midiOut.send([0xE0|ch,0,64]);}, stepMs*.6);
+  }
+}
+
+// ── tick() の sendVoice 呼び出しを差し替え ──
+const _origTick = tick;
+tick = function() {
+  if(!playing) return;
+  const bpm = EC.inSurge ? EC.currentBpm : getBpm();
+  const sec = SECTIONS[currentSection];
+  const stepMs = Math.max(20,(60000/bpm/4)*(1/sec.tempoMult));
+  const rubato = 0.15;
+  const jitter = (Math.random()-.5)*rubato*stepMs*0.3;
+  const live = getLiveParams();
+
+  document.querySelectorAll('#leadGrid .step').forEach((e,i)=>e.classList.toggle('playing',i===leadIdx));
+  document.querySelectorAll('#cho1Grid .step').forEach((e,i)=>e.classList.toggle('playing',i===cho1Idx));
+  document.querySelectorAll('#cho2Grid .step').forEach((e,i)=>e.classList.toggle('playing',i===cho2Idx));
+  document.querySelectorAll('#harmGrid .step').forEach((e,i)=>e.classList.toggle('playing',i===harmIdx));
+  document.querySelectorAll('#tablaGrid .step').forEach((e,i)=>e.classList.toggle('playing',i===tablaIdx));
+
+  rgxFieldTick();
+  const _bMs=60000/bpm;
+  const _gLd=rgxGate('lead',stepMs,_bMs), _gC1=rgxGate('cho1',stepMs,_bMs), _gC2=rgxGate('cho2',stepMs,_bMs),
+        _gHm=rgxGate('harm',stepMs,_bMs), _gTb=rgxGate('tabla',stepMs,_bMs);
+  if(_gLd) sendVoiceLive(leadSteps, leadIdx, 'chLead', 0,   false, live);
+  if(_gC1) sendVoiceLive(cho1Steps, cho1Idx, 'chCho1', -12, false, live);
+  if(_gC2) sendVoiceLive(cho2Steps, cho2Idx, 'chCho2', -12, false, live);
+  if(_gHm) sendVoiceLive(harmSteps, harmIdx, 'chHarm', -12, true,  live);
+  if(_gTb) sendTabla(tablaIdx, stepMs);
+
+  tdmAdd(leadSteps[leadIdx]?.midi||0, leadIdx);
+  document.getElementById('beatDisplay').textContent=`${barCount+1} · ${leadIdx+1}/${leadLen}`;
+
+  if(_gLd){ leadIdx++;  if(leadIdx>=leadLen)  {leadIdx=0;barCount++;} }
+  if(_gC1){ cho1Idx++;  if(cho1Idx>=choLen)   cho1Idx=0; }
+  if(_gC2){ cho2Idx++;  if(cho2Idx>=choLen)   cho2Idx=0; }
+  if(_gHm){ harmIdx++;  if(harmIdx>=harmLen)  harmIdx=0; }
+  if(_gTb){ tablaIdx++; if(tablaIdx>=tablaLen) tablaIdx=0; }
+
+  ecTick(); reTick(); ssTick(); tdmTick();
+  playTimer = accurateTimeout(tick, stepMs+jitter);
+};
+
+// ═══════════════════════════════════════════════════════
+//  LFO SYSTEM
+// ═══════════════════════════════════════════════════════
+const LFO_LABEL_MAP = {
+  density:    v=>{const e=document.getElementById('densityV');    if(e)e.textContent=Math.round(v)+'%';},
+  murki:      v=>{const e=document.getElementById('murkiV');      if(e)e.textContent=Math.round(v);},
+  gamak:      v=>{const e=document.getElementById('gamakV');      if(e)e.textContent=Math.round(v);},
+  meend:      v=>{const e=document.getElementById('meendV');      if(e)e.textContent=Math.round(v);},
+  ssStr:      v=>{const e=document.getElementById('ssStrV');      if(e)e.textContent=Math.round(v);},
+  ssAdv:      v=>{const e=document.getElementById('ssAdvV');      if(e)e.textContent=Math.round(v);},
+  tdmDecay:   v=>{const e=document.getElementById('tdmDecayV');   if(e)e.textContent=Math.round(v);},
+  tdmSens:    v=>{const e=document.getElementById('tdmSensV');    if(e)e.textContent=Math.round(v);},
+  releaseThresh:v=>{const e=document.getElementById('releaseThreshV');if(e)e.textContent=Math.round(v);},
+  surgeRate:  v=>{const e=document.getElementById('surgeRateV'); if(e)e.textContent=Math.round(v);},
+  surgeBpm:   v=>{const e=document.getElementById('surgeBpmV');  if(e)e.textContent=Math.round(v);},
+  tintStr:    v=>{const e=document.getElementById('tintStrV');   if(e)e.textContent=Math.round(v);},
+  bpmIn:      v=>{},
+};
+const LFO_TARGETS = [
+  {id:'density',     min:10, max:95, label:'Density',           group:'Transport'},
+  {id:'bpmIn',       min:40, max:220,label:'BPM',               group:'Transport'},
+  {id:'murki',       min:0,  max:100,label:'Murki',             group:'Ornament'},
+  {id:'gamak',       min:0,  max:100,label:'Gamak',             group:'Ornament'},
+  {id:'meend',       min:0,  max:100,label:'Meend',             group:'Ornament'},
+  {id:'releaseThresh',min:40,max:99, label:'Ecstasy: Threshold',group:'Ecstasy'},
+  {id:'surgeRate',   min:1,  max:100,label:'Ecstasy: Surge Rate',group:'Ecstasy'},
+  {id:'surgeBpm',    min:60, max:280,label:'Ecstasy: Surge BPM', group:'Ecstasy'},
+  {id:'tintStr',     min:0,  max:100,label:'Tintinnabuli: Str',  group:'Tintinnabuli'},
+  {id:'ssStr',       min:0,  max:100,label:'SS: Strength',       group:'SS'},
+  {id:'ssAdv',       min:0,  max:100,label:'SS: Advance',        group:'SS'},
+  {id:'tdmDecay',    min:1,  max:100,label:'TDM: Decay',         group:'TDM'},
+  {id:'tdmSens',     min:1,  max:100,label:'TDM: Sensitivity',   group:'TDM'},
+];
+const LFO_SYNCS=[
+  {label:'1/8',beats:.5},{label:'1/4',beats:1},{label:'1/2',beats:2},
+  {label:'1',  beats:4}, {label:'2',  beats:8},{label:'4',  beats:16},
+];
+let _lfoInsts=[],_lfoIdCtr=0,_lfoRaf=null,_lfoLast=null;
+function _lfoNew(){return{id:++_lfoIdCtr,on:true,shape:'sine',syncMode:false,syncIdx:3,rateHz:.15,amount:30,targetId:LFO_TARGETS[0].id,phase:Math.random()*Math.PI*2,baseVal:null,_shVal:0,_shPrev:0,hist:[]};}
+function _lfoWave(i){const t=i.phase;if(i.shape==='sine')return Math.sin(t);if(i.shape==='square')return Math.sin(t)>=0?1:-1;const pos=((t%(Math.PI*2))+Math.PI*2)%(Math.PI*2);if(pos<i._shPrev)i._shVal=Math.random()*2-1;i._shPrev=pos;return i._shVal;}
+function _lfoApply(inst){
+  const tgt=LFO_TARGETS.find(t=>t.id===inst.targetId);if(!tgt)return;
+  const el=document.getElementById(tgt.id);if(!el)return;
+  if(inst.baseVal===null)inst.baseVal=parseFloat(el.value)||((tgt.min+tgt.max)/2);
+  const val=Math.max(tgt.min,Math.min(tgt.max,inst.baseVal+_lfoWave(inst)*((tgt.max-tgt.min)/2)*(inst.amount/100)));
+  el.value=val;
+  const fn=LFO_LABEL_MAP[tgt.id];if(fn)fn(val);
+}
+function _lfoTick(ts){
+  _lfoRaf=requestAnimationFrame(_lfoTick);
+  const dt=_lfoLast!==null?Math.min((ts-_lfoLast)/1000,.1):.016;_lfoLast=ts;
+  const bpm=getBpm();
+  _lfoInsts.forEach(inst=>{
+    if(!inst.on)return;
+    const hz=inst.syncMode?1/(LFO_SYNCS[inst.syncIdx].beats*60/bpm):inst.rateHz;
+    inst.phase+=hz*Math.PI*2*dt;
+    _lfoApply(inst);
+    inst.hist.push(_lfoWave(inst));if(inst.hist.length>80)inst.hist.shift();
+  });
+  if(Math.floor(ts/66)!==Math.floor((ts-dt*1000)/66))_lfoInsts.forEach(_lfoDrawCV);
+}
+function _lfoEnsureRaf(){if(!_lfoRaf&&_lfoInsts.some(i=>i.on)){_lfoLast=null;_lfoRaf=requestAnimationFrame(_lfoTick);}}
+function _lfoMaybeStop(){if(_lfoRaf&&!_lfoInsts.some(i=>i.on)){cancelAnimationFrame(_lfoRaf);_lfoRaf=null;}}
+function _lfoDrawCV(inst){
+  const cv=document.getElementById('lfocv_'+inst.id);if(!cv)return;
+  const W=cv.clientWidth||120,H=28;cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(92,96,128,.2)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+  const h=inst.hist;if(h.length<2)return;
+  ctx.beginPath();h.forEach((v,i)=>{const x=(i/(h.length-1))*W,y=H/2-v*(H/2-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle=inst.on?'#a0c8ff':'rgba(92,96,128,.4)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.lineTo(W,H/2);ctx.lineTo(0,H/2);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,inst.on?'rgba(160,200,255,.15)':'rgba(92,96,128,.04)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fill();
+}
+function _lfoSelHTML(sel){
+  const grps={};LFO_TARGETS.forEach(t=>{(grps[t.group]=grps[t.group]||[]).push(t);});
+  return Object.entries(grps).map(([g,ts])=>`<optgroup label="${g}">${ts.map(t=>`<option value="${t.id}"${t.id===sel?' selected':''}>${t.label}</option>`).join('')}</optgroup>`).join('');
+}
+function _lfoRenderInst(inst){
+  const syncBtns=LFO_SYNCS.map((s,i)=>`<button class="lfo-syncbtn${i===inst.syncIdx?' on':''}" onclick="lfoSyncIdx(${inst.id},${i})">${s.label}</button>`).join('');
+  const rateBlock=inst.syncMode
+    ?`<div class="lfo-sync-row">${syncBtns}</div>`
+    :`<div class="lfo-row"><input type="range" class="lfo-r" min="1" max="200" value="${Math.round(inst.rateHz*100)}" oninput="lfoRate(${inst.id},this.value/100)"><span class="lfo-v" id="lfoRV_${inst.id}">${inst.rateHz.toFixed(2)}Hz</span></div>`;
+  return `<div class="lfo-inst${inst.on?' on':''}" id="lfoI_${inst.id}">
+    <div class="lfo-sec"><div class="lfo-mini" style="color:${inst.on?'#a0c8ff':'var(--dim)'}">LFO ${inst.id}</div>
+    <div class="lfo-shape">
+      <button class="lfo-sbtn${inst.shape==='sine'?' on':''}"   onclick="lfoShape(${inst.id},'sine')">∿</button>
+      <button class="lfo-sbtn${inst.shape==='square'?' on':''}" onclick="lfoShape(${inst.id},'square')">⊓</button>
+      <button class="lfo-sbtn${inst.shape==='sh'?' on':''}"     onclick="lfoShape(${inst.id},'sh')">S&H</button>
+    </div></div>
+    <div class="lfo-sec"><div class="lfo-row" style="justify-content:space-between"><div class="lfo-mini">Rate</div>
+    <button class="lfo-syncbtn${inst.syncMode?' on':''}" onclick="lfoSyncMode(${inst.id})" style="font-size:.34rem;padding:.05rem .16rem">${inst.syncMode?'BPM':'free'}</button></div>${rateBlock}</div>
+    <div class="lfo-sec"><div class="lfo-mini">Amount ±</div>
+    <div class="lfo-row"><input type="range" class="lfo-r" min="0" max="100" value="${inst.amount}" oninput="lfoAmt(${inst.id},+this.value)"><span class="lfo-v" id="lfoAV_${inst.id}">${inst.amount}%</span></div>
+    <canvas id="lfocv_${inst.id}" class="lfo-cv"></canvas></div>
+    <div class="lfo-sec"><div class="lfo-mini">Target</div>
+    <select class="lfo-tsel" onchange="lfoTarget(${inst.id},this.value)">${_lfoSelHTML(inst.targetId)}</select></div>
+    <div></div>
+    <div class="lfo-sec">
+      <button class="lfo-onbtn${inst.on?' on':''}" onclick="lfoToggle(${inst.id})">${inst.on?'ON':'OFF'}</button>
+      <button class="lfo-delbtn" onclick="lfoDel(${inst.id})">✕</button>
+    </div></div>`;
+}
+function _lfoRefresh(){const el=document.getElementById('lfoList');if(!el)return;el.innerHTML=_lfoInsts.map(_lfoRenderInst).join('');setTimeout(()=>_lfoInsts.forEach(_lfoDrawCV),30);}
+function _lfoRefreshOne(id){const el=document.getElementById('lfoI_'+id),inst=_lfoInsts.find(i=>i.id===id);if(!el||!inst)return;el.outerHTML=_lfoRenderInst(inst);setTimeout(()=>_lfoDrawCV(inst),30);}
+function lfoAddInstance(){_lfoInsts.push(_lfoNew());_lfoRefresh();_lfoEnsureRaf();}
+function lfoDel(id){const inst=_lfoInsts.find(i=>i.id===id);if(inst?.baseVal!==null&&inst){const tgt=LFO_TARGETS.find(t=>t.id===inst.targetId);const el=tgt&&document.getElementById(tgt.id);if(el)el.value=inst.baseVal;}_lfoInsts=_lfoInsts.filter(i=>i.id!==id);_lfoRefresh();_lfoMaybeStop();}
+function lfoToggle(id){const inst=_lfoInsts.find(i=>i.id===id);if(!inst)return;inst.on=!inst.on;if(!inst.on)inst.baseVal=null;_lfoRefreshOne(id);inst.on?_lfoEnsureRaf():_lfoMaybeStop();}
+function lfoStopAll(){_lfoInsts.forEach(i=>{i.on=false;i.baseVal=null;});_lfoRefresh();_lfoMaybeStop();}
+function lfoShape(id,shape){const inst=_lfoInsts.find(i=>i.id===id);if(!inst)return;inst.shape=shape;inst._shVal=0;inst._shPrev=0;_lfoRefreshOne(id);}
+function lfoSyncMode(id){const inst=_lfoInsts.find(i=>i.id===id);if(!inst)return;inst.syncMode=!inst.syncMode;_lfoRefreshOne(id);}
+function lfoSyncIdx(id,idx){const inst=_lfoInsts.find(i=>i.id===id);if(!inst)return;inst.syncIdx=idx;_lfoRefreshOne(id);}
+function lfoRate(id,hz){const inst=_lfoInsts.find(i=>i.id===id);if(!inst)return;inst.rateHz=Math.max(.01,hz);const v=document.getElementById('lfoRV_'+id);if(v)v.textContent=inst.rateHz.toFixed(2)+'Hz';}
+function lfoAmt(id,amt){const inst=_lfoInsts.find(i=>i.id===id);if(!inst)return;inst.amount=amt;const v=document.getElementById('lfoAV_'+id);if(v)v.textContent=amt+'%';}
+function lfoTarget(id,targetId){const inst=_lfoInsts.find(i=>i.id===id);if(!inst)return;if(inst.baseVal!==null){const old=LFO_TARGETS.find(t=>t.id===inst.targetId);const el=old&&document.getElementById(old.id);if(el)el.value=inst.baseVal;}inst.targetId=targetId;inst.baseVal=null;}
+
+function init(){
+  buildRaagStrip(); buildShrutiGrid(); buildCentRows();
+  generateAll();
+  initMIDI();
+  updateLcmDisplay();
+  // Live bindings
+  document.getElementById('rootSel').addEventListener('change',onRootChange);
+  document.getElementById('densitySlider')?.addEventListener('input',()=>generateAll());
+  ['murki','gamak','meend','aakar'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>generateAll()));
+
+  // Feel-parameter sliders → record an Undo step when adjusted.
+  // 'change' fires on release (one undo per gesture, not per pixel).
+  let _preParam=null;
+  FEEL_PARAM_IDS.forEach(function(id){
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('pointerdown',function(){ _preParam=captureState(); });
+    el.addEventListener('change',function(){
+      if(_preParam){ _undoStack.push(_preParam); if(_undoStack.length>UNDO_MAX)_undoStack.shift(); _redoStack=[]; updateUndoButtons(); _preParam=null; }
+      else pushUndo();
+    });
+  });
+}
+init();
+
+// ═══════════════════════════════════════════════════════════════════
+// RGX 文法クロック(移植版) — koln3 v8のrhythmGrammar/fieldJourneyを消費
+//   方式: «ゲート». 宿主のtickは殺さず、文法ONの声部の発火とidx前進だけを実測IOI位相で門番する。
+//   注意: 発火は宿主tick解像度に量子化される(gismonti_max_25の独立クロック版より粗い)。
+//   検証済みの核(gismonti_max_25と同一): 完全bigram行列Markov=生成統計が実測と±0.1%一致。
+// ═══════════════════════════════════════════════════════════════════
+var RGX={ data:null, gap:{}, phase:{}, last:{}, markov:{},
+  journey:null, srcPc:6, shift:0, fIdx:null, fNext:0 };
+var RGX_VOICES={lead:{map:'top',label:'lead'},cho1:{map:'mid',label:'cho1'},cho2:{map:'mid',label:'cho2'},harm:{map:'low',label:'harm'},tabla:{map:'low',label:'tabla'}};
+var RGX_FILL={lead:{arr:()=>leadSteps,gridBeat:0.25,rebuild:()=>buildGrid('lead')},cho1:{arr:()=>cho1Steps,gridBeat:0.25,rebuild:()=>buildGrid('cho1')},cho2:{arr:()=>cho2Steps,gridBeat:0.25,rebuild:()=>buildGrid('cho2')},harm:{arr:()=>harmSteps,gridBeat:0.25,rebuild:()=>buildGrid('harm')}};
+function rgxMapOf(v){ const s=document.getElementById('rgxMap_'+v); return s?s.value:RGX_VOICES[v].map; }
+function rgxOn(v){ const el=document.getElementById('rgxOn_'+v);
+  return !!(el&&el.checked&&RGX.data&&RGX.data.voices&&RGX.data.voices[rgxMapOf(v)]); }
+function rgxTactusMs(v,beatMs){ return beatMs*(parseFloat(document.getElementById('rgxTac_'+v)?.value)||0.5); }
+function rgxBuildMarkov(vd){
+  const m={}; m._full=!!vd.cellBigramsFull;
+  const src=vd.cellBigramsFull?Object.entries(vd.cellBigramsFull).map(([k,p])=>({cell:k,p})):(vd.cellBigramsTop||[]);
+  src.forEach(c=>{ const [a,b]=c.cell.split('>'); (m[a]=m[a]||[]).push([parseFloat(b),c.p]); });
+  return m;
+}
+function rgxSampleRatio(v){
+  const vd=RGX.data.voices[rgxMapOf(v)]; if(!vd) return 1;
+  const h=vd.ratioHist||{'1':1};
+  const sh=()=>{ const ks=Object.keys(h); let r=Math.random(),a=0;
+    for(const k of ks){a+=h[k]; if(r<a)return parseFloat(k);} return parseFloat(ks[0]); };
+  const mk=RGX.markov[v]||{}; const last=RGX.last[v];
+  const opts=(last!=null&&mk[last])?mk[last]:null;
+  let out;
+  if(opts){
+    const pa=h[String(last)]||0, known=opts.reduce((a,x)=>a+x[1],0);
+    const cover=mk._full?1:(pa>0?Math.min(1,known/pa):0);
+    if(Math.random()<cover){ let r=Math.random()*known;
+      for(const [ratio,p] of opts){ r-=p; if(r<=0){out=ratio;break;} }
+      if(out==null)out=opts[opts.length-1][0];
+    } else out=sh();
+  } else out=sh();
+  RGX.last[v]=out; return out;
+}
+function rgxNextGap(v,beatMs){ return Math.max(20, rgxTactusMs(v,beatMs)*rgxSampleRatio(v)); }
+// ゲート: 文法OFF=常に発火可(従来動作)。ON=位相が満ちたtickのみtrue
+function rgxGate(v, elapsedMs, beatMs){
+  if(!rgxOn(v)) return true;
+  let ph=(RGX.phase[v]||0)+elapsedMs;
+  if(RGX.gap[v]==null) RGX.gap[v]=rgxNextGap(v,beatMs);
+  if(ph>=RGX.gap[v]-0.5){ RGX.phase[v]=ph-RGX.gap[v]; RGX.gap[v]=rgxNextGap(v,beatMs); return true; }
+  RGX.phase[v]=ph; return false;
+}
+function rgxShift(){ return (typeof RGX!=="undefined"&&RGX&&RGX.shift)||0; }   // TDZ安全: 宿主が初期化中にgetRootを呼んでも死なない(v2修正: 旧版は読込時に全スクリプト即死)
+// 磁場引力: 旅の各遷移を%の確率で採用。root関門に注入済み(全系追従)
+function rgxFieldTick(){
+  const pct=parseFloat(document.getElementById('rgxPull')?.value)||0;
+  if(!RGX.journey||!RGX.journey.length||pct<=0) return;
+  const now=performance.now();
+  if(RGX.fIdx==null){ RGX.fIdx=0; RGX.shift=0; RGX.fNext=now+RGX.journey[0][1]*1000; rgxStat(); return; }
+  if(now>=RGX.fNext){
+    const prev=RGX.journey[RGX.fIdx][0];
+    RGX.fIdx=(RGX.fIdx+1)%RGX.journey.length;
+    const [pc,dur]=RGX.journey[RGX.fIdx];
+    let d=(pc-prev)%12; if(d>6)d-=12; if(d<-6)d+=12;
+    if(Math.random()*100<pct){ let ns=RGX.shift+d; RGX.shift=((ns+6)%12+12)%12-6; rgxStat(); }
+    RGX.fNext=now+dur*1000;
+  }
+}
+function rgxStat(){ const el=document.getElementById('rgxFStat');
+  if(el) el.textContent='磁場 '+(RGX.shift>0?'+':'')+RGX.shift+'st'+(RGX.journey?' 旅'+((RGX.fIdx||0)+1)+'/'+RGX.journey.length:''); }
+// 埋め: 格子量子化(小数累積)。音程/vel保持・activeのみ書換
+function rgxFill(){
+  if(!RGX.data){ alert('先に文法JSONを読込'); return; }
+  if(!RGX_FILL){ alert('この宿主は格子を持たない/未対応'); return; }
+  const rep=[];
+  for(const v in RGX_VOICES){
+    if(!rgxOn(v)) continue;
+    const fm=RGX_FILL[v]; if(!fm) continue;
+    const arr=fm.arr(); if(!arr||!arr.length) continue;
+    arr.forEach(st=>{ st.active=false; });
+    const spt=(parseFloat(document.getElementById('rgxTac_'+v)?.value)||0.5)/fm.gridBeat;
+    RGX.last[v]=null;
+    let pos=0,placed=0,clamped=0;
+    while(pos<arr.length){ const i=Math.round(pos); if(i>=arr.length)break;
+      arr[i].active=true; placed++;
+      const adv=rgxSampleRatio(v)*spt; if(adv<0.5)clamped++;
+      pos+=Math.max(0.5,adv); }
+    if(fm.rebuild)fm.rebuild();
+    rep.push(v+':'+placed+(clamped?('('+clamped+'丸め)'):''));
+  }
+  const st=document.getElementById('rgxStatus');
+  if(st) st.textContent=rep.length?('埋め: '+rep.join(' ')+' — 格子量子化(ライブゲートの方が忠実)'):'文法ON声部なし';
+}
+// 干渉監査(宿主別の既知項目のみ・800ms)
+function rgxAudit(){
+  const el=document.getElementById('rgxWarn'); if(!el)return;
+  const anyOn=Object.keys(RGX_VOICES).some(v=>rgxOn(v));
+  const w=anyOn?([]).filter(x=>x):[];
+  if(anyOn) w.unshift('ゲート方式: 発火は宿主tick解像度に量子化(スウィング/格子前提の機構とは前提が異なる)');
+  el.innerHTML=w.length&&anyOn?('⚠ '+w.join('<br>⚠ ')):'';
+}
+setInterval(rgxAudit,800);
+// フローティングパネル(全宿主共通・レイアウト非侵襲)
+(function(){
+  const p=document.createElement('div');
+  p.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;background:#141210;border:1px solid #4a3a2a;border-radius:6px;padding:8px;font-family:"JetBrains Mono",monospace;font-size:.55rem;color:#cbb;max-width:260px;opacity:.94';
+  let rows='<div style="font-weight:600;color:#d0a050;margin-bottom:4px;cursor:pointer" id="rgxHead">文法クロック ▾ <span style="opacity:.5">nusrat_v2</span></div><div id="rgxBody">';
+  rows+='<button id="rgxLoadBtn" style="width:100%;margin-bottom:4px;font-size:.55rem">🧬 文法JSON読込 (koln3 v8)</button>';
+  rows+='<input type="file" id="rgxFile" accept=".json" style="display:none">';
+  rows+='<div id="rgxStatus" style="opacity:.7;margin-bottom:4px">未読込</div>';
+  for(const v in RGX_VOICES){
+    const c=RGX_VOICES[v];
+    rows+='<div style="display:flex;gap:4px;align-items:center;margin-bottom:2px">'
+      +'<label><input type="checkbox" id="rgxOn_'+v+'"> '+c.label+'</label>'
+      +'<select id="rgxMap_'+v+'" style="font-size:.5rem">'
+      +['low','mid','top'].map(m=>'<option value="'+m+'"'+(m===c.map?' selected':'')+'>'+m+'</option>').join('')
+      +'</select>'
+      +'<input type="number" id="rgxTac_'+v+'" value="0.5" min="0.05" max="8" step="0.01" style="width:44px;font-size:.55rem" title="タクトゥス(拍)">'
+      +'</div>';
+  }
+  rows+='<div style="display:flex;gap:4px;align-items:center;margin-top:4px">'
+    +(RGX_FILL?'<button id="rgxFillBtn" style="flex:1;font-size:.5rem">⌫ 空にして埋める</button>':'')
+    +'</div>';
+  rows+='<div style="display:flex;gap:4px;align-items:center;margin-top:4px"><span>磁場引力</span>'
+    +'<input type="range" id="rgxPull" min="0" max="100" step="5" value="0" style="flex:1">'
+    +'<span id="rgxFStat" style="opacity:.75"></span></div>';
+  rows+='<div id="rgxWarn" style="color:#d0a050;line-height:1.5;margin-top:4px"></div></div>';
+  p.innerHTML=rows;
+  document.body.appendChild(p);
+  document.getElementById('rgxHead').addEventListener('click',()=>{
+    const b=document.getElementById('rgxBody'); b.style.display=b.style.display==='none'?'':'none'; });
+  document.getElementById('rgxLoadBtn').addEventListener('click',()=>document.getElementById('rgxFile').click());
+  if(RGX_FILL) document.getElementById('rgxFillBtn').addEventListener('click',rgxFill);
+  document.getElementById('rgxFile').addEventListener('change',ev=>{
+    const f=ev.target.files[0]; if(!f)return;
+    const rd=new FileReader();
+    rd.onload=()=>{ try{
+      const j=JSON.parse(rd.result);
+      if(!j.rhythmGrammar){ alert('rhythmGrammarが無い(koln3 v8以降か要確認)'); return; }
+      RGX.data=j.rhythmGrammar;
+      for(const v in RGX_VOICES){ const vd=RGX.data.voices[rgxMapOf(v)];
+        RGX.markov[v]=vd?rgxBuildMarkov(vd):null; RGX.last[v]=null; RGX.gap[v]=null; RGX.phase[v]=0; }
+      if(j.fieldJourney&&j.fieldJourney.length){
+        const cont=!!(j.meta&&j.meta.journeyContiguous);
+        RGX.journey=j.fieldJourney.map((x,i)=>{ let d=x.endSec-x.startSec;
+          if(!cont&&i<j.fieldJourney.length-1)d=Math.max(0.5,d-2.0); return [x.pc,d]; });
+        RGX.srcPc=(j.meta&&typeof j.meta.rootMidi==='number')?(j.meta.rootMidi%12):6;
+        RGX.fIdx=null; RGX.shift=0; rgxStat();
+      } else { RGX.journey=null; RGX.shift=0; }
+      document.getElementById('rgxStatus').textContent='文法: '+f.name+' | tactus '+RGX.data.tactusSec+'s'+(RGX.journey?' | 旅'+RGX.journey.length+'区間':'');
+    }catch(e){ alert('読込失敗: '+e.message); } };
+    rd.readAsText(f);
+  });
+})();
+
+</script>
+</body>
+</html>
